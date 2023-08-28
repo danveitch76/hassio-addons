@@ -3,10 +3,10 @@ name: Validate/Lint Home Assistant Add-on configuration files
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
   schedule:
     - cron: "0 0 * * *"
 
