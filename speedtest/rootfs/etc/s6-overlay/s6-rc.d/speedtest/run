@@ -1,0 +1,79 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Start Speedtest service
+# ==============================================================================
+bashio::log.green "Starting up Speedtest CLI..."
+
+declare ACCEPT_EULA
+declare ACCEPT_RGPD
+
+ACCEPT_EULA=$(bashio::config 'accept_eula')
+ACCEPT_RGPD=$(bashio::config 'accept_rgpd')
+if [[ "$ACCEPT_EULA" != "true" || "$ACCEPT_RGPD" != "true" ]]; then
+    bashio::log.fatal "Licenses were not accepted!"
+    exit 1
+fi
+
+if $(bashio::config 'print_closest_servers'); then
+	bashio::log.green "Getting closest servers..."
+    /usr/local/bin/speedtest -L --accept-license --accept-gdpr
+	bashio::log.green "Completed closest server test."
+fi
+
+if $(bashio::config 'show_speedtest_outputs'); then
+    bashio::log.level "debug"
+fi
+
+function post_result() {
+    sensor=${1}
+    unitmeasure=${2}
+    friendlyname=${3}
+    state=${4}
+    serverid=${5}
+    servername=${6}
+    servercountry=${7}
+
+    data="{\"state\":\"$state\", \"attributes\":{\"state_class\":\"measurement\",\"unit_of_measurement\":\"$unitmeasure\",\"friendly_name\":\"$friendlyname\",\"icon\":\"mdi:speedometer\",\"server_name\":$servername,\"server_country\":\"$servercountry\",\"server_id\":\"$serverid\"}}"
+	data=$(echo "${data//\"\"/\"}")
+
+	bashio::log.debug "$data"
+
+    bashio::api.supervisor POST "/core/api/states/sensor.speedtest_$sensor" "$data" 1> /dev/null
+
+    bashio::log.info "$friendlyname updated"
+}
+
+bashio::log.green "Starting Speedtest..."
+if bashio::config.exists 'server_id'; then
+    SERVER_ID=$(bashio::config 'server_id')
+    RESULT=$(/usr/local/bin/speedtest --format=json --precision=4 --accept-license --accept-gdpr -s "$SERVER_ID")
+else
+    RESULT=$(/usr/local/bin/speedtest --format=json --precision=4 --accept-license --accept-gdpr)
+fi
+
+down_load_speed=$(printf %.2f "$(($(echo $RESULT | jq .download.bandwidth)*8/10000))e-2")
+up_load_speed=$(printf %.2f "$(($(echo $RESULT | jq .upload.bandwidth)*8/10000))e-2")
+ping_latency=$(echo $RESULT | jq .ping.latency)
+used_server_id=$(echo $RESULT | jq .server.id)
+used_server_name=$(echo $RESULT | jq .server.location) # This is exact the same behaviour of the native HomeAssistant speedtest
+used_server_country=$(echo $RESULT | jq .server.country)
+timestamp=$(date "+%Y-%m-%d %H:%M:%S %z")
+
+bashio::log.blue "--------------- Speedtest Results ----------------"
+bashio::log.green "Download measured: $down_load_speed"
+bashio::log.green "Upload: $up_load_speed"
+bashio::log.green "Ping: $ping_latency"
+bashio::log.green "Server name: $used_server_name"
+bashio::log.green "Server id: $used_server_id"
+bashio::log.green "Server country: $used_server_country"
+bashio::log.green "Request timstamp: $timestamp"
+bashio::log.blue "---------------------------------------------------"
+
+bashio::log.debug "Speedtest output: ${RESULT}"
+
+post_result "download" "Mbit/s" "Speedtest Download" "${down_load_speed}" "${used_server_id}" "${used_server_name}" "${used_server_country}"
+post_result "upload" "Mbit/s" "Speedtest Upload" "${up_load_speed}" "${used_server_id}" "${used_server_name}" "${used_server_country}"
+post_result "ping" "ms" "Speedtest Ping" "${ping_latency}" "${used_server_id}" "${used_server_name}" "${used_server_country}"
+bashio::log.info "speedtest stopped"
+exit 0

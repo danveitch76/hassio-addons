@@ -1,0 +1,33 @@
+---
+name: Speedtest
+description: Update the speedtest sensors using the Official Speedtest CLI.
+slug: speedtest
+version: 1.6.2
+slug: "speedtest_addon"
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: once
+boot: manual
+init: false
+homeassistant_api: true
+hassio_api: true
+hassio_role: admin
+auth_api: true
+options:
+  accept_eula: false
+  accept_rgpd: false
+  show_speedtest_outputs: false
+  print_closest_servers: false
+schema:
+  accept_eula: bool
+  accept_rgpd: bool
+  server_id: int?
+  show_speedtest_outputs: bool?
+  print_closest_servers: bool?
+url: https://github.com/danveitch76/hassio-addons/tree/master/speedtest
+image: ghcr.io/danveitch76/{arch}-addon-speedtest
+homeassistant: 2023.08.0
