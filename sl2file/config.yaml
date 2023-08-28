@@ -2,7 +2,7 @@
 name: sl2file
 description: Simple syslog capture to file.
 slug: sl2file
-version: 0.1.3
+version: 0.1.4
 slug: "sl2file_addon"
 arch:
   - armhf
