@@ -29,6 +29,7 @@ This is a compilation of add-ons from mutiple sources in one place. Enabling bui
 ### Deprecated Add-ons:
 **WARNING**: <i>These add-ons will not be updated anymore. Feel free to fork them.</i>
 * Portainer - Portainer add-on to manage the docker supervisor instance.
+* sl2file - Simple PHP to capture all remote syslogs to a file.
 
 ## Installation
 To install any of the add-ons offered in this repository, you must first add its repository URL to your Home Assistant instance. To do so, click the following button
@@ -60,4 +61,4 @@ The licence of the repository is inherited by the plugins, if not stated differe
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 ## Credits
-<b>Repository setup and SambasNAS were forked from <a href="https://github.com/dianlight/hassio-addons">dianlight/hassio-addons</a>. All attributions to their work.</b>
+<b>Repository setup and SambasNAS were copied/forked from <a href="https://github.com/dianlight/hassio-addons">dianlight/hassio-addons</a>. All attributions to their work.</b>
