@@ -108,7 +108,11 @@ RUN curl -Lso /usr/bin/ha "https://github.com/home-assistant/cli/releases/downlo
 
 # Copy data
 COPY rootfs /
-
+RUN for f in $(find . -name 'run'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+    for f in $(find . -name 'finish'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+    for f in $(find . -name 'down'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+    for f in $(find . -name 'up'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+    for f in $(find . -name '*.sh'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done 
 # Labels
 LABEL \
     io.hass.name="${BUILD_NAME}" \
