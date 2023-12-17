@@ -44,9 +44,8 @@ RUN (crontab -l 2>/dev/null || : ; cat /data/pialert/install/pialert.cron) | cro
 RUN mv "/var/www/html/index.html" "/var/www/html/index.html.orig"
 RUN ln -s "/data/pialert/install/index.html" "/var/www/html/index.html"
 RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data"
+RUN mv "/etc/lighttpd/lighttpd.conf" "/etc/lighttpd/lighttpd.conf.orig"
 RUN ln -s "/data/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
-RUN sed -i 's/error.log/error-pialert.log/g' /etc/lighttpd/lighttpd.conf
-RUN echo 'accesslog.filename          = "/var/log/lighttpd/access-pialert.log"' | tee -a /etc/lighttpd/lighttpd.conf
 RUN chmod -R go+x /data/pialert
 RUN chmod -R +x /data/pialert/*.sh
 RUN chmod -R +x /data/pialert/*.py
