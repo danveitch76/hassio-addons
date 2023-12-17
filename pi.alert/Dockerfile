@@ -30,10 +30,8 @@ RUN \
   # Setup PHP PIP packages \
   pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location \
   # Set permissions \
-  if [ -e "/var/www/html/pialert" ] || [ -L "/var/www/html/pialert" ] ; then \
-    echo "- Deleting previous Pi.Alert site" \
-    rm -r "/var/www/html/pialert" \
-  fi \
+  echo "- Deleting previous Pi.Alert site" \
+  rm -r "/var/www/html/pialert" \
   echo "- Setting permissions..." \
   chmod go+x /root/pialert \
   chgrp -R www-data "/root/pialert/db" \
@@ -63,13 +61,9 @@ RUN \
   echo "- Publishing Pi.Alert web..." \
   ln -s "/root/pialert/front" "/var/www/html/pialert" \
   echo "- Configuring http://pi.alert/ redirection..." \
-  if [ -e "/etc/lighttpd/conf-available/pialert_front.conf" ] ; then \
-    rm -r "/etc/lighttpd/conf-available/pialert_front.conf" \
-  fi \
+  rm -r "/etc/lighttpd/conf-available/pialert_front.conf" \
   cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available" \
-  if [ -e "/etc/lighttpd/conf-enabled/pialert_front.conf" ] || \
-     [ -L "/etc/lighttpd/conf-enabled/pialert_front.conf" ] ; then \
-    rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf" \
+  rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf" \
   fi \
   ln -s ../conf-available/pialert_front.conf  "/etc/lighttpd/conf-enabled/pialert_front.conf" \
   echo "- Restarting lighttpd..." \
