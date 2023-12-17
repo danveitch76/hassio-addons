@@ -47,8 +47,8 @@ RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data"
 RUN mv "/etc/lighttpd/lighttpd.conf" "/etc/lighttpd/lighttpd.conf.orig"
 RUN ln -s "/data/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
 RUN chmod -R go+x /data/pialert
-RUN chmod -R +x /data/pialert/*.sh
-RUN chmod -R +x /data/pialert/*.py
+RUN chmod -R +x /data/pialert/back/*.sh
+RUN chmod -R +x /data/pialert/back/*.py
 RUN chmod -R +x /data/pialert/back/pialert-cli
 RUN chmod -R +x /data/pialert/back/speedtest-cli
 RUN chgrp -R www-data "/data/pialert/db"
