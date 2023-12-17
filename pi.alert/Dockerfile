@@ -22,7 +22,7 @@ COPY rootfs /
 
 # Install requirements for add-on:
 #RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests -y
-RUN apt-get install lighttpd
+RUN apt-get update && apt-get install lighttpd
 RUN lighttpd-enable-mod fastcgi-php accesslog
 #RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
 RUN touch "/data/pialert/log/pialert.vendors.log"
