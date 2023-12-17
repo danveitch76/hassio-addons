@@ -49,16 +49,16 @@ Estimated time: 20'
 
 1.6 - Setup the basic configuration
   ```
-  sudo raspi-config
+  raspi-config
   ```
 
 1.7 - Optionally, configure a static IP in raspi-config
 
 1.8 - Update the OS
   ```
-  sudo apt-get update
-  sudo apt-get upgrade
-  sudo shutdown -r now
+  apt-get update
+  apt-get upgrade
+  shutdown -r now
   ```
 
 
@@ -115,7 +115,7 @@ Estimated time: 20'
 
 2.9 - Renew your computer IP to unsure you are using the new DHCP and DNS server
   - Windows: cmd -> ipconfig /renew
-  - Linux: shell -> sudo dhclient -r; sudo dhclient
+  - Linux: shell -> dhclient -r; dhclient
   - Mac: Apple menu -> System Preferences -> Network -> Select the network
     -> Advanced -> TCP/IP -> Renew DHCP Lease
 
@@ -127,58 +127,58 @@ block is not necessary
 
 3.1 - Install apt-utils
   ```
-  sudo apt-get install apt-utils -y
+  apt-get install apt-utils -y
   ```
 
 3.2 - Install lighttpd
   ```
-  sudo apt-get install lighttpd -y
+  apt-get install lighttpd -y
   ```
 
 3.3 - If Pi.Alert will be the only site available in this webserver, you can
   redirect the default server page to pialert subfolder
   ```
-  sudo mv /var/www/html/index.lighttpd.html /var/www/html/index.lighttpd.html.old
-  sudo ln -s $HOME/pialert/install/index.html /var/www/html/index.html
+  mv /var/www/html/index.lighttpd.html /var/www/html/index.lighttpd.html.old
+  ln -s $HOME/pialert/install/index.html /var/www/html/index.html
   ```
 
 3.4 - Install PHP
   ```
-  sudo apt-get install php php-cgi php-fpm php-curl php-xml php-sqlite3 -y     
+  apt-get install php php-cgi php-fpm php-curl php-xml php-sqlite3 -y     
   ```
 
 3.5 - Activate PHP
   ```
-  sudo lighttpd-enable-mod fastcgi-php
-  sudo service lighttpd restart
+  lighttpd-enable-mod fastcgi-php
+  service lighttpd restart
   ```
 
 3.6 - Install sqlite3
   ```
-  sudo apt-get install sqlite3 -y
+  apt-get install sqlite3 -y
   ```
 
 3.7 - Install mmdblookup
   ```
-  sudo apt-get install mmdb-bin -y
+  apt-get install mmdb-bin -y
   ```
 
 ### arp-scan & Python
 <!--- --------------------------------------------------------------------- --->
 4.1 - Install arp-scan utility and test
   ```
-  sudo apt-get install arp-scan -y
-  sudo arp-scan -l
+  apt-get install arp-scan -y
+  arp-scan -l
   ```
 
 4.2 - Install dnsutils & net-tools utilities
   ```
-  sudo apt-get install dnsutils net-tools libwww-perl libtext-csv-perl -y
+  apt-get install dnsutils net-tools libwww-perl libtext-csv-perl -y
   ```
 
 4.3 - Installing nmap, zip and wakeonlan
   ```
-  sudo apt-get install nmap zip wakeonlan aria2 -y
+  apt-get install nmap zip wakeonlan aria2 -y
   ```
 
 4.4 - Test Python
@@ -198,13 +198,13 @@ block is not necessary
 
   If Python 3 is installed, necessary packages have to be installed afterwards.
   ```
-  sudo apt-get install python3-pip python3-cryptography python3-requests
+  apt-get install python3-pip python3-cryptography python3-requests
   ```
 
 4.5 - If Python 3 is not installed in your system, you can install it with this
   command:
   ```
-  sudo apt-get install python3 python3-pip python3-cryptography python3-requests
+  apt-get install python3 python3-pip python3-cryptography python3-requests
   ```
 
 4.6 - Install additional packages
@@ -227,7 +227,7 @@ block is not necessary
 
 5.2 - Public the front portal
   ```
-  sudo ln -s $HOME/pialert/front /var/www/html/pialert
+  ln -s $HOME/pialert/front /var/www/html/pialert
   ```
 
 5.3 - Configure web server redirection
@@ -236,9 +236,9 @@ block is not necessary
   with the IP of your raspberry, youy must configure lighttpd to redirect these 
   requests to the correct pialert web folder
   ```
-  sudo cp $HOME/pialert/install/pialert_front.conf /etc/lighttpd/conf-available
-  sudo ln -s ../conf-available/pialert_front.conf /etc/lighttpd/conf-enabled/pialert_front.conf
-  sudo /etc/init.d/lighttpd restart
+  cp $HOME/pialert/install/pialert_front.conf /etc/lighttpd/conf-available
+  ln -s ../conf-available/pialert_front.conf /etc/lighttpd/conf-enabled/pialert_front.conf
+  /etc/init.d/lighttpd restart
   ```
 
 5.4 - If you want to use email reporting with gmail
@@ -303,15 +303,15 @@ block is not necessary
 5.10 - Add necessary permissions
   ```
   chmod go+x $HOME/pialert
-  sudo chgrp -R www-data "$HOME/pialert/db"
-  sudo chmod -R 775 "$HOME/pialert/db"
-  sudo chmod -R 775 "$HOME/pialert/db/temp"
-  sudo chgrp -R www-data "$HOME/pialert/config"
-  sudo chmod -R 775 "$HOME/pialert/config"
-  sudo chgrp -R www-data "$HOME/pialert/front/reports"
-  sudo chmod -R 775 "$HOME/pialert/front/reports"
-  sudo chgrp -R www-data "$HOME/pialert/back/speedtest/"
-  sudo chmod -R 775 "$HOME/pialert/back/speedtest/"
+  chgrp -R www-data "$HOME/pialert/db"
+  chmod -R 775 "$HOME/pialert/db"
+  chmod -R 775 "$HOME/pialert/db/temp"
+  chgrp -R www-data "$HOME/pialert/config"
+  chmod -R 775 "$HOME/pialert/config"
+  chgrp -R www-data "$HOME/pialert/front/reports"
+  chmod -R 775 "$HOME/pialert/front/reports"
+  chgrp -R www-data "$HOME/pialert/back/speedtest/"
+  chmod -R 775 "$HOME/pialert/back/speedtest/"
   chmod +x $HOME/pialert/back/shoutrrr/arm64/shoutrrr
   chmod +x $HOME/pialert/back/shoutrrr/armhf/shoutrrr
   chmod +x $HOME/pialert/back/shoutrrr/x86/shoutrrr
@@ -333,7 +333,7 @@ block is not necessary
 
 5.12 - Set sudoers
   ```
-  sudo $HOME/back/pialert-cli set_sudoers
+  $HOME/back/pialert-cli set_sudoers
   ```
 
 5.13 - Check DNS record for pi.alert (explained in point 2.7 of Pi.hole

@@ -16,8 +16,8 @@ $help_lang['Cat_General_102_text'] = 'Al momento potrebbero essere in corso modi
       								 <span class="text-maroon help_faq_code">drwxrwxr-x  2 (tuo nome utente) www-data</span><br>
       								 Se i permessi non sono corretti, puoi reimpostarli con i seguenti comandi nel terminale o nella console:<br>
       								 <div class="help_faq_code" style="padding-left: 10px; margin-bottom: 10px;">
-      								 sudo chgrp -R www-data ~/pialert/db<br>
-      								 sudo chown [Username]:www-data ~/pialert/db/pialert.db<br>
+      								 chgrp -R www-data ~/pialert/db<br>
+      								 chown [Username]:www-data ~/pialert/db/pialert.db<br>
         							 chmod -R 775 ~/pialert/db
       								 </div>
       								 Un&apos;altra opzione è ripristinare i permessi necessari nella directory <span class="text-maroon help_faq_code">~/pialert/back</span> utilizzando <span class="text-maroon help_faq_code">pialert-cli</span>. Ci sono diverse opzioni a disposizione.<br><br>

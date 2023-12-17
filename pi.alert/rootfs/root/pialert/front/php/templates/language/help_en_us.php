@@ -18,8 +18,8 @@ $help_lang['Cat_General_102_text'] = 'Changes may currently be written to the da
       								 <span class="text-maroon help_faq_code">drwxrwxr-x  2 (your username) www-data</span><br>
       								 If the permission is not correct, you can set it again with the following commands in the terminal or the console:<br>
       								 <div class="help_faq_code" style="padding-left: 10px; margin-bottom: 10px;">
-      								 sudo chgrp -R www-data ~/pialert/db<br>
-      								 sudo chown [Username]:www-data ~/pialert/db/pialert.db<br>
+      								 chgrp -R www-data ~/pialert/db<br>
+      								 chown [Username]:www-data ~/pialert/db/pialert.db<br>
         							 chmod -R 775 ~/pialert/db
       								 </div>
       								 Another option is to reset the necessary permissions in the directory <span class="text-maroon help_faq_code">~/pialert/back</span> using <span class="text-maroon help_faq_code">pialert-cli</span>. There are several options available to you.<br><br>

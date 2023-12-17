@@ -168,7 +168,7 @@ New:
  - View logs on frontend (Maintenance page)
 
 Fixed:
- - in some cases speedtest-cli could not be started. The bug has been fixed for new installations. For existing installations, installing an additional package with the command "sudo apt install python-is-python3" helps.
+ - in some cases speedtest-cli could not be started. The bug has been fixed for new installations. For existing installations, installing an additional package with the command "apt install python-is-python3" helps.
 
 Updated:
  - Documentation

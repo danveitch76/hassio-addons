@@ -204,7 +204,7 @@ EOM
        echo "No timeout is set. Pi.Alert restarts itself with the next scan after 10min."
        STOPTIMER=10
     fi
-    sudo killall arp-scan
+    killall arp-scan
     echo $STOPTIMER > ${SCRIPTPATH}/../db/setting_stoppialert
     /usr/bin/python3 ${SCRIPTPATH}/pialert_reporting_test.py reporting_starttimer
     echo "Configured Pi.Alert scans are disabled"
@@ -563,17 +563,17 @@ EOM
     user() {
         echo "Pi.Alert User: $PIA_USER"
         echo "    Set DB Permissions"
-        sudo chmod -R 775 "$PIA_DB_FILE_PATH"
-        sudo chown -R "$PIA_USER":www-data "$PIA_DB_FILE_PATH"
+        chmod -R 775 "$PIA_DB_FILE_PATH"
+        chown -R "$PIA_USER":www-data "$PIA_DB_FILE_PATH"
         echo "    Set Config Permissions"
-        sudo chmod -R 775 "$PIA_CONF_FILE_PATH"
-        sudo chown -R "$PIA_USER":www-data "$PIA_CONF_FILE_PATH"
+        chmod -R 775 "$PIA_CONF_FILE_PATH"
+        chown -R "$PIA_USER":www-data "$PIA_CONF_FILE_PATH"
         echo "    Set Back Permissions"
-        sudo chmod -R 775 "$PIA_BACK_FILE_PATH"
-        sudo chown -R "$PIA_USER":www-data "$PIA_BACK_FILE_PATH"
+        chmod -R 775 "$PIA_BACK_FILE_PATH"
+        chown -R "$PIA_USER":www-data "$PIA_BACK_FILE_PATH"
         echo "    Set Reports Permissions"
-        sudo chmod -R 775 "$PIA_REPORTS_PATH"
-        sudo chown -R "$PIA_USER":www-data "$PIA_REPORTS_PATH"
+        chmod -R 775 "$PIA_REPORTS_PATH"
+        chown -R "$PIA_USER":www-data "$PIA_REPORTS_PATH"
         echo "Permissions set"; }
     case "$2" in
         --custom)
@@ -593,17 +593,17 @@ EOM
         *)
             echo "Pi.Alert Group: www-data"
             echo "    Set DB Group Permissions only"
-            sudo chmod -R 775 "$PIA_DB_FILE_PATH"
-            sudo chgrp -R www-data "$PIA_DB_FILE_PATH"
+            chmod -R 775 "$PIA_DB_FILE_PATH"
+            chgrp -R www-data "$PIA_DB_FILE_PATH"
             echo "    Set Config Group Permissions only"
-            sudo chmod -R 775 "$PIA_CONF_FILE_PATH"
-            sudo chgrp -R www-data "$PIA_CONF_FILE_PATH"
+            chmod -R 775 "$PIA_CONF_FILE_PATH"
+            chgrp -R www-data "$PIA_CONF_FILE_PATH"
             echo "    Set Back Group Permissions only"
-            sudo chmod -R 775 "$PIA_BACK_FILE_PATH"
-            sudo chgrp -R www-data "$PIA_BACK_FILE_PATH"
+            chmod -R 775 "$PIA_BACK_FILE_PATH"
+            chgrp -R www-data "$PIA_BACK_FILE_PATH"
             echo "    Set Reports Permissions"
-            sudo chmod -R 775 "$PIA_REPORTS_PATH"
-            sudo chown -R "$PIA_USER":www-data "$PIA_REPORTS_PATH"
+            chmod -R 775 "$PIA_REPORTS_PATH"
+            chown -R "$PIA_USER":www-data "$PIA_REPORTS_PATH"
             echo "Group Permissions set"
             ;;
     esac
@@ -625,14 +625,14 @@ EOM
     # get username from install directory
     echo "Pi.Alert User: $PIA_USER"
     echo -e "\nFrontend sudoer"
-    echo "www-data ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/pialert-cli" | sudo tee /etc/sudoers.d/pialert-frontend
-    echo "www-data ALL=(ALL) NOPASSWD: /usr/bin/df" | sudo tee -a /etc/sudoers.d/pialert-frontend
-    echo "www-data ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/speedtest/speedtest" | sudo tee -a /etc/sudoers.d/pialert-frontend
+    echo "www-data ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/pialert-cli" | tee /etc/sudoers.d/pialert-frontend
+    echo "www-data ALL=(ALL) NOPASSWD: /usr/bin/df" | tee -a /etc/sudoers.d/pialert-frontend
+    echo "www-data ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/speedtest/speedtest" | tee -a /etc/sudoers.d/pialert-frontend
     echo -e "\nBackend sudoer"
-    echo "${PIA_USER} ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/pialert-cli" | sudo tee /etc/sudoers.d/pialert-backend
-    echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/sbin/arp-scan" | sudo tee -a /etc/sudoers.d/pialert-backend
-    echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/bin/nmap" | sudo tee -a /etc/sudoers.d/pialert-backend
-    echo "${PIA_USER} ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/speedtest/speedtest" | sudo tee -a /etc/sudoers.d/pialert-backend
+    echo "${PIA_USER} ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/pialert-cli" | tee /etc/sudoers.d/pialert-backend
+    echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/sbin/arp-scan" | tee -a /etc/sudoers.d/pialert-backend
+    echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/bin/nmap" | tee -a /etc/sudoers.d/pialert-backend
+    echo "${PIA_USER} ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/speedtest/speedtest" | tee -a /etc/sudoers.d/pialert-backend
     ;;
 
   unset_sudoers)
@@ -640,8 +640,8 @@ EOM
     # get username from install directory
     PIA_USER=$(echo ${SCRIPTPATH} | xargs dirname | xargs dirname | xargs basename)
     echo "Removing sudoers"
-    sudo rm /etc/sudoers.d/pialert-frontend
-    sudo rm /etc/sudoers.d/pialert-backend
+    rm /etc/sudoers.d/pialert-frontend
+    rm /etc/sudoers.d/pialert-backend
     ;;
 
   reporting_test)

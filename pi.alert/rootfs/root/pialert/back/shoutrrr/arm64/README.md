@@ -28,7 +28,7 @@ Heavily inspired by <a href="https://github.com/caronc/apprise">caronc/apprise</
 ### Using the snap
 
 ```bash
-$ sudo snap install shoutrrr
+$ snap install shoutrrr
 ```
 
 ### Using the Go CLI

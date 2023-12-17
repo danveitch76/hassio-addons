@@ -111,7 +111,7 @@ function delete_speedtest_archive() {
 # ------------------------------------------------------------------------------
 if (file_exists($speedtest_binary) && $mod == "test") {
 
-	exec('sudo ' . $speedtest_binary . $speedtest_option, $output);
+	exec('' . $speedtest_binary . $speedtest_option, $output);
 
 	echo '<h4>Speedtest (Ookla) Results</h4>';
 	echo '<pre style="border: none;">';

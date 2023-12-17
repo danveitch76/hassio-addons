@@ -16,8 +16,8 @@ $help_lang['Cat_General_102_text'] = 'Des modifications sont peut-être en cours
       								 <span class="text-maroon help_faq_code">drwxrwxr-x  2 (nombre de usuario) www-data</span><br>
       								 Si l&apos;autorisation n&apos;est pas correcte, tu peux la rétablir avec les commandes suivantes dans le terminal ou la console :<br>
       								 <div class="help_faq_code" style="padding-left: 10px; margin-bottom: 10px;">
-      								 sudo chgrp -R www-data ~/pialert/db<br>
-      								 sudo chown [Username]:www-data ~/pialert/db/pialert.db<br>
+      								 chgrp -R www-data ~/pialert/db<br>
+      								 chown [Username]:www-data ~/pialert/db/pialert.db<br>
         							 chmod -R 775 ~/pialert/db
       								 </div>
 									 Une autre option consiste à réinitialiser les autorisations nécessaires dans le répertoire <span class="text-maroon help_faq_code">~/pialert/back</span> en utilisant <span class="text-maroon help_faq_code">pialert-cli</span>. Plusieurs options s&apos;offrent à vous.<br><br>

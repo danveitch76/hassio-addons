@@ -20,8 +20,8 @@ $help_lang['Cat_General_102_text'] = 'Möglicherweise werden durch das Backend g
       								 <span class="text-maroon help_faq_code">drwxrwxr-x  2 (dein Username) www-data</span><br>
       								 Sollte die Berechtigung nicht stimmen, kannst du sie mit folgenden Befehlen im Terminal oder der Konsole wieder setzen:<br>
       								 <div class="help_faq_code" style="padding-left: 10px; margin-bottom: 10px;">
-      								 sudo chgrp -R www-data ~/pialert/db<br>
-      								 sudo chown [Username]:www-data ~/pialert/db/pialert.db<br>
+      								 chgrp -R www-data ~/pialert/db<br>
+      								 chown [Username]:www-data ~/pialert/db/pialert.db<br>
         							 chmod -R 775 ~/pialert/db
       								 </div>
       								 Ein ander Möglichkeit wäre, die notwendigen Rechte mit Hilfe von <span class="text-maroon help_faq_code">pialert-cli</span> im Verzeichnis <span class="text-maroon help_faq_code">~/pialert/back</span> neu zu setze. Hier stehen dir mehrere Optionen zur Verfügung.<br><br>

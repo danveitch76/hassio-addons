@@ -17,24 +17,24 @@ Estimated time: 5'
 
 1.2 - Remove Pi.Alert web front
   ```
-  sudo rm "/var/www/html/pialert"
+  rm "/var/www/html/pialert"
   ```
 
 1.3 - Remove lighttpd Pi.Alert config
   ```
-  sudo rm "/etc/lighttpd/conf-available/pialert_front.conf"
-  sudo rm "/etc/lighttpd/conf-enabled/pialert_front.conf"
+  rm "/etc/lighttpd/conf-available/pialert_front.conf"
+  rm "/etc/lighttpd/conf-enabled/pialert_front.conf"
   ```
 
 1.4 - Remove lighttpd Pi.Alert cache
   ```
-  sudo rm -r /var/cache/lighttpd/compress/pialert
+  rm -r /var/cache/lighttpd/compress/pialert
   ```
 
 1.5 - Remove Pi.Alert DNS entry
   ```
-  sudo sed -i '/pi.alert/d' /etc/pihole/custom.list
-  sudo pihole restartdns
+  sed -i '/pi.alert/d' /etc/pihole/custom.list
+  pihole restartdns
   ```
 
 1.6 - Remove Pi.Alert crontab jobs
