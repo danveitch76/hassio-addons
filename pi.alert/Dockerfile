@@ -28,7 +28,7 @@ RUN \
   lighttpd-enable-mod fastcgi-php \
   service lighttpd restart \
   # Setup PHP PIP packages \
-  pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location \
+  pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --no-warn-script-location \
   # Set permissions \
   echo "- Deleting previous Pi.Alert site" \
   rm -r "/var/www/html/pialert" \
