@@ -47,16 +47,12 @@ RUN ln -s "/root/pialert/log/pialert.IP.log" "/root/pialert/front/php/server/pia
 RUN ln -s "/root/pialert/log/pialert.1.log" "/root/pialert/front/php/server/pialert.1.log"
 RUN ln -s "/root/pialert/log/pialert.cleanup.log" "/root/pialert/front/php/server/pialert.cleanup.log"
 RUN ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log"
-RUN /root/pialert/back/pialert-cli set_sudoers
 RUN ln -s "/root/pialert/front" "/var/www/html/pialert"
-#RUN rm -r "/etc/lighttpd/conf-available/pialert_front.conf"
 RUN cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
-#RUN rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN ln -s ../conf-available/pialert_front.conf "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN service lighttpd restart
 RUN (crontab -l 2>/dev/null || : ; cat /root/pialert/install/pialert.cron) | crontab -
-#RUN mv "/var/www/html/index.lighttpd.html"  "/var/www/html/index.lighttpd.html.orig"
 RUN cp "/root/pialert/install/index.html" "/var/www/html/index.html"
 
 # Labels
