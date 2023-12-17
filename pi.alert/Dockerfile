@@ -22,8 +22,13 @@ COPY rootfs /
 
 # Install requirements for add-on:
 RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests -y
+# Setup lighttpd:
 RUN lighttpd-enable-mod fastcgi-php accesslog
+
+# Install pip dependencies for pi.alert
 RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
+
+
 RUN touch "/data/pialert/log/pialert.vendors.log"
 RUN touch "/data/pialert/log/pialert.1.log"
 RUN touch "/data/pialert/log/pialert.cleanup.log"
@@ -36,10 +41,12 @@ RUN ln -s "/data/pialert/log/pialert.IP.log" "/data/pialert/front/php/server/pia
 RUN ln -s "/data/pialert/log/pialert.1.log" "/data/pialert/front/php/server/pialert.1.log"
 RUN ln -s "/data/pialert/log/pialert.cleanup.log" "/data/pialert/front/php/server/pialert.cleanup.log"
 RUN ln -s "/data/pialert/log/pialert.webservices.log" "/data/pialert/front/php/server/pialert.webservices.log"
+
 RUN ln -s "/data/pialert/front" "/var/www/html/pialert"
 RUN ln -s "/data/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
 RUN ln -s "/etc/lighttpd/conf-available/pialert_front.conf" "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN ln -s "/usr/bin/python3" "/usr/bin/python"
+
 RUN (crontab -l 2>/dev/null || : ; cat /data/pialert/install/pialert.cron) | crontab -
 RUN mv "/var/www/html/index.html" "/var/www/html/index.html.orig"
 RUN ln -s "/data/pialert/install/index.html" "/var/www/html/index.html"
