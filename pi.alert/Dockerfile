@@ -22,38 +22,47 @@ COPY rootfs /
 
 # Install requirements for add-on:
 RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests -y
-RUN lighttpd-enable-mod fastcgi-php
-RUN service lighttpd restart
+RUN lighttpd-enable-mod fastcgi-php accesslog
 RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
-RUN chmod -R go+x /root/pialert
-RUN chgrp -R www-data "/root/pialert/db"
-RUN chmod -R 775 "/root/pialert/db"
-RUN chmod -R 775 "/root/pialert/db/temp"
-RUN chgrp -R www-data "/root/pialert/config"
-RUN chmod -R 775 "/root/pialert/config"
-RUN chgrp -R www-data "/root/pialert/front/reports"
-RUN chmod -R 775 "/root/pialert/front/reports"
-RUN chgrp -R www-data "/root/pialert/back/speedtest/"
-RUN chmod -R 775 "/root/pialert/back/speedtest/"
-RUN chmod +x "/root/pialert/back/shoutrrr/arm64/shoutrrr"
-RUN chmod +x "/root/pialert/back/shoutrrr/armhf/shoutrrr"
-RUN chmod +x "/root/pialert/back/shoutrrr/x86/shoutrrr"
-RUN touch "/root/pialert/log/pialert.vendors.log"
-RUN touch "/root/pialert/log/pialert.1.log"
-RUN touch "/root/pialert/log/pialert.cleanup.log"
-RUN touch "/root/pialert/log/pialert.webservices.log"
-RUN ln -s "/root/pialert/log/pialert.vendors.log" "/root/pialert/front/php/server/pialert.vendors.log"
-RUN ln -s "/root/pialert/log/pialert.IP.log" "/root/pialert/front/php/server/pialert.IP.log"
-RUN ln -s "/root/pialert/log/pialert.1.log" "/root/pialert/front/php/server/pialert.1.log"
-RUN ln -s "/root/pialert/log/pialert.cleanup.log" "/root/pialert/front/php/server/pialert.cleanup.log"
-RUN ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log"
-RUN ln -s "/root/pialert/front" "/var/www/html/pialert"
-RUN cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
-RUN ln -s ../conf-available/pialert_front.conf "/etc/lighttpd/conf-enabled/pialert_front.conf"
-RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN service lighttpd restart
-RUN (crontab -l 2>/dev/null || : ; cat /root/pialert/install/pialert.cron) | crontab -
-RUN cp "/root/pialert/install/index.html" "/var/www/html/index.html"
+RUN touch "/data/pialert/log/pialert.vendors.log"
+RUN touch "/data/pialert/log/pialert.1.log"
+RUN touch "/data/pialert/log/pialert.cleanup.log"
+RUN touch "/data/pialert/log/access-pialert.log"
+RUN touch "/data/pialert/log/error-pialert.log"
+RUN ln -s "/var/log/lighttpd/access-pialert.log" "/data/pialert/log/access-pialert.log"
+RUN ln -s "/var/log/lighttpd/error-pialert.log" "/data/pialert/log/error-pialert.log"
+RUN ln -s "/data/pialert/log/pialert.vendors.log" "/data/pialert/front/php/server/pialert.vendors.log"
+RUN ln -s "/data/pialert/log/pialert.IP.log" "/data/pialert/front/php/server/pialert.IP.log"
+RUN ln -s "/data/pialert/log/pialert.1.log" "/data/pialert/front/php/server/pialert.1.log"
+RUN ln -s "/data/pialert/log/pialert.cleanup.log" "/data/pialert/front/php/server/pialert.cleanup.log"
+RUN ln -s "/data/pialert/log/pialert.webservices.log" "/data/pialert/front/php/server/pialert.webservices.log"
+RUN ln -s "/data/pialert/front" "/var/www/html/pialert"
+RUN ln -s "/data/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
+RUN ln -s "/etc/lighttpd/conf-available/pialert_front.conf" "/etc/lighttpd/conf-enabled/pialert_front.conf"
+RUN ln -s "/usr/bin/python3" "/usr/bin/python"
+RUN (crontab -l 2>/dev/null || : ; cat /data/pialert/install/pialert.cron) | crontab -
+RUN ln -s "/data/pialert/install/index.html" "/var/www/html/index.html"
+RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data
+RUN ln -s "/data/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
+RUN sed -i 's/error.log/error-pialert.log/g' /etc/lighttpd/lighttpd.conf
+RUN echo 'accesslog.filename          = "/var/log/lighttpd/access-pialert.log"' | tee -a /etc/lighttpd/lighttpd.conf
+RUN chmod -R go+x /data/pialert
+RUN chmod -R +x /data/pialert/*.sh
+RUN chmod -R +x /data/pialert/*.py
+RUN chmod -R +x /data/pialert/back/pialert-cli
+RUN chmod -R +x /data/pialert/back/speedtest-cli
+RUN chgrp -R www-data "/data/pialert/db"
+RUN chmod -R 775 "/data/pialert/db"
+RUN chmod -R 775 "/data/pialert/db/temp"
+RUN chgrp -R www-data "/data/pialert/config"
+RUN chmod -R 775 "/data/pialert/config"
+RUN chgrp -R www-data "/data/pialert/front/reports"
+RUN chmod -R 775 "/data/pialert/front/reports"
+RUN chgrp -R www-data "/data/pialert/back/speedtest/"
+RUN chmod -R 775 "/data/pialert/back/speedtest/"
+RUN chmod +x "/data/pialert/back/shoutrrr/arm64/shoutrrr"
+RUN chmod +x "/data/pialert/back/shoutrrr/armhf/shoutrrr"
+RUN chmod +x "/data/pialert/back/shoutrrr/x86/shoutrrr"
 
 # Labels
 LABEL \

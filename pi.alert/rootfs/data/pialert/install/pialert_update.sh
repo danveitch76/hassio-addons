@@ -12,7 +12,7 @@
 # ------------------------------------------------------------------------------
 # Variables
 # ------------------------------------------------------------------------------
-INSTALL_DIR="$HOME"
+INSTALL_DIR="/data"
 PIALERT_HOME="$INSTALL_DIR/pialert"
 LOG="pialert_update_`date +"%Y-%m-%d_%H-%M"`.log"
 PYTHON_BIN=python3
