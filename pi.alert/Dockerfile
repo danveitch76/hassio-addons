@@ -41,6 +41,7 @@ RUN ln -s "/data/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-availab
 RUN ln -s "/etc/lighttpd/conf-available/pialert_front.conf" "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN ln -s "/usr/bin/python3" "/usr/bin/python"
 RUN (crontab -l 2>/dev/null || : ; cat /data/pialert/install/pialert.cron) | crontab -
+RUN mv "/var/www/html/index.html" "/var/www/html/index.html.orig"
 RUN ln -s "/data/pialert/install/index.html" "/var/www/html/index.html"
 RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data
 RUN ln -s "/data/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
