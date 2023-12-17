@@ -1,0 +1,6 @@
+#!/usr/bin/execlineb -S0
+# ==============================================================================
+# Take down the S6 supervision tree 
+# ==============================================================================
+foreground { redirfd -w 1 /run/s6-linux-init-container-results/exitcode echo 0 }
+/run/s6/basedir/bin/halt
