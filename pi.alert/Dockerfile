@@ -47,7 +47,7 @@ RUN ln -s "/root/pialert/log/pialert.IP.log" "/root/pialert/front/php/server/pia
 RUN ln -s "/root/pialert/log/pialert.1.log" "/root/pialert/front/php/server/pialert.1.log"
 RUN ln -s "/root/pialert/log/pialert.cleanup.log" "/root/pialert/front/php/server/pialert.cleanup.log"
 RUN ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log"
-RUN /root/pialert/back/pialert-cli set_sudoers
+#RUN /root/pialert/back/pialert-cli set_sudoers
 RUN ln -s "/root/pialert/front" "/var/www/html/pialert"
 RUN rm -r "/etc/lighttpd/conf-available/pialert_front.conf"
 RUN cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
