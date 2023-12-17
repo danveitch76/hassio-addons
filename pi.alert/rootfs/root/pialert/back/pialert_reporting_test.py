@@ -108,12 +108,12 @@ def get_username():
 
 # ------------------------------------------------------------------------------
 def set_pia_file_permissions():
-    os.system("sudo chown " + get_username() + ":www-data " + PIALERT_DB_FILE)
+    os.system("chown " + get_username() + ":www-data " + PIALERT_DB_FILE)
 
 # ------------------------------------------------------------------------------
 def set_pia_reports_permissions():
-    os.system("sudo chown -R " + get_username() + ":www-data " + REPORTPATH_WEBGUI)
-    os.system("sudo chmod -R 775 " + REPORTPATH_WEBGUI)
+    os.system("chown -R " + get_username() + ":www-data " + REPORTPATH_WEBGUI)
+    os.system("chmod -R 775 " + REPORTPATH_WEBGUI)
 
 #===============================================================================
 # Sending Notofications

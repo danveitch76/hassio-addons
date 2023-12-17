@@ -123,7 +123,7 @@ ask_config() {
   DHCP_ACTIVE=false
   DHCP_ACTIVATE=false
   if $PIHOLE_ACTIVE ; then
-    DHCP_ACTIVE=`sudo grep DHCP_ACTIVE /etc/pihole/setupVars.conf | awk -F= '/./{print $2}'`
+    DHCP_ACTIVE=`grep DHCP_ACTIVE /etc/pihole/setupVars.conf | awk -F= '/./{print $2}'`
     if [ "$DHCP_ACTIVE" = "" ] ; then DHCP_ACTIVE=false; fi
  
     if ! $DHCP_ACTIVE ; then
@@ -279,7 +279,7 @@ activate_DHCP() {
   fi
 
   print_msg "- Activating DHCP..."
-  sudo pihole -a enabledhcp "$DHCP_RANGE_START" "$DHCP_RANGE_END" "$DHCP_ROUTER" "$DHCP_LEASE" "$DHCP_DOMAIN"   2>&1 >> "$LOG"
+  pihole -a enabledhcp "$DHCP_RANGE_START" "$DHCP_RANGE_END" "$DHCP_ROUTER" "$DHCP_LEASE" "$DHCP_DOMAIN"   2>&1 >> "$LOG"
   DHCP_ACTIVE=true
 }
 
@@ -298,8 +298,8 @@ add_pialert_DNS() {
   fi
 
   print_msg "- Adding 'pi.alert' to Local DNS..."
-  sudo sh -c "echo $MAIN_IP pi.alert >> /etc/pihole/custom.list"            2>&1 >> "$LOG"
-  sudo pihole restartdns                                                    2>&1 >> "$LOG"
+  sh -c "echo $MAIN_IP pi.alert >> /etc/pihole/custom.list"            2>&1 >> "$LOG"
+  pihole restartdns                                                    2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------
@@ -309,31 +309,31 @@ install_lighttpd() {
   print_header "Lighttpd & PHP"
 
   print_msg "- Installing apt-utils..."
-  sudo apt-get install apt-utils -y                                         2>&1 >> "$LOG"
+  apt-get install apt-utils -y                                         2>&1 >> "$LOG"
 
   print_msg "- Installing lighttpd..."
-  sudo apt-get install lighttpd -y                                          2>&1 >> "$LOG"
+  apt-get install lighttpd -y                                          2>&1 >> "$LOG"
   
   print_msg "- Installing PHP..."
-  sudo apt-get install php php-cgi php-fpm php-curl php-sqlite3 php-xml -y          2>&1 >> "$LOG"
+  apt-get install php php-cgi php-fpm php-curl php-sqlite3 php-xml -y          2>&1 >> "$LOG"
 
   print_msg "- Activating PHP..."
   ERRNO=0
-  sudo lighttpd-enable-mod fastcgi-php 2>&1                 >>"$LOG" || ERRNO=$? 
+  lighttpd-enable-mod fastcgi-php 2>&1                 >>"$LOG" || ERRNO=$? 
   log_no_screen "-- Command error code: $ERRNO"
   if [ "$ERRNO" = "1" ] ; then
     process_error "Error activating PHP"
   fi
   
   print_msg "- Restarting lighttpd..."
-  sudo service lighttpd restart                                             2>&1 >> "$LOG"
-  # sudo /etc/init.d/lighttpd restart                             2>&1 >> "$LOG"
+  service lighttpd restart                                             2>&1 >> "$LOG"
+  # /etc/init.d/lighttpd restart                             2>&1 >> "$LOG"
 
   print_msg "- Installing sqlite3..."
-  sudo apt-get install sqlite3 -y                                           2>&1 >> "$LOG"
+  apt-get install sqlite3 -y                                           2>&1 >> "$LOG"
 
   print_msg "- Installing mmdblookup"
-  sudo apt-get install mmdb-bin -y                                          2>&1 >> "$LOG"
+  apt-get install mmdb-bin -y                                          2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------
@@ -343,17 +343,17 @@ install_arpscan() {
   print_header "arp-scan, dnsutils and nmap"
 
   print_msg "- Installing arp-scan..."
-  sudo apt-get install arp-scan -y                                          2>&1 >> "$LOG"
-  sudo mkdir -p /usr/share/ieee-data                                        2>&1 >> "$LOG"
+  apt-get install arp-scan -y                                          2>&1 >> "$LOG"
+  mkdir -p /usr/share/ieee-data                                        2>&1 >> "$LOG"
 
   print_msg "- Testing arp-scan..."
-  sudo arp-scan -l | head -n -3 | tail +3 | tee -a "$LOG"
+  arp-scan -l | head -n -3 | tail +3 | tee -a "$LOG"
 
   print_msg "- Installing dnsutils & net-tools..."
-  sudo apt-get install dnsutils net-tools libwww-perl libtext-csv-perl -y   2>&1 >> "$LOG"
+  apt-get install dnsutils net-tools libwww-perl libtext-csv-perl -y   2>&1 >> "$LOG"
 
   print_msg "- Installing nmap, zip, aria2 and wakeonlan"
-  sudo apt-get install nmap zip wakeonlan aria2 -y                          2>&1 >> "$LOG"
+  apt-get install nmap zip wakeonlan aria2 -y                          2>&1 >> "$LOG"
 }
   
 # ------------------------------------------------------------------------------
@@ -384,10 +384,10 @@ install_python() {
   if [ $USE_PYTHON_VERSION -eq 3 ] ; then
     if $PYTHON3 ; then
       print_msg "- Using Python 3"
-      sudo apt-get install python3-pip python3-cryptography python3-requests -y                 2>&1 >> "$LOG"
+      apt-get install python3-pip python3-cryptography python3-requests -y                 2>&1 >> "$LOG"
     else
       print_msg "- Installing Python 3..."
-      sudo apt-get install python3 python3-pip python3-cryptography python3-requests -y         2>&1 >> "$LOG"
+      apt-get install python3 python3-pip python3-cryptography python3-requests -y         2>&1 >> "$LOG"
     fi
     print_msg "    - Install additional packages"
     if [ -f /usr/lib/python3.*/EXTERNALLY-MANAGED ]; then
@@ -481,9 +481,9 @@ download_pialert() {
 
   print_msg "- Copy autocomplete file..."
   if [ -d "/etc/bash_completion.d" ] ; then
-      sudo cp $PIALERT_HOME/install/pialert-cli.autocomplete /etc/bash_completion.d/pialert-cli                     2>&1 >> "$LOG"
+      cp $PIALERT_HOME/install/pialert-cli.autocomplete /etc/bash_completion.d/pialert-cli                     2>&1 >> "$LOG"
   elif [ -d "/usr/share/bash-completion/completions" ] ; then
-      sudo cp $PIALERT_HOME/install/pialert-cli.autocomplete /usr/share/bash-completion/completions/pialert-cli     2>&1 >> "$LOG"
+      cp $PIALERT_HOME/install/pialert-cli.autocomplete /usr/share/bash-completion/completions/pialert-cli     2>&1 >> "$LOG"
   fi
 
 }
@@ -535,7 +535,7 @@ test_pialert() {
   print_msg "- Testing Pi.Alert HW vendors database update process..."
   print_msg "- Prepare directories..."
   if [ ! -e /var/lib/ieee-data ]; then
-    sudo ln -s /usr/share/ieee-data/ /var/lib/ieee-data                                          2>&1 >> "$LOG"
+    ln -s /usr/share/ieee-data/ /var/lib/ieee-data                                          2>&1 >> "$LOG"
   fi
 
   print_msg "*** PLEASE WAIT A COUPLE OF MINUTES..."
@@ -589,20 +589,20 @@ add_jobs_to_crontab() {
 publish_pialert() {
   if [ -e "$WEBROOT/pialert" ] || [ -L "$WEBROOT/pialert" ] ; then
     print_msg "- Deleting previous Pi.Alert site"
-    sudo rm -r "$WEBROOT/pialert"                                                                               2>&1 >> "$LOG"
+    rm -r "$WEBROOT/pialert"                                                                               2>&1 >> "$LOG"
   fi
 
   print_msg "- Setting permissions..."
   chmod go+x $INSTALL_DIR
-  sudo chgrp -R www-data "$PIALERT_HOME/db"                                                                     2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/db"                                                                          2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/db/temp"                                                                     2>&1 >> "$LOG"
-  sudo chgrp -R www-data "$PIALERT_HOME/config"                                                                 2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/config"                                                                      2>&1 >> "$LOG"
-  sudo chgrp -R www-data "$PIALERT_HOME/front/reports"                                                          2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/front/reports"                                                               2>&1 >> "$LOG"
-  sudo chgrp -R www-data "$PIALERT_HOME/back/speedtest/"                                                        2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/back/speedtest/"                                                             2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/db"                                                                     2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/db"                                                                          2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/db/temp"                                                                     2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/config"                                                                 2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/config"                                                                      2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/front/reports"                                                          2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/front/reports"                                                               2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/back/speedtest/"                                                        2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/back/speedtest/"                                                             2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/shoutrrr/arm64/shoutrrr"                                                         2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/shoutrrr/armhf/shoutrrr"                                                         2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/shoutrrr/x86/shoutrrr"                                                           2>&1 >> "$LOG"
@@ -618,27 +618,27 @@ publish_pialert() {
   ln -s "$PIALERT_HOME/log/pialert.webservices.log" "$PIALERT_HOME/front/php/server/pialert.webservices.log"    2>&1 >> "$LOG"
 
   print_msg "- Set sudoers..."
-  sudo $PIALERT_HOME/back/pialert-cli set_sudoers                                                               2>&1 >> "$LOG"
+  $PIALERT_HOME/back/pialert-cli set_sudoers                                                               2>&1 >> "$LOG"
 
   print_msg "- Publishing Pi.Alert web..."
-  sudo ln -s "$PIALERT_HOME/front" "$WEBROOT/pialert"                                                           2>&1 >> "$LOG"
+  ln -s "$PIALERT_HOME/front" "$WEBROOT/pialert"                                                           2>&1 >> "$LOG"
 
   print_msg "- Configuring http://pi.alert/ redirection..."
   if [ -e "$LIGHTTPD_CONF_DIR/conf-available/pialert_front.conf" ] ; then
-    sudo rm -r "$LIGHTTPD_CONF_DIR/conf-available/pialert_front.conf"                                           2>&1 >> "$LOG"
+    rm -r "$LIGHTTPD_CONF_DIR/conf-available/pialert_front.conf"                                           2>&1 >> "$LOG"
   fi
-  sudo cp "$PIALERT_HOME/install/pialert_front.conf" "$LIGHTTPD_CONF_DIR/conf-available"                        2>&1 >> "$LOG"
+  cp "$PIALERT_HOME/install/pialert_front.conf" "$LIGHTTPD_CONF_DIR/conf-available"                        2>&1 >> "$LOG"
 
   if [ -e "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf" ] || \
      [ -L "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf" ] ; then
-    sudo rm -r "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf"                                             2>&1 >> "$LOG"
+    rm -r "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf"                                             2>&1 >> "$LOG"
   fi
 
-  sudo ln -s ../conf-available/pialert_front.conf  "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf"         2>&1 >> "$LOG"
+  ln -s ../conf-available/pialert_front.conf  "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf"         2>&1 >> "$LOG"
 
   print_msg "- Restarting lighttpd..."
-  sudo sudo service lighttpd restart                                                                            2>&1 >> "$LOG"
-  # sudo /etc/init.d/lighttpd restart                             2>&1 >> "$LOG"
+  service lighttpd restart                                                                            2>&1 >> "$LOG"
+  # /etc/init.d/lighttpd restart                             2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------
@@ -653,21 +653,21 @@ set_pialert_default_page() {
 
   if [ -e "$WEBROOT/index.lighttpd.html" ] ; then
     if [ -e "$WEBROOT/index.lighttpd.html.orig" ] ; then
-      sudo rm "$WEBROOT/index.lighttpd.html"                                        2>&1 >> "$LOG"
+      rm "$WEBROOT/index.lighttpd.html"                                        2>&1 >> "$LOG"
     else
-      sudo mv "$WEBROOT/index.lighttpd.html"  "$WEBROOT/index.lighttpd.html.orig"   2>&1 >> "$LOG"
+      mv "$WEBROOT/index.lighttpd.html"  "$WEBROOT/index.lighttpd.html.orig"   2>&1 >> "$LOG"
     fi
   fi
 
   if [ -e "$WEBROOT/index.html" ] || [ -L "$WEBROOT/index.html" ] ; then
     if [ -e "$WEBROOT/index.html.orig" ] ; then
-      sudo rm "$WEBROOT/index.html"                                                 2>&1 >> "$LOG"
+      rm "$WEBROOT/index.html"                                                 2>&1 >> "$LOG"
     else
-      sudo mv "$WEBROOT/index.html" "$WEBROOT/index.html.orig"                      2>&1 >> "$LOG"
+      mv "$WEBROOT/index.html" "$WEBROOT/index.html.orig"                      2>&1 >> "$LOG"
     fi
   fi
 
-  sudo cp "$PIALERT_HOME/install/index.html" "$WEBROOT/index.html"                  2>&1 >>"$LOG"
+  cp "$PIALERT_HOME/install/index.html" "$WEBROOT/index.html"                  2>&1 >>"$LOG"
 }
 
 # ------------------------------------------------------------------------------
@@ -682,7 +682,7 @@ check_pialert_home() {
   if [ -e "$PIALERT_HOME" ] || [ -L "$PIALERT_HOME" ] ; then
     process_error "Pi.Alert path already exists: $PIALERT_HOME"
   fi
-  sudo apt-get install cron whiptail -y
+  apt-get install cron whiptail -y
 }
 
 # ------------------------------------------------------------------------------
@@ -690,7 +690,7 @@ check_pialert_home() {
 # ------------------------------------------------------------------------------
 install_dependencies() {
   print_msg "- Installing dependencies..."
-  sudo apt-get install cron whiptail -y                          2>&1 >> "$LOG"
+  apt-get install cron whiptail -y                          2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------

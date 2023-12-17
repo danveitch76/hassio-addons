@@ -95,10 +95,10 @@ start_pialert() {
 reset_permissions() {
   echo ""
   print_msg "- Reset permissions..."
-  sudo chgrp -R www-data $PIALERT_HOME/db                             2>&1 >> "$LOG"
-  sudo chmod -R 775 $PIALERT_HOME/db                                  2>&1 >> "$LOG"
-  sudo chgrp -R www-data $PIALERT_HOME/config                         2>&1 >> "$LOG"
-  sudo chmod -R 775 $PIALERT_HOME/config                              2>&1 >> "$LOG"
+  chgrp -R www-data $PIALERT_HOME/db                             2>&1 >> "$LOG"
+  chmod -R 775 $PIALERT_HOME/db                                  2>&1 >> "$LOG"
+  chgrp -R www-data $PIALERT_HOME/config                         2>&1 >> "$LOG"
+  chmod -R 775 $PIALERT_HOME/config                              2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------
@@ -143,7 +143,7 @@ clean_files() {
 # Check packages
 # ------------------------------------------------------------------------------
 check_packages() {
-  sudo apt-get update 2>&1 >>"$LOG"
+  apt-get update 2>&1 >>"$LOG"
   packages=("apt-utils" "sqlite3" "dnsutils" "net-tools" "wakeonlan" "php-curl" "php-xml" "python3-requests" "python3-cryptography" "libwww-perl" "mmdb-bin" "libtext-csv-perl" "aria2")
   print_msg "- Checking packages..."
   missing_packages=()
@@ -154,7 +154,7 @@ check_packages() {
   done
   if [ ${#missing_packages[@]} -gt 0 ]; then
     print_msg "- Installing missing packages: ${missing_packages[*]}"
-    sudo apt-get install -y "${missing_packages[@]}" 2>&1 >>"$LOG"
+    apt-get install -y "${missing_packages[@]}" 2>&1 >>"$LOG"
   fi
 }
 
@@ -188,9 +188,9 @@ download_pialert() {
 
   print_msg "- Copy autocomplete file..."
   if [ -d "/etc/bash_completion.d" ] ; then
-      sudo cp $PIALERT_HOME/install/pialert-cli.autocomplete /etc/bash_completion.d/pialert-cli 2>&1 >> "$LOG"
+      cp $PIALERT_HOME/install/pialert-cli.autocomplete /etc/bash_completion.d/pialert-cli 2>&1 >> "$LOG"
   elif [ -d "/usr/share/bash-completion/completions" ] ; then
-      sudo cp $PIALERT_HOME/install/pialert-cli.autocomplete /usr/share/bash-completion/completions/pialert-cli 2>&1 >> "$LOG"
+      cp $PIALERT_HOME/install/pialert-cli.autocomplete /usr/share/bash-completion/completions/pialert-cli 2>&1 >> "$LOG"
   fi
 }
 
@@ -200,7 +200,7 @@ download_pialert() {
 update_config() {
   print_msg "- Config backup..."
   # to force write permission, will be reverted later
-  sudo chmod 777 "$PIALERT_HOME/config/pialert.conf"
+  chmod 777 "$PIALERT_HOME/config/pialert.conf"
   cp "$PIALERT_HOME/config/pialert.conf" "$PIALERT_HOME/config/pialert.conf.back"  2>&1 >> "$LOG"
 
   print_msg "- Updating config file..."
@@ -289,11 +289,11 @@ fi
 # ------------------------------------------------------------------------------
 update_db() {
   print_msg "- Updating DB permissions..."
-  sudo chgrp -R www-data $PIALERT_HOME/db                         2>&1 >> "$LOG"
-  sudo chmod -R 775 $PIALERT_HOME/db                              2>&1 >> "$LOG"
+  chgrp -R www-data $PIALERT_HOME/db                         2>&1 >> "$LOG"
+  chmod -R 775 $PIALERT_HOME/db                              2>&1 >> "$LOG"
 
   print_msg "- Installing sqlite3..."
-  sudo apt-get install sqlite3 -y                                 2>&1 >> "$LOG"
+  apt-get install sqlite3 -y                                 2>&1 >> "$LOG"
 
 }
 
@@ -302,8 +302,8 @@ update_db() {
 # ------------------------------------------------------------------------------
 update_permissions() {
   print_msg "- Set Permissions..."
-  sudo chgrp -R www-data "$PIALERT_HOME/db"                         2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/db/temp"                         2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/db"                         2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/db/temp"                         2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/shoutrrr/arm64/shoutrrr"             2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/shoutrrr/armhf/shoutrrr"             2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/shoutrrr/x86/shoutrrr"               2>&1 >> "$LOG"
@@ -311,12 +311,12 @@ update_permissions() {
   chmod +x "$PIALERT_HOME/back/pialert-cli"                         2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/pialert.py"                          2>&1 >> "$LOG"
   chmod +x "$PIALERT_HOME/back/update_vendors.sh"                   2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/config/"                         2>&1 >> "$LOG"
-  sudo chgrp -R www-data "$PIALERT_HOME/config"                     2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/front/reports"                   2>&1 >> "$LOG"
-  sudo chgrp -R www-data "$PIALERT_HOME/front/reports"              2>&1 >> "$LOG"
-  sudo chmod -R 775 "$PIALERT_HOME/back/speedtest/"                 2>&1 >> "$LOG"
-  sudo chgrp -R www-data "$PIALERT_HOME/back/speedtest/"            2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/config/"                         2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/config"                     2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/front/reports"                   2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/front/reports"              2>&1 >> "$LOG"
+  chmod -R 775 "$PIALERT_HOME/back/speedtest/"                 2>&1 >> "$LOG"
+  chgrp -R www-data "$PIALERT_HOME/back/speedtest/"            2>&1 >> "$LOG"
   print_msg "- Create Logfile Symlinks..."
   touch "$PIALERT_HOME/log/pialert.vendors.log"                     2>&1 >> "$LOG"
   touch "$PIALERT_HOME/log/pialert.1.log"                           2>&1 >> "$LOG"
@@ -328,7 +328,7 @@ update_permissions() {
       ln -s "$src_dir/$file" "$dest_dir/$file" 2>&1 >> "$LOG"
   done
   print_msg "- Set sudoers..."
-  sudo $PIALERT_HOME/back/pialert-cli set_sudoers                   2>&1 >> "$LOG"
+  $PIALERT_HOME/back/pialert-cli set_sudoers                   2>&1 >> "$LOG"
 
   print_msg "- Patch DB..."
   $PIALERT_HOME/back/pialert-cli update_db

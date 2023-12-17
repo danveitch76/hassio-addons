@@ -118,8 +118,8 @@ def get_username():
 
 # ------------------------------------------------------------------------------
 def set_pia_reports_permissions():
-    os.system("sudo chown -R " + get_username() + ":www-data " + REPORTPATH_WEBGUI)
-    os.system("sudo chmod -R 775 " + REPORTPATH_WEBGUI)
+    os.system("chown -R " + get_username() + ":www-data " + REPORTPATH_WEBGUI)
+    os.system("chmod -R 775 " + REPORTPATH_WEBGUI)
 
 #===============================================================================
 # Countdown
@@ -229,7 +229,7 @@ def check_internet_IP ():
 #-------------------------------------------------------------------------------
 def run_speedtest_task ():
     # Define the command and arguments
-    command = ["sudo", PIALERT_BACK_PATH + "/speedtest/speedtest", "-p", "no", "-f", "json"]
+    command = [PIALERT_BACK_PATH + "/speedtest/speedtest", "-p", "no", "-f", "json"]
     if len(SPEEDTEST_TASK_HOUR) != 0:
         openDB()
         speedtest_actual_hour = startTime.hour
@@ -646,7 +646,7 @@ def execute_arpscan_on_interface (SCAN_SUBNETS):
     # Prepare command arguments
     subnets = SCAN_SUBNETS.strip().split()
     # Retry is 3 to avoid false offline devices
-    arpscan_args = ['sudo', 'arp-scan', '--ignoredups', '--bandwidth=256k', '--retry=6'] + subnets
+    arpscan_args = ['arp-scan', '--ignoredups', '--bandwidth=256k', '--retry=6'] + subnets
 
     # Execute command
     try:
@@ -1506,7 +1506,7 @@ def rogue_dhcp_detection ():
     dhcp_server_list = []
     dhcp_server_list.append(strftime("%Y-%m-%d %H:%M:%S"))
     for _ in range(dhcp_probes):
-        stream = os.popen('sudo nmap --script broadcast-dhcp-discover 2>/dev/null | grep "Server Identifier" | awk \'{ print $4 }\'')
+        stream = os.popen('nmap --script broadcast-dhcp-discover 2>/dev/null | grep "Server Identifier" | awk \'{ print $4 }\'')
         output = stream.read()
         dhcp_server_list.append(output.replace("\n", ""))
 
