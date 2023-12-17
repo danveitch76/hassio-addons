@@ -30,9 +30,7 @@ RUN \
   # Setup PHP PIP packages \
   pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt \
   # Set permissions \
-  echo "- Deleting previous Pi.Alert site" \
   rm -r "/var/www/html/pialert" \
-  echo "- Setting permissions..." \
   chmod go+x /root/pialert \
   chgrp -R www-data "/root/pialert/db" \
   chmod -R 775 "/root/pialert/db" \
@@ -46,7 +44,6 @@ RUN \
   chmod +x "/root/pialert/back/shoutrrr/arm64/shoutrrr" \
   chmod +x "/root/pialert/back/shoutrrr/armhf/shoutrrr" \
   chmod +x "/root/pialert/back/shoutrrr/x86/shoutrrr" \
-  echo "- Create Logfile Symlinks..." \
   touch "/root/pialert/log/pialert.vendors.log" \
   touch "/root/pialert/log/pialert.1.log" \
   touch "/root/pialert/log/pialert.cleanup.log" \
@@ -56,17 +53,12 @@ RUN \
   ln -s "/root/pialert/log/pialert.1.log" "/root/pialert/front/php/server/pialert.1.log" \
   ln -s "/root/pialert/log/pialert.cleanup.log" "/root/pialert/front/php/server/pialert.cleanup.log" \
   ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log" \
-  echo "- Set sudoers..." \
   /root/pialert/back/pialert-cli set_sudoers \
-  echo "- Publishing Pi.Alert web..." \
   ln -s "/root/pialert/front" "/var/www/html/pialert" \
-  echo "- Configuring http://pi.alert/ redirection..." \
   rm -r "/etc/lighttpd/conf-available/pialert_front.conf" \
   cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available" \
   rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf" \
-  fi \
   ln -s ../conf-available/pialert_front.conf  "/etc/lighttpd/conf-enabled/pialert_front.conf" \
-  echo "- Restarting lighttpd..." \
   service lighttpd restart \
 
 # Labels
