@@ -24,13 +24,13 @@ COPY rootfs /
 RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests -y
 RUN lighttpd-enable-mod fastcgi-php
 RUN service lighttpd restart
-RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt
+RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
 RUN chmod go+x /root/pialert
 RUN chgrp -R www-data "/root/pialert/db"
 RUN chmod -R 775 "/root/pialert/db"
 RUN chmod -R 775 "/root/pialert/db/temp"
 RUN chgrp -R www-data "/root/pialert/config"
-RUN chmod -R 775 "/root/pialert/config"RUN 
+RUN chmod -R 775 "/root/pialert/config"
 RUN chgrp -R www-data "/root/pialert/front/reports"
 RUN chmod -R 775 "/root/pialert/front/reports"
 RUN chgrp -R www-data "/root/pialert/back/speedtest/"
@@ -52,7 +52,7 @@ RUN ln -s "/root/pialert/front" "/var/www/html/pialert"
 RUN rm -r "/etc/lighttpd/conf-available/pialert_front.conf"
 RUN cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
 RUN rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf"
-RUN ln -s ../conf-available/pialert_front.confRUN "/etc/lighttpd/conf-enabled/pialert_front.conf"
+RUN ln -s ../conf-available/pialert_front.conf "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN service lighttpd restart
 
 # Labels
