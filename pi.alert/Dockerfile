@@ -49,9 +49,9 @@ RUN ln -s "/root/pialert/log/pialert.cleanup.log" "/root/pialert/front/php/serve
 RUN ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log"
 #RUN /root/pialert/back/pialert-cli set_sudoers
 RUN ln -s "/root/pialert/front" "/var/www/html/pialert"
-RUN rm -r "/etc/lighttpd/conf-available/pialert_front.conf"
+#RUN rm -r "/etc/lighttpd/conf-available/pialert_front.conf"
 RUN cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
-RUN rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf"
+#RUN rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN ln -s ../conf-available/pialert_front.conf "/etc/lighttpd/conf-enabled/pialert_front.conf"
 RUN service lighttpd restart
 
