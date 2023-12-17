@@ -30,7 +30,7 @@ RUN \
   # Setup PHP PIP packages \
   pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt \
   # Set permissions \
-  rm -r "/var/www/html/pialert" \
+  # rm -r "/var/www/html/pialert" \
   chmod go+x /root/pialert \
   chgrp -R www-data "/root/pialert/db" \
   chmod -R 775 "/root/pialert/db" \
@@ -55,9 +55,9 @@ RUN \
   ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log" \
   /root/pialert/back/pialert-cli set_sudoers \
   ln -s "/root/pialert/front" "/var/www/html/pialert" \
-  rm -r "/etc/lighttpd/conf-available/pialert_front.conf" \
+  # rm -r "/etc/lighttpd/conf-available/pialert_front.conf" \
   cp "/root/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available" \
-  rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf" \
+  # rm -r "/etc/lighttpd/conf-enabled/pialert_front.conf" \
   ln -s ../conf-available/pialert_front.conf  "/etc/lighttpd/conf-enabled/pialert_front.conf" \
   service lighttpd restart \
 
