@@ -69,5 +69,11 @@ chmod -R 775 "/root/pialert/db"
 chmod -R 775 "/root/pialert/db/temp"
 chgrp -R www-data "/root/pialert/log"
 chmod -R 775 "/root/pialert/log"
+chgrp -R www-data "/data/db"
+chmod -R 775 "/data/db"
+chmod -R 775 "/data/db/temp"
+chgrp -R www-data "/data/log"
+chmod -R 775 "/data/log"
+
 
 exit 0

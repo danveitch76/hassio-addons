@@ -12,10 +12,12 @@ arch:
 map:
   - share:rw
 init: false
+webui: [PROTO:option_name]://[HOST]:[PORT:80]
 ports:
   80/tcp: 8078
 ports_description:
   80/tcp: "Web entrance"
+host_network: true
 options:
   debug: false
 schema:

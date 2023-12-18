@@ -646,7 +646,7 @@ def execute_arpscan_on_interface (SCAN_SUBNETS):
     # Prepare command arguments
     subnets = SCAN_SUBNETS.strip().split()
     # Retry is 3 to avoid false offline devices
-    arpscan_args = ['arp-scan', '--ignoredups', '--bandwidth=256k', '--retry=6'] + subnets
+    arpscan_args = ['/usr/sbin/arp-scan', '--ignoredups', '--bandwidth=256k', '--retry=6'] + subnets
 
     # Execute command
     try:
