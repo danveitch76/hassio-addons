@@ -25,7 +25,6 @@ RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-c
 
 # Setup lighttpd:
 RUN lighttpd-enable-mod fastcgi-php accesslog
-RUN service lighttpd force-reload
 RUN service lighttpd restart
 
 # Install pip dependencies for pi.alert:
