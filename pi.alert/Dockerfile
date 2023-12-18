@@ -81,7 +81,7 @@ RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-over
 
 # Update from /var/lib/ieee-data
 RUN cd /usr/share/arp-scan && get-oui -v
-
+RUN service lighttpd force-reload && service lighttpd restart
 # Labels
 LABEL \
     io.hass.name="${BUILD_NAME}" \

@@ -35,7 +35,7 @@ if [ -e /data/db ]; then
 	rm -rf "/root/pialert/db"
 else
 	# First setup of DB folder
-	mv -R "/root/pialert/db" "/data/"
+	mv "/root/pialert/db" "/data/"
 fi
 ln -s "/data/db/" "/root/pialert/db"
 
