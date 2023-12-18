@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-c
 
 # Setup lighttpd:
 RUN lighttpd-enable-mod fastcgi-php accesslog
+RUN service lighttpd force-reload && service lighttpd restart
 
 # Install pip dependencies for pi.alert:
 RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
@@ -81,7 +82,7 @@ RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-over
 
 # Update from /var/lib/ieee-data
 RUN cd /usr/share/arp-scan && get-oui -v
-RUN service lighttpd force-reload && service lighttpd restart
+
 # Labels
 LABEL \
     io.hass.name="${BUILD_NAME}" \
