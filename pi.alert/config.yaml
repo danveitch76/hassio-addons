@@ -3,7 +3,7 @@ name: pi.alert
 description: Network Intrusion Monitor, from Pi.Alert.
 slug: addon_pi.alert
 version: 0.0.1
-webui: [PROTO:ssl]://[HOST]:[PORT:80]
+webui: [PROTO]://[HOST]:[PORT:80]
 host_network: true
 startup: services
 arch:
