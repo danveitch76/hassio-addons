@@ -50,6 +50,7 @@ RUN ln -s "/root/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
 
 # Set permissions on folders
 RUN chmod -R +x /etc/s6-overlay/scripts/*.sh
+
 RUN chmod -R go+x /root/pialert
 RUN chmod -R +x /root/pialert/back/*.sh
 RUN chmod -R +x /root/pialert/back/*.py

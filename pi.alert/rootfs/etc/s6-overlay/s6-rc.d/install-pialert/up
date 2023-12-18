@@ -4,5 +4,5 @@
 # Start install-pialert service
 # ==============================================================================
 #bashio::log.info "Starting install-pialert..."
-set -x
-exec /etc/s6-overlay/scripts/install-pialert.sh
+
+/etc/s6-overlay/scripts/install-pialert.sh
