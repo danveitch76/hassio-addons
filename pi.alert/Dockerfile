@@ -22,54 +22,63 @@ COPY rootfs /
 
 # Install requirements for add-on:
 RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests -y
+
 # Setup lighttpd:
 RUN lighttpd-enable-mod fastcgi-php accesslog
 
-# Install pip dependencies for pi.alert
+# Install pip dependencies for pi.alert:
 RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
 
-
-RUN touch "/data/pialert/log/pialert.vendors.log"
-RUN touch "/data/pialert/log/pialert.1.log"
-RUN touch "/data/pialert/log/pialert.cleanup.log"
-RUN touch "/data/pialert/log/access-pialert.log"
-RUN touch "/data/pialert/log/error-pialert.log"
-RUN ln -s "/data/pialert/log/access-pialert.log" "/var/log/lighttpd/access-pialert.log"
-RUN ln -s "/data/pialert/log/error-pialert.log" "/var/log/lighttpd/error-pialert.log"
-RUN ln -s "/data/pialert/log/pialert.vendors.log" "/data/pialert/front/php/server/pialert.vendors.log"
-RUN ln -s "/data/pialert/log/pialert.IP.log" "/data/pialert/front/php/server/pialert.IP.log"
-RUN ln -s "/data/pialert/log/pialert.1.log" "/data/pialert/front/php/server/pialert.1.log"
-RUN ln -s "/data/pialert/log/pialert.cleanup.log" "/data/pialert/front/php/server/pialert.cleanup.log"
-RUN ln -s "/data/pialert/log/pialert.webservices.log" "/data/pialert/front/php/server/pialert.webservices.log"
-
-RUN ln -s "/data/pialert/front" "/var/www/html/pialert"
-RUN ln -s "/data/pialert/install/pialert_front.conf" "/etc/lighttpd/conf-available"
-RUN ln -s "/etc/lighttpd/conf-available/pialert_front.conf" "/etc/lighttpd/conf-enabled/pialert_front.conf"
+# Setup links used for pialert
 RUN ln -s "/usr/bin/python3" "/usr/bin/python"
 
-RUN (crontab -l 2>/dev/null || : ; cat /data/pialert/install/pialert.cron) | crontab -
+# Setup pialert website
+RUN ln -s "/root/pialert/front" "/var/www/html/pialert"
+RUN ln -s "/root/pialert/config/pialert_front.conf" "/etc/lighttpd/conf-available"
+RUN ln -s "/etc/lighttpd/conf-available/pialert_front.conf" "/etc/lighttpd/conf-enabled/pialert_front.conf"
+
+# Setup crontab to run services
+RUN (crontab -l 2>/dev/null || : ; cat /root/pialert/config/pialert.cron) | crontab -
+
+# Set default site to pialert
 RUN mv "/var/www/html/index.html" "/var/www/html/index.html.orig"
-RUN ln -s "/data/pialert/install/index.html" "/var/www/html/index.html"
-RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data"
+RUN ln -s "/root/pialert/config/index.html" "/var/www/html/index.html"
+
+# Change lighttpd config to pialert version
 RUN mv "/etc/lighttpd/lighttpd.conf" "/etc/lighttpd/lighttpd.conf.orig"
-RUN ln -s "/data/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
-RUN chmod -R go+x /data/pialert
-RUN chmod -R +x /data/pialert/back/*.sh
-RUN chmod -R +x /data/pialert/back/*.py
-RUN chmod -R +x /data/pialert/back/pialert-cli
-RUN chmod -R +x /data/pialert/back/speedtest-cli
-RUN chgrp -R www-data "/data/pialert/db"
-RUN chmod -R 775 "/data/pialert/db"
-RUN chmod -R 775 "/data/pialert/db/temp"
-RUN chgrp -R www-data "/data/pialert/config"
-RUN chmod -R 775 "/data/pialert/config"
-RUN chgrp -R www-data "/data/pialert/front/reports"
-RUN chmod -R 775 "/data/pialert/front/reports"
-RUN chgrp -R www-data "/data/pialert/back/speedtest/"
-RUN chmod -R 775 "/data/pialert/back/speedtest/"
-RUN chmod +x "/data/pialert/back/shoutrrr/arm64/shoutrrr"
-RUN chmod +x "/data/pialert/back/shoutrrr/armhf/shoutrrr"
-RUN chmod +x "/data/pialert/back/shoutrrr/x86/shoutrrr"
+RUN ln -s "/root/pialert/config/lighttpd.conf" "/etc/lighttpd/lighttpd.conf"
+
+# Set permissions on folders
+RUN chmod -R go+x /root/pialert
+RUN chmod -R +x /root/pialert/back/*.sh
+RUN chmod -R +x /root/pialert/back/*.py
+RUN chmod -R +x /root/pialert/back/pialert-cli
+RUN chmod -R +x /root/pialert/back/speedtest-cli
+RUN chgrp -R www-data "/root/pialert/config"
+RUN chmod -R 775 "/root/pialert/config"
+RUN chgrp -R www-data "/root/pialert/front/reports"
+RUN chmod -R 775 "/root/pialert/front/reports"
+RUN chgrp -R www-data "/root/pialert/back/speedtest/"
+RUN chmod -R 775 "/root/pialert/back/speedtest/"
+RUN chmod +x "/root/pialert/back/shoutrrr/arm64/shoutrrr"
+RUN chmod +x "/root/pialert/back/shoutrrr/armhf/shoutrrr"
+RUN chmod +x "/root/pialert/back/shoutrrr/x86/shoutrrr"
+
+# Configure Mac Address database
+RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data"
+
+# Update Vendors
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/oui/oui.csv"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/oui/oui.txt"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/oui36/oui36.csv"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/oui36/oui36.txt"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/oui28/mam.csv"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/oui28/mam.txt"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/iab/iab.csv"
+RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/iab/iab.txt"
+
+# Update from /var/lib/ieee-data
+RUN cd /usr/share/arp-scan && get-oui -v
 
 # Labels
 LABEL \

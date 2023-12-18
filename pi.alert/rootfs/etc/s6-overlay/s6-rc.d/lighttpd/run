@@ -6,7 +6,7 @@ fi
 
 if [[ 1 -eq ${WEBLOGS_STDOUT:-0} ]]; then
   #lighthttpd cannot use /dev/stdout https://redmine.lighttpd.net/issues/2731
-  for fi in /data/pialert/log/access-pialert.log /data/pialert/log/error-pialert.log
+  for fi in /root/pialert/log/access-pialert.log /root/pialert/log/error-pialert.log
   do
     if [[ ! -p ${fi} ]]; then
       rm -f ${fi}
@@ -19,16 +19,16 @@ if [[ 1 -eq ${WEBLOGS_STDOUT:-0} ]]; then
   sleep 2
 else
   #remove fifo if exists
-  [[ -p /data/pialert/log/access-pialert.log ]] && rm -Rf /data/pialert/log/access-pialert.log
-  [[ -p  /data/pialert/log/error-pialert.log ]] && rm -Rf /data/pialert/log/error-pialert.log
+  [[ -p /root/pialert/log/access-pialert.log ]] && rm -Rf /root/pialert/log/access-pialert.log
+  [[ -p  /root/pialert/log/error-pialert.log ]] && rm -Rf /root/pialert/log/error-pialert.log
 
   # install /dev/null log files to ensure they exist (create if non-existing, preserve if existing)
-  [[ ! -f /data/pialert/log/access-pialert.log ]] && install /dev/null /data/pialert/log/access-pialert.log
-  [[ ! -f  /data/pialert/log/error-pialert.log ]] && install /dev/null /data/pialert/log/error-pialert.log
+  [[ ! -f /root/pialert/log/access-pialert.log ]] && install /dev/null /root/pialert/log/access-pialert.log
+  [[ ! -f  /root/pialert/log/error-pialert.log ]] && install /dev/null /root/pialert/log/error-pialert.log
 
   # Ensure that permissions are set so that lighttpd can write to the logs
   chown -R www-data:www-data /var/log/lighttpd
-  chmod 0644 /data/pialert/log/access-pialert.log /data/pialert/log/error-pialert.log
+  chmod 0644 /root/pialert/log/access-pialert.log /root/pialert/log/error-pialert.log
 fi
 
 lighttpd -D -f /etc/lighttpd/lighttpd.conf
