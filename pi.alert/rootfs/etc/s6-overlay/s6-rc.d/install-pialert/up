@@ -3,7 +3,7 @@
 # ==============================================================================
 # Start install-pialert service
 # ==============================================================================
-bashio::log.info "Starting install-pialert..."
+#bashio::log.info "Starting install-pialert..."
 
 # Tidy up pialert folder
 if [ -e /root/pialert/install ]; then
@@ -67,6 +67,6 @@ chmod -R 775 "/root/pialert/db/temp"
 chgrp -R www-data "/root/pialert/log"
 chmod -R 775 "/root/pialert/log"
 
-bashio::log.info "Completed pialert install."
-bashio::log.info "install-pialert stopped"
-exit 0
+#bashio::log.info "Completed pialert install."
+#bashio::log.info "install-pialert stopped"
+#exit 0

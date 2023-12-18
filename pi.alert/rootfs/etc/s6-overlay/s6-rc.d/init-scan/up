@@ -3,25 +3,29 @@
 # ==============================================================================
 # Start init-scan service
 # ==============================================================================
-bashio::log.info "Starting up First Scan..."
-bashio::log.info "Starting init-scan..."
-bashio::log.info "Starting Vendor Update..."
-RESULT1=$(/usr/bin/python /root/pialert/back/pialert.py update_vendors_silent)
-bashio::log.info "Completed Vendor update."
-bashio::log.info "Starting Internet IP Update..."
-RESULT2=$(/usr/bin/python /root/pialert/back/pialert.py internet_IP)
-bashio::log.info "Completed Internet IP update."
-bashio::log.info "Starting Update Scan..."
-RESULT3=$(/usr/bin/python /root/pialert/back/pialert.py 1)
-bashio::log.info "Completed Update Scan."
-timestamp=$(date "+%Y-%m-%d %H:%M:%S %z")
+#bashio::log.info "Starting up First Scan..."
+#bashio::log.info "Starting init-scan..."
+#bashio::log.info "Starting Vendor Update..."
+#RESULT1=$(/usr/bin/python /root/pialert/back/pialert.py update_vendors_silent)
+#bashio::log.info "Completed Vendor update."
+#bashio::log.info "Starting Internet IP Update..."
+#RESULT2=$(/usr/bin/python /root/pialert/back/pialert.py internet_IP)
+#bashio::log.info "Completed Internet IP update."
+#bashio::log.info "Starting Update Scan..."
+#RESULT3=$(/usr/bin/python /root/pialert/back/pialert.py 1)
+#bashio::log.info "Completed Update Scan."
+#timestamp=$(date "+%Y-%m-%d %H:%M:%S %z")
 
-bashio::log.info "--------------- init-scan Results ----------------"
-bashio::log.info "Request timstamp: $timestamp"
-bashio::log.debug "Update Vendors output: ${RESULT1}"
-bashio::log.debug "Get Internet Address output: ${RESULT2}"
-bashio::log.debug "First Update output: ${RESULT3}"
-bashio::log.info "---------------------------------------------------"
+#bashio::log.info "--------------- init-scan Results ----------------"
+#bashio::log.info "Request timstamp: $timestamp"
+#bashio::log.debug "Update Vendors output: ${RESULT1}"
+#bashio::log.debug "Get Internet Address output: ${RESULT2}"
+#bashio::log.debug "First Update output: ${RESULT3}"
+#bashio::log.info "---------------------------------------------------"
 
-bashio::log.info "init-scan stopped"
-exit 0
+#bashio::log.info "init-scan stopped"
+#exit 0
+
+/usr/bin/python /root/pialert/back/pialert.py update_vendors_silent
+/usr/bin/python /root/pialert/back/pialert.py internet_IP
+/usr/bin/python /root/pialert/back/pialert.py 1
