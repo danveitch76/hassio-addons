@@ -1,0 +1,28 @@
+---
+name: Pi.Alert
+description: Network Intrusion Monitor, from Pi.Alert.
+slug: addon_pialert
+version: 0.0.0
+webui: http://[HOST]:[PORT:8078]
+host_network: true
+startup: services
+arch:
+#  - armhf
+#  - armv7
+  - aarch64
+#  - amd64
+#  - i386
+map:
+  - share:rw
+init: false
+ports:
+  8078/tcp: 8078
+ports_description:
+  8078/tcp: "Web entrance"
+options:
+  debug: false
+schema:
+  debug: bool
+url: https://github.com/danveitch76/hassio-addons/tree/master/pialert
+image: ghcr.io/danveitch76/{arch}-addon-pialert
+homeassistant: 2023.12.0
