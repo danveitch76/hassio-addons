@@ -1,0 +1,38 @@
+---
+name: sl2file
+description: Simple syslog capture to file.
+slug: sl2file
+version: 0.1.4
+slug: "sl2file_addon"
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+map:
+  - share:rw
+init: false
+ports:
+  80/tcp: 8079
+  514/udp: 514
+ports_description:
+  80/tcp: "PimpMyLog Web entrance"
+  514/udp: "syslog listening port"
+options:
+  custom_host: 0.0.0.0
+  custom_port: 514
+  custom_log_file: /share/syslog/syslog.log
+  syslog_username: admin
+  syslog_password: SyslogP4ss
+  debug: false
+schema:
+  debug: bool
+  custom_host: str
+  custom_port: int
+  syslog_username: str
+  syslog_password: str
+  custom_log_file: str
+url: https://github.com/danveitch76/hassio-addons/tree/master/sl2file
+image: ghcr.io/danveitch76/{arch}-addon-sl2file
+homeassistant: 2023.08.0
