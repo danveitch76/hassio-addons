@@ -39,6 +39,16 @@ else
 fi
 ln -s "/data/db/" "/root/pialert/db"
 
+# Setup config location for persitent data
+if [ -e /data/config ]; then
+	# Remove config folder from pialert folder
+	rm -rf "/root/pialert/config"
+else
+	# First setup of config folder
+	mv "/root/pialert/config" "/data/"
+fi
+ln -s "/data/config/" "/root/pialert/config"
+
 # Create log files
 if [ -e /root/pialert/log ]; then
 	# Remove log folder from pialert folder
@@ -63,6 +73,7 @@ ln -s "/root/pialert/log/pialert.cleanup.log" "/root/pialert/front/php/server/pi
 touch "/root/pialert/log/pialert.webservices.log"
 ln -s "/root/pialert/log/pialert.webservices.log" "/root/pialert/front/php/server/pialert.webservices.log"
 
+
 # Set permissions on folders
 chgrp -R www-data "/root/pialert/db"
 chmod -R 775 "/root/pialert/db"
@@ -74,6 +85,7 @@ chmod -R 775 "/data/db"
 chmod -R 775 "/data/db/temp"
 chgrp -R www-data "/data/log"
 chmod -R 775 "/data/log"
-
+chgrp -R www-data "/data/config"
+chmod -R 775 "/data/config"
 
 exit 0

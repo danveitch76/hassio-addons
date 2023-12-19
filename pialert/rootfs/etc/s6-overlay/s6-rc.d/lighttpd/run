@@ -1,0 +1,7 @@
+#!/command/with-contenv bash
+
+if [ "${PH_VERBOSE:-0}" -gt 0 ] ; then
+    set -x ;
+fi
+
+lighttpd -D -f /etc/lighttpd/lighttpd.conf
