@@ -1,0 +1,11 @@
+Report Date: <REPORT_DATE>
+Server:      <SERVER_NAME>
+
+<SECTION_DEVICES_DOWN>
+Services Down
+------------------------------
+<TABLE_DEVICES_DOWN>
+</SECTION_DEVICES_DOWN><SECTION_EVENTS>Services Events
+------------------------------
+<TABLE_EVENTS>
+</SECTION_EVENTS>
