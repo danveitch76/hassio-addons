@@ -29,8 +29,8 @@ This is a compilation of add-ons from mutiple sources in one place. Enabling bui
 
 ### Deprecated Add-ons:
 **WARNING**: <i>These add-ons will not be updated anymore. Feel free to fork them.</i>
-* Portainer - Portainer add-on to manage the docker supervisor instance.
-* sl2file - Simple PHP to capture all remote syslogs to a file.
+* Portainer - Portainer add-on to manage the docker supervisor instance. (NOW REMOVED)
+* sl2file - Simple PHP to capture all remote syslogs to a file. (NOW REMOVED)
 
 ## Installation
 To install any of the add-ons offered in this repository, you must first add its repository URL to your Home Assistant instance. To do so, click the following button
