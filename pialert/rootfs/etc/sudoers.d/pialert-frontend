@@ -1,3 +1,4 @@
 www-data ALL=(ALL) NOPASSWD: /root/pialert/back/pialert-cli
 www-data ALL=(ALL) NOPASSWD: /usr/bin/df
+www-data ALL=(ALL) NOPASSWD: /usr/bin/nmap
 www-data ALL=(ALL) NOPASSWD: /root/pialert/back/speedtest/speedtest

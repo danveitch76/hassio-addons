@@ -41,6 +41,8 @@ ln -s "/data/db/" "/root/pialert/db"
 
 # Setup config location for persitent data
 if [ -e /data/config ]; then
+	# Replace Version File
+	cp "/root/pialert/config/version.conf" "/data/config/"
 	# Remove config folder from pialert folder
 	rm -rf "/root/pialert/config"
 else
