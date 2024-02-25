@@ -54,6 +54,7 @@ ARG CLI_VERSION
 RUN apk add --no-cache \
     samba-common-tools \
     samba-server \
+	samba-client \
     dbus \
     exfatprogs \
     btrfs-progs \
@@ -80,7 +81,9 @@ RUN apk add --no-cache \
     wsdd \
     udisks2 \
     libcap \
-    hd-idle
+    hd-idle \
+    fuse3 \
+    py3-pip
 
 # HDDTEMP
 ARG HDDTEMP_VERSION
@@ -89,7 +92,6 @@ RUN  curl http://download.savannah.nongnu.org/releases/hddtemp/hddtemp.db -Lso /
 
 # WSDD2
 COPY --from=builder /wsdd2-master/wsdd2 /usr/sbin
-
 
 # SAMBA Config
 RUN  mkdir -p /var/lib/samba \
@@ -103,16 +105,21 @@ RUN  mkdir -p /var/lib/samba \
 RUN curl -Lso /usr/bin/ha "https://github.com/home-assistant/cli/releases/download/${CLI_VERSION}/ha_${BUILD_ARCH}" \
     && chmod a+x /usr/bin/ha
 
-
 #RUN echo "devtmpfs /dev_ devtmpfs rw,relatime,size=1965288k,nr_inodes=182901,mode=755 0 0" >> /etc/fstab
 
 # Copy data
 COPY rootfs /
-RUN for f in $(find . -name 'run'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
-    for f in $(find . -name 'finish'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
-    for f in $(find . -name 'down'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
-    for f in $(find . -name 'up'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
-    for f in $(find . -name '*.sh'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done 
+
+# Fix for Windows Permissions to run scripts
+# RUN for f in $(find . -name 'run'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+#     for f in $(find . -name 'finish'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+#     for f in $(find . -name 'down'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+#     for f in $(find . -name 'up'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done && \
+#     for f in $(find . -name '*.sh'); do (cd "$(dirname $f)" && chmod 0755 "$(basename $f)") done 
+
+HEALTHCHECK \
+    CMD smbclient -L '\\localhost' -U '%' -m SMB3
+
 # Labels
 LABEL \
     io.hass.name="${BUILD_NAME}" \

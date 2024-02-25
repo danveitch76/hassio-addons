@@ -196,7 +196,7 @@
    directory mask = 0775
    force directory mode = 0775
 
-   path = /{{- .share }}
+   path = /{{- if eq .share "config" }}homeassistant{{- else }}{{- .share }}{{- end }}
    valid users = {{ .users|default .username|join " " }} {{ .ro_users|join " " }}
    {{ if .ro_users }}
    read list = {{ .ro_users|join " " }}
@@ -230,7 +230,7 @@
    fruit:locking = none{{ end }}
 {{ end }}
 
-{{- $dfdisk := list "config" "addons" "ssl" "share" "backup" "media" }}
+{{- $dfdisk := list "config" "addons" "ssl" "share" "backup" "media" "addon_configs" }}
 {{- $disks := concat $dfdisk (compact .moredisks|default list) -}}
 {{- $root := . -}}
 {{- range $disk := $disks -}}

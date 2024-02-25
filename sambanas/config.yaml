@@ -1,6 +1,6 @@
 ---
 name: Samba NAS
-version: 10.0.2-nas4b
+version: 10.0.2-nas4c
 slug: sambanas
 description: Expose Home Assistant disc with SMB/CIFS
 url: https://github.com/danveitch76/hassio-addons/tree/master/sambanas
@@ -17,8 +17,10 @@ hassio_api: true
 hassio_role: admin
 host_network: true
 map:
-  - config:rw
+  - homeassistant_config:rw
+  - addon_config:rw
   - ssl:rw
+  - all_addon_configs:rw
   - addons:rw
   - share:rw
   - backup:rw
