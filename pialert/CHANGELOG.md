@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.4
+### 🩹 BugFix
+- Fix missing uuid from pialert.py
+
 ## 0.0.3
 ### ✨ Features
 - Updated to v2024-07-04 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-07-04)
