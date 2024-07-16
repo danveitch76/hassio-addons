@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 #  Puche 2021                                              GNU GPLv3
 #  leiweibau 2023                                          GNU GPLv3
-#  danveitch76 2023                                          GNU GPLv3
+#  danveitch76 2024                                          GNU GPLv3
 #-------------------------------------------------------------------------------
 
 #===============================================================================
@@ -45,7 +45,7 @@ import paho.mqtt.publish as publish
 PIALERT_BACK_PATH = os.path.dirname(os.path.abspath(__file__))
 PIALERT_PATH = f"{PIALERT_BACK_PATH}/.."
 PIALERT_WEBSERVICES_LOG = f"{PIALERT_PATH}/log/pialert.webservices.log"
-STOPPIALERT = f"{PIALERT_PATH}/db/setting_stoppialert"
+STOPPIALERT = f"{PIALERT_PATH}/config/setting_stoppialert"
 PIALERT_DB_FILE = f"{PIALERT_PATH}/db/pialert.db"
 REPORTPATH_WEBGUI = f"{PIALERT_PATH}/front/reports/"
 MQTT_UUID = uuid.uuid4()
@@ -109,7 +109,7 @@ def set_reports_file_permissions():
   os.system(f"chmod -R 775 {REPORTPATH_WEBGUI}")
 
 #===============================================================================
-# Sending Notofications
+# Sending Notifications
 #===============================================================================
 def sending_notifications_test(_Mode):
     if _Mode == 'Test' :
@@ -159,22 +159,24 @@ def sending_notifications_test(_Mode):
 
 #-------------------------------------------------------------------------------
 def send_ntfy_test(_notiMessage):
-  headers = {
-      "Title": "Pi.Alert Notification",
-      "Click": REPORT_DASHBOARD_URL,
-      "Priority": NTFY_PRIORITY,
-      "Tags": "warning"
-  }
-  if NTFY_USER != "" and NTFY_PASSWORD != "":
+    headers = {
+        "Title": "Pi.Alert Notification",
+        "Priority": NTFY_PRIORITY,
+        "Tags": "warning"
+    }
+
+    if NTFY_CLICKABLE == True:
+        headers["Click"] = REPORT_DASHBOARD_URL
+    if NTFY_USER != "" and NTFY_PASSWORD != "":
     # Generate hash for basic auth
-    usernamepassword = f"{NTFY_USER}:{NTFY_PASSWORD}"
-    basichash = b64encode(bytes(f'{NTFY_USER}:{NTFY_PASSWORD}',
+        usernamepassword = f"{NTFY_USER}:{NTFY_PASSWORD}"
+        basichash = b64encode(bytes(f'{NTFY_USER}:{NTFY_PASSWORD}',
                                 "utf-8")).decode("ascii")
 
     # add authorization header with hash
-    headers["Authorization"] = f"Basic {basichash}"
+        headers["Authorization"] = f"Basic {basichash}"
 
-  requests.post(f"{NTFY_HOST}/{NTFY_TOPIC}", data=_notiMessage, headers=headers)
+    requests.post(f"{NTFY_HOST}/{NTFY_TOPIC}", data=_notiMessage, headers=headers)
 
 #-------------------------------------------------------------------------------
 def send_pushsafer_test(_notiMessage):
@@ -188,11 +190,16 @@ def send_pushsafer_test(_notiMessage):
     except NameError:
         PUSHSAFER_PRIO = 0
 
+    try:
+        notification_sound = PUSHSAFER_SOUND
+    except NameError:
+        notification_sound = 22
+
     url = 'https://www.pushsafer.com/api'
     post_fields = {
         "t" : 'Pi.Alert Message',
         "m" : _notiMessage,
-        "s" : 22,
+        "s" : notification_sound,
         "v" : 3,
         "i" : 148,
         "c" : '#ef7f7f',
@@ -211,6 +218,11 @@ def send_pushover_test(_notiMessage):
     except NameError:
         PUSHOVER_PRIO = 0
 
+    try:
+        notification_sound = PUSHOVER_SOUND
+    except NameError:
+        notification_sound = 'siren'
+
     url = 'https://api.pushover.net/1/messages.json'
     post_fields = {
         "token": PUSHOVER_TOKEN,
@@ -218,6 +230,7 @@ def send_pushover_test(_notiMessage):
         "title" : 'Pi.Alert Message',
         "message" : _notiMessage,
         "priority" : PUSHOVER_PRIO,
+        "sound" : notification_sound,
         }
     requests.post(url, data=post_fields)
 

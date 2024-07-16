@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.3
+### ✨ Features
+- Updated to v2024-07-04 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-07-04)
+- Updated GeoLite2-Country db to latest version
+
 ## 0.0.2
 ### ✨ Features
 - Migrate to [Home Assistant Add-on: Base Images](https://github.com/home-assistant/docker-base) bookworm

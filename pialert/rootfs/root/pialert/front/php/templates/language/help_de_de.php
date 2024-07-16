@@ -1,10 +1,6 @@
 <?php
 unset($help_lang);
 
-//////////////////////////////////////////////////////////////////
-// Help Page
-//////////////////////////////////////////////////////////////////
-
 $help_lang['Title'] = 'Hilfe / FAQ';
 $help_lang['Cat_General'] = 'Allgemein';
 $help_lang['Cat_Detail'] = 'Detailansicht';
@@ -120,6 +116,18 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									        <td class="help_table_gen_b">Aktiviert bzw. deaktiviert den Passwortschutz der Weboberfläche von Pi.Alert</td></tr>
 									    <tr><td class="help_table_gen_a">PIALERT_WEB_PASSWORD</td>
 									        <td class="help_table_gen_b">Dieses Feld beinhaltet das "gehashte" Passwort für die Weboberfläche. Das Passwort kann nicht im Klartext hier eingetragen, sondern muss mit <span class="text-maroon help_faq_code">pialert-cli</span> gesetzt werden</td></tr>
+									    <tr><td class="help_table_gen_a">NETWORK_DNS_SERVER</td>
+									        <td class="help_table_gen_b">IP des DNS-Servers im Netzwerk. Dieser Eintrag wird benötigt um zu versuchen einen Hostnamen im Netzwerk zu ermitteln.</td></tr>
+									    <tr><td class="help_table_gen_a">AUTO_UPDATE_CHECK</td>
+									        <td class="help_table_gen_b">Aktiviert oder deaktiviert die automatische Suche nach Pi.Alert Updates.</td></tr>
+									    <tr><td class="help_table_gen_a">AUTO_UPDATE_CHECK_CRON</td>
+									        <td class="help_table_gen_b">Intervall, im Crontab Syntax, in dem nach neuen Updates von Pi.Alert gesucht werden soll. Der kürzeste Intervall beträgt 3 Minuten. Alle größeren Intervalle müssen ein ganzzahliges Vielfaches von 3 Minuten sein (15, 30, 36 etc).</td></tr>
+									    <tr><td class="help_table_gen_a">AUTO_DB_BACKUP</td>
+									        <td class="help_table_gen_b">Aktiviert oder deaktiviert die automatische Erstellung von Datenbank- und Konfigurationssicherungen</td></tr>
+									    <tr><td class="help_table_gen_a">AUTO_DB_BACKUP_CRON</td>
+									        <td class="help_table_gen_b">Intervall, im Crontab Syntax, in dem die automatischen Backups erstellt werden sollen. Der kürzeste Intervall beträgt 3 Minuten. Alle größeren Intervalle müssen ein ganzzahliges Vielfaches von 3 Minuten sein (15, 30, 36 etc).</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_DB_BACKUP_KEEP</td>
+									        <td class="help_table_gen_b">Hier kann angegeben werden, wieviele automatische Backups aufgehoben werden sollen, einschließlich des aktuellen Backups. Dies umfasst sowohl die Konfigurationssicherungen, als auch die Datenbanksicherung. Dieser Wert hat keine Relevanz bei der manuellen Bereinigung, bei der die letzten 3 Sicherungen aufgehoben werden.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Other Modules</td></tr>
@@ -133,7 +141,7 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									    <tr><td class="help_table_gen_a">SCAN_ROGUE_DHCP</td>
 									        <td class="help_table_gen_b">Aktiviert die Suche nach fremden, auch "rogue" genannt, DHCP Servern. Diese Funktion dient dazu, zu erkennen, ob sich ein fremder DHCP Server im Netzwerk befindet, welcher die Kontrolle über die IP Verwaltung übernehmen könnte.</td></tr>
 									    <tr><td class="help_table_gen_a">DHCP_SERVER_ADDRESS</td>
-									        <td class="help_table_gen_b">Hier wird die IP des bekannten DHCP Servers hinterlegt.</td></tr>
+									        <td class="help_table_gen_b">Hier wird die IP des bekannten DHCP Servers hinterlegt. Es kann nur EIN DHCP Server eingetragen werden.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Mail-Account Settings</td></tr>
@@ -175,9 +183,7 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									        <td class="help_table_gen_b">URL der Pi.Alert Installation, um einen klickbaren Link in der eMail erzeugen zu können.</td></tr>
 									</table>
 									<table class="help_table_gen">
-									    <tr>
-									        <td class="help_table_gen_section" colspan="2">Pushsafer</td>
-									    </tr>
+									    <tr><td class="help_table_gen_section" colspan="2">Pushsafer</td></tr>
 									    <tr><td class="help_table_gen_a">REPORT_PUSHSAFER</td>
 									        <td class="help_table_gen_b">Aktiviert/Deaktiviert die Benachrichtigungen über Änderungen im Netzwerk via Pushsafer</td></tr>
 									    <tr><td class="help_table_gen_a">REPORT_PUSHSAFER_WEBMON</td>
@@ -186,6 +192,10 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									        <td class="help_table_gen_b">Hierbei handelt es sich um den privaten Schlüssel, den man auf der pushsafer-Seite einsehen kann.</td></tr>
 									    <tr><td class="help_table_gen_a">PUSHSAFER_DEVICE</td>
 									        <td class="help_table_gen_b">Die Device-ID, an die die Nachricht gesendet wird. &lsquo;<span class="text-maroon help_faq_code">a</span>&rsquo; bedeutet, die Nachricht wird an alle konfigurieren Geräte gesendet und verbraucht entsprechend viele API-Calls</td></tr>
+									    <tr><td class="help_table_gen_a">PUSHSAFER_PRIO</td>
+									        <td class="help_table_gen_b">Prioritätsstufe der Nachricht.</td></tr>
+									    <tr><td class="help_table_gen_a">PUSHSAFER_SOUND</td>
+									        <td class="help_table_gen_b">Benachrichtigungston (Integer)</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Pushover</td></tr>
@@ -197,6 +207,10 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									        <td class="help_table_gen_b">Auch "APP TOKEN" oder "API TOKEN" genannt. Dieser Token kann auf der pushover-Seite abgefragt werden</td></tr>
 									    <tr><td class="help_table_gen_a">PUSHOVER_USER</td>
 									        <td class="help_table_gen_b">Oder auch "USER KEY". Dieser Key wird, gleich nach dem Login, auf der pushover-Startseite angezeigt.</td></tr>
+									    <tr><td class="help_table_gen_a">PUSHOVER_PRIO</td>
+									        <td class="help_table_gen_b">Prioritätsstufe der Nachricht.</td></tr>
+									    <tr><td class="help_table_gen_a">PUSHOVER_SOUND</td>
+									        <td class="help_table_gen_b">Benachrichtigungston</td></tr>
 									</table>
 									<table class="help_table_gen">
 			    						<tr><td class="help_table_gen_section" colspan="2">NTFY</td></tr>
@@ -214,11 +228,13 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									        <td class="help_table_gen_b">Das Passwort, das für die Authentifizierung beim NTFY-Server verwendet wird.</td></tr>
 									    <tr><td class="help_table_gen_a">NTFY_PRIORITY</td>
 									        <td class="help_table_gen_b">Priorisierung der über NTFY gesendeten Benachrichtigungen</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_CLICKABLE</td>
+									        <td class="help_table_gen_b">Aktiviert oder deaktiviert die Klick-Aktion für die Benachrichtigung.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Shoutrrr</td></tr>
 									    <tr><td class="help_table_gen_a">SHOUTRRR_BINARY</td>
-									        <td class="help_table_gen_b">Hier muss konfiguriert werden, welches Binary von shoutrrr zum einsatz gebracht werden muss. Dies richtet sich danach, auf welcher Hardware Pi.Alert installiert wurde.</td></tr>
+									        <td class="help_table_gen_b">Hier muss konfiguriert werden, welches Binary von shoutrrr zum Einsatz gebracht werden soll. Dies richtet sich danach, auf welcher Hardware Pi.Alert installiert wurde.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Telegram via Shoutrrr</td></tr>
@@ -227,7 +243,7 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									    <tr><td class="help_table_gen_a">REPORT_TELEGRAM_WEBMON</td>
 									        <td class="help_table_gen_b">Aktiviert/Deaktiviert die Benachrichtigungen über Änderungen der überwachten Webservices via Telegram</td></tr>
 									    <tr><td class="help_table_gen_a">TELEGRAM_BOT_TOKEN_URL</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">Hier wird die URL eingetragen, welche der Setup-Assistent von shoutrrr erstellt.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">DynDNS and IP</td></tr>
@@ -242,14 +258,14 @@ $help_lang['Cat_General_107_text'] = 'Die Datei <span class="text-maroon help_fa
 									    <tr><td class="help_table_gen_a">DDNS_PASSWORD</td>
 									        <td class="help_table_gen_b">Passwort</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_UPDATE_URL</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">URL zur Aktualisierung der aktuellen IP beim DDNS Service</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Automatic Speedtest</td></tr>
 									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_ACTIVE</td>
 									        <td class="help_table_gen_b">Automatischen Speedtest aktivieren/deaktivieren. Hierfür ist die Installation des Ookla Speedtests im Tab "Tools" des Gerätes "Internet" erforderlich. Beachte die Hinweise bei der Installation.</td></tr>
-									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_HOUR</td>
-									        <td class="help_table_gen_b">Volle Stunde, oder durch Komma getrennte Stunden, zu denen der Speedtest gestartet werden soll.</td></tr>
+									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_CRON</td>
+									        <td class="help_table_gen_b">Intervall, im Crontab Syntax, in dem der automatische Speedtest durchgeführt werden soll. Der kürzeste Intervall beträgt 3 Minuten. Alle größeren Intervalle müssen ein ganzzahliges Vielfaches von 3 Minuten sein (15, 30, 36 etc).</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Arp-scan Options & Samples</td></tr>
@@ -358,10 +374,23 @@ $help_lang['Cat_Detail_302_head_a'] = 'Was bedeutet ';
 $help_lang['Cat_Detail_302_head_b'] = ' und warum kann ich das nicht auswählen?';
 $help_lang['Cat_Detail_302_text'] = 'Einige moderne Geräte generieren aus Datenschutzgründen zufällige MAC-Adressen, die keinem Hersteller mehr zugeordnet werden können und welche sich mit jeder neuen Verbindung wieder ändern.
 									Pi.Alert erkennt, ob es sich um eine solche zufällige MAC-Adresse handelt und aktiviert diese "Feld" automatisch. Um das Verhalten abzustellen, muss du in deinem Endgerät schauen, wie du die
-									MAC-Adressen-Generierung deaktivierst.';
+									MAC-Adressen-Generierung deaktivierst. MAC-Adressen mit folgendem Schema werden als "zufällig" markiert:
+									<ul style="list-style-type: none">
+										<li>x2:xx:xx:xx:xx:xx</li>
+										<li>x6:xx:xx:xx:xx:xx</li>
+										<li>xA:xx:xx:xx:xx:xx</li>
+										<li>xE:xx:xx:xx:xx:xx</li>
+									</ul>';
 $help_lang['Cat_Detail_303_head'] = 'Was ist Nmap und wozu dient es?';
 $help_lang['Cat_Detail_303_text'] = 'Nmap ist ein Netzwerkscanner mit vielfältigen Möglichkeiten.<br>
-									Wenn ein neues Gerät in deiner Liste auftaucht, hast du die Möglichkeit über den Nmap-Scan genauere Informationen über das Gerät zu erhalten.';
+									Wenn ein neues Gerät in deiner Liste auftaucht, hast du die Möglichkeit über den Nmap-Scan genauere Informationen über das Gerät zu erhalten. 
+									<br>Pi.Alert bietet 3 verschiedene voreingestellte Scans an:
+									<br>
+									<ul>
+									<li>Schneller Scan: Überprüft nur die wichtigsten 100 Ports (wenige Sekunden)</li>
+									<li>Standard Scan: Nmap scannt die ersten 1.000 Ports für jedes angeforderte Scan-Protokoll. (ca. 5-10 Sekunden)</li>
+									<li>Detailierter Scan (Timeout 60s): Der Scan ist um einige UDP Ports erweitert. Ebenfalls ist die Range der TCP Ports vergrößert.</li>
+									</ul>';
 $help_lang['Cat_Presence_400_head'] = 'Geräte werden mit einer gelben Markierung und dem Hinweis "missing Event" angezeigt.';
 $help_lang['Cat_Presence_400_text'] = 'Wenn dies geschieht hast du die Möglickeit, bei dem betreffenden Gerät (Detailsansicht) die Events zu löschen. Eine andere Möglichkeit wäre, das Gerät einzuschalten und zu warten, bis Pi.Alert mit dem nächsten
 									  Scan das Gerät als "Online" erkennt und anschließend das Gerät einfach wieder ausschalten. Nun sollte Pi.Alert mit dem nächsten Scan den Zustand des Gerätes ordentlich in der Datenbank vermerken.';

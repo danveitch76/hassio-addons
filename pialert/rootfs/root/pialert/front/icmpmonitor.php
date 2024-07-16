@@ -5,7 +5,7 @@
 //
 //  icmpmonitor.php - Front module. Ping polling
 //------------------------------------------------------------------------------
-//  leiweibau  2023        https://github.com/leiweibau     GNU GPLv3
+//  leiweibau  2024        https://github.com/leiweibau     GNU GPLv3
 //------------------------------------------------------------------------------
 session_start();
 error_reporting(0);
@@ -46,10 +46,11 @@ function print_box_bottom_element() {
 // Get Online Graph Arrays
 $graph_arrays = array();
 $graph_arrays = prepare_graph_arrays_history("icmpscan");
-$Pia_Graph_Device_Time = $graph_arrays[0];
-$Pia_Graph_Device_Down = $graph_arrays[1];
-$Pia_Graph_Device_All = $graph_arrays[2];
-$Pia_Graph_Device_Online = $graph_arrays[3];
+$Graph_Device_Time = $graph_arrays[0];
+$Graph_Device_Down = $graph_arrays[1];
+$Graph_Device_All = $graph_arrays[2];
+$Graph_Device_Online = $graph_arrays[3];
+$Graph_Device_Arch = $graph_arrays[4];
 ?>
 
 <!-- Page ------------------------------------------------------------------ -->
@@ -63,7 +64,7 @@ if ($_REQUEST['mod'] == 'bulkedit') {
 
 	echo '<section class="content-header">
           <h1 id="pageTitle">' . $pia_lang['ICMPMonitor_Title'] . ' - ' . $pia_lang['Device_bulkEditor_mode'] . '</h1>
-          <a href="./icmpmonitor.php" class="btn btn-success pull-right" role="button" style="position: absolute; display: inline-block; top: 5px; right: 15px;">' . $pia_lang['Device_bulkEditor_mode_quit'] . '</a>
+          <a href="./icmpmonitor.php" class="btn btn-success pull-right bulk_editor_quit" role="button">' . $pia_lang['Device_bulkEditor_mode_quit'] . '</a>
         </section>';
 
 	echo '<section class="content">
@@ -160,22 +161,21 @@ if ($_REQUEST['mod'] == 'bulkedit') {
 	$sql = 'SELECT icmp_hostname, icmp_ip, icmp_PresentLastScan, icmp_AlertEvents, icmp_AlertDown FROM ICMP_Mon ORDER BY icmp_hostname COLLATE NOCASE ASC';
 	$results = $db->query($sql);
 	while ($row = $results->fetchArray()) {
-		if ($row[2] == 1) {$status_border = 'border: 1px solid #00A000; box-shadow: inset 0px 0px 5px 0px #00A000;';} else { $status_border = 'border: 1px solid #888;';}
+		if ($row[2] == 1) {$status_border = 'bulked_online_border';} else { $status_border = 'bulked_offline_border';}
 		if ($row[3] == 1 && $row[4] == 1) {$status_text_color = 'bulked_checkbox_label_alldown';} elseif ($row[3] == 1) {$status_text_color = 'bulked_checkbox_label_all';} elseif ($row[4] == 1) {$status_text_color = 'bulked_checkbox_label_down';} else { $status_text_color = '';}
-		//if ($row[4] == 1) {$status_box = 'background-color: #b1720c;';} else { $status_box = 'background-color: transparent;';}
-		echo '<div class="table_settings_col_box" style="padding-left: 0px; padding-top: 0px; ' . $status_border . '">
-             <div style="display: inline-block; ' . $status_box . ' height: 32px; width: 36px; margin-right: 3px; padding-left: 8px; padding-top: 6px;">
-                <input class="icheckbox_flat-blue hostselection" id="' . str_replace(".", "_", $row[1]) . '" name="' . str_replace(".", "_", $row[1]) . '" type="checkbox" style="position: relative; margin-top:-3px; margin-right: 3px;">
+		echo '<div class="bulked_dev_box ' . $status_border . '">
+             <div class="bulked_dev_chk_cont" style="' . $status_box . '">
+                <input class="icheckbox_flat-blue hostselection bulked_dev_chkbox" id="' . str_replace(".", "_", $row[1]) . '" name="' . str_replace(".", "_", $row[1]) . '" type="checkbox">
              </div>
              <label class="control-label ' . $status_text_color . '" for="' . str_replace(".", "_", $row[1]) . '" style="">' . $row[0] . '</label>
           </div>';
 	}
 
 	// Check/Uncheck All Button
-	echo '<button type="button" class="btn btn-warning pull-right checkall" style="display: block; margin-top: 20px; margin-bottom: 10px; min-width: 180px;">' . $pia_lang['Device_bulkEditor_selectall'] . '</button>';
+	echo '<button type="button" class="btn btn-warning pull-right checkall" id="bulked_checkall">' . $pia_lang['Device_bulkEditor_selectall'] . '</button>';
 	echo '<script>
             var clicked = false;
-            $(".checkall").on("click", function() {
+            $("#bulked_checkall").on("click", function() {
               $(".hostselection").prop("checked", !clicked);
               clicked = !clicked;
               this.innerHTML = clicked ? \'' . $pia_lang['Device_bulkEditor_selectnone'] . '\' : \'' . $pia_lang['Device_bulkEditor_selectall'] . '\';
@@ -187,14 +187,14 @@ if ($_REQUEST['mod'] == 'bulkedit') {
 	// Inputs
 	echo '<table style="margin-bottom:30px; width: 100%">
           <tr>
-            <td style="padding-left: 10px; height: 70px; width: 80px;"><input class="icheckbox_flat-blue" id="en_bulk_owner" name="en_bulk_owner" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a" style="width: 80px;"><input class="icheckbox_flat-blue" id="en_bulk_owner" name="en_bulk_owner" type="checkbox"></td>
+            <td>
                 <label for="bulk_owner">' . $pia_lang['DevDetail_MainInfo_Owner'] . ':</label><br>
                 <input type="text" class="form-control" id="bulk_owner" name="bulk_owner" style="max-width: 400px;" disabled></td>
           </tr>
           <tr>
-            <td style="padding-left: 10px; height: 70px;"><input class="icheckbox_flat-blue" id="en_bulk_type" name="en_bulk_type" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_type" name="en_bulk_type" type="checkbox"></td>
+            <td>
                 <label for="bulk_type">' . $pia_lang['DevDetail_MainInfo_Type'] . ':</label><br>
                 <div class="input-group" style="max-width: 400px;">
                   <input class="form-control" id="bulk_type" name="bulk_type" type="text" disabled>
@@ -218,8 +218,8 @@ if ($_REQUEST['mod'] == 'bulkedit') {
             </td>
           </tr>
           <tr>
-            <td style="padding-left: 10px; height: 70px;"><input class="icheckbox_flat-blue" id="en_bulk_group" name="en_bulk_group" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_group" name="en_bulk_group" type="checkbox"></td>
+            <td>
                 <label for="bulk_group">' . $pia_lang['DevDetail_MainInfo_Group'] . ':</label><br>
                 <div class="input-group" style="max-width: 400px;">
                   <input class="form-control" id="bulk_group" name="bulk_group" type="text" disabled>
@@ -238,8 +238,8 @@ if ($_REQUEST['mod'] == 'bulkedit') {
             </td>
           </tr>
           <tr>
-            <td style="padding-left: 10px; height: 70px;"><input class="icheckbox_flat-blue" id="en_bulk_location" name="en_bulk_location" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_location" name="en_bulk_location" type="checkbox"></td>
+            <td>
                 <label for="bulk_location">' . $pia_lang['DevDetail_MainInfo_Location'] . ':</label><br>
                 <div class="input-group" style="max-width: 400px;">
                   <input class="form-control" id="bulk_location" name="bulk_location" type="text" disabled>
@@ -260,20 +260,20 @@ if ($_REQUEST['mod'] == 'bulkedit') {
             </td>
           </tr>
           <tr>
-            <td style="padding-left: 10px; height: 70px;"><input class="icheckbox_flat-blue" id="en_bulk_comments" name="en_bulk_comments" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_comments" name="en_bulk_comments" type="checkbox"></td>
+            <td>
                 <label for="bulk_comments">' . $pia_lang['DevDetail_MainInfo_Comments'] . ':</label><br>
                 <textarea class="form-control" rows="3" id="bulk_comments" name="bulk_comments" spellcheck="false" data-gramm="false" style="max-width: 400px;" disabled></textarea></td>
           </tr>
           <tr>
-            <td style="padding-left: 10px; height: 70px;"><input class="icheckbox_flat-blue" id="en_bulk_AlertAllEvents" name="en_bulk_AlertAllEvents" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_AlertAllEvents" name="en_bulk_AlertAllEvents" type="checkbox"></td>
+            <td>
                 <label for="bulk_AlertAllEvents" style="width: 200px;">' . $pia_lang['DevDetail_EveandAl_AlertAllEvents'] . ':</label>
                 <input class="icheckbox_flat-blue" id="bulk_AlertAllEvents" name="bulk_AlertAllEvents" type="checkbox" disabled></td>
           </tr>
           <tr>
-            <td style="padding-left: 10px; height: 70px;"><input class="icheckbox_flat-blue" id="en_bulk_AlertDown" name="en_bulk_AlertDown" type="checkbox"></td>
-            <td style="">
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_AlertDown" name="en_bulk_AlertDown" type="checkbox"></td>
+            <td>
                 <label for="bulk_AlertDown" style="width: 200px;">' . $pia_lang['DevDetail_EveandAl_AlertDown'] . ':</label>
                 <input class="icheckbox_flat-blue" id="bulk_AlertDown" name="bulk_AlertDown" type="checkbox" disabled></td>
           </tr>
@@ -436,7 +436,7 @@ if ($_REQUEST['mod'] == 'bulkedit') {
     <section class="content">
 
       <div class="row">
-        <div class="col-lg-3 col-sm-3 col-xs-6">
+        <div class="col-lg-2 col-sm-4 col-xs-6">
         	<a href="#" onclick="javascript: getDevicesList('all');">
           <div class="small-box bg-aqua">
             <div class="inner"><h3 id="devicesAll"> -- </h3>
@@ -447,7 +447,7 @@ if ($_REQUEST['mod'] == 'bulkedit') {
         </a>
         </div>
 
-        <div class="col-lg-3 col-sm-3 col-xs-6">
+        <div class="col-lg-2 col-sm-4 col-xs-6">
         	<a href="#" onclick="javascript: getDevicesList('connected');">
           <div class="small-box bg-green">
             <div class="inner"><h3 id="devicesConnected"> -- </h3>
@@ -458,7 +458,7 @@ if ($_REQUEST['mod'] == 'bulkedit') {
         	</a>
         </div>
 
-        <div class="col-lg-3 col-sm-3 col-xs-6">
+        <div class="col-lg-2 col-sm-4 col-xs-6">
         	<a href="#" onclick="javascript: getDevicesList('favorites');">
           <div class="small-box bg-yellow">
             <div class="inner"><h3 id="devicesFavorites"> -- </h3>
@@ -469,13 +469,24 @@ if ($_REQUEST['mod'] == 'bulkedit') {
         	</a>
         </div>
 
-        <div class="col-lg-3 col-sm-3 col-xs-6">
+        <div class="col-lg-2 col-sm-4 col-xs-6">
         	<a href="#" onclick="javascript: getDevicesList('down');">
           <div class="small-box bg-red">
             <div class="inner"><h3 id="devicesDown"> -- </h3>
                 <p class="infobox_label"><?=$pia_lang['Device_Shortcut_DownAlerts'];?></p>
             </div>
             <div class="icon"><i class="fa fa-warning text-red-40"></i></div>
+          </div>
+        	</a>
+        </div>
+
+        <div class="col-lg-2 col-sm-4 col-xs-6">
+        	<a href="#" onclick="javascript: getDevicesList('archived');">
+          <div class="small-box bg-gray top_small_box_gray_text">
+            <div class="inner"><h3 id="devicesArchived"> -- </h3>
+                <p class="infobox_label"><?=$pia_lang['Device_Shortcut_Archived'];?></p>
+            </div>
+            <div class="icon"><i class="fa fa-eye-slash text-gray-40"></i></div>
           </div>
         	</a>
         </div>
@@ -506,10 +517,17 @@ If ($ENABLED_HISTOY_GRAPH !== False) {
 
       <script src="js/graph_online_history.js"></script>
       <script>
-        var pia_js_online_history_time = [<?php pia_graph_devices_data($Pia_Graph_Device_Time);?>];
-        var pia_js_online_history_ondev = [<?php pia_graph_devices_data($Pia_Graph_Device_Online);?>];
-        var pia_js_online_history_dodev = [<?php pia_graph_devices_data($Pia_Graph_Device_Down);?>];
-        graph_online_history_icmp(pia_js_online_history_time, pia_js_online_history_ondev, pia_js_online_history_dodev);
+        // var pia_js_online_history_time = [<?php pia_graph_devices_data($Graph_Device_Time);?>];
+        // var pia_js_online_history_ondev = [<?php pia_graph_devices_data($Graph_Device_Online);?>];
+        // var pia_js_online_history_dodev = [<?php pia_graph_devices_data($Graph_Device_Down);?>];
+        // graph_online_history_icmp(pia_js_online_history_time, pia_js_online_history_ondev, pia_js_online_history_dodev);
+
+        var online_history_time = [<?php pia_graph_devices_data($Graph_Device_Time);?>];
+        var online_history_ondev = [<?php pia_graph_devices_data($Graph_Device_Online);?>];
+        var online_history_dodev = [<?php pia_graph_devices_data($Graph_Device_Down);?>];
+        var online_history_ardev = [<?php pia_graph_devices_data($Graph_Device_Arch);?>];
+        graph_online_history_icmp(online_history_time, online_history_ondev, online_history_dodev, online_history_ardev);
+
       </script>
 <?php
 }
@@ -599,7 +617,7 @@ function initializeiCheck () {
 function main () {
     initializeiCheck();
     initializeDatatable();
-    getDevicesList();
+    getDevicesList (deviceStatus);
     getICMPHostTotals();
 }
 
@@ -692,6 +710,7 @@ function getDevicesList(status) {
     case 'connected':  tableTitle = '<?=$pia_lang['Device_Shortcut_Connected']?>';   color = 'green';   break;
     case 'favorites':  tableTitle = '<?=$pia_lang['Device_Shortcut_Favorites']?>';   color = 'yellow';  break;
     case 'down':       tableTitle = '<?=$pia_lang['Device_Shortcut_DownAlerts']?>';  color = 'red';     break;
+    case 'archived':   tableTitle = '<?=$pia_lang['Device_Shortcut_Archived']?>';    color = 'gray';    break;
     default:           tableTitle = '<?=$pia_lang['Device_Shortcut_AllDevices']?>';  color = 'aqua';    break;
   }
 
@@ -714,6 +733,7 @@ function getICMPHostTotals () {
     $('#devicesConnected').html  (totalsDevices[2].toLocaleString());
     $('#devicesFavorites').html  (totalsDevices[3].toLocaleString());
     $('#devicesDown').html       (totalsDevices[1].toLocaleString());
+    $('#devicesArchived').html   (totalsDevices[4].toLocaleString());
 } );
 };
 

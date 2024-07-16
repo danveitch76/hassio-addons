@@ -4,10 +4,7 @@ require 'journal.php';
 
 OpenDB();
 
-foreach (glob("../../../db/setting_language*") as $filename) {
-	$pia_lang_selected = str_replace('setting_language_', '', basename($filename));
-}
-if (strlen($pia_lang_selected) == 0) {$pia_lang_selected = 'en_us';}
+require 'language_switch.php';
 require '../templates/language/' . $pia_lang_selected . '.php';
 
 // Get Version from version.conf
@@ -42,10 +39,14 @@ $geolite_update = json_decode($query, true);
 
 // Get GeoIP Version from Tag Name
 $geolite_new_version = $geolite_update['name'];
+for ($x=0;$x<=2;$x++) {
+	if ($geolite_update['assets'][$x]['name'] == "GeoLite2-Country.mmdb") {$geolite_update_filesize = round(($geolite_update['assets'][$x]['size']/1024/1024), 2);}
+}
 // GeoIP Version from file system
 $geoliteDB_file = '../../../db/GeoLite2-Country.mmdb';
 if (file_exists($geoliteDB_file)) {
 	$geolite_cur_version = date("Y.m.d", filemtime($geoliteDB_file));
+	$geolite_cur_filesize = round((filesize($geoliteDB_file)/1048576),2);
 } else { $geolite_cur_version = "###";}
 // DEBUG
 // $geolite_cur_version = '2023-05-28';
@@ -80,9 +81,9 @@ if (($temp_geolite_new_version > $temp_geolite_cur_version) && ($geolite_cur_ver
 	echo '<div class="box">
     		<div class="box-body">
 				<h4 class="text-aqua" style="text-align: center;">' . $pia_lang['GeoLiteDB_Title'] . '</h4>
-				<p style="font-size: 16px; font-weight: bold;">
-				' . $pia_lang['GeoLiteDB_cur'] . ': 	<span class="text-green">	' . $geolite_cur_version . '</span><br>
-				' . $pia_lang['GeoLiteDB_new'] . ': 	<span class="text-red">		' . $geolite_new_version . '</span>
+				<p class="updatechk_font_a">
+				' . $pia_lang['GeoLiteDB_cur'] . ': 	<span class="text-green">	' . $geolite_cur_version . '</span> <span style="font-weight: normal;">('.$geolite_cur_filesize.' MB)</span><br>
+				' . $pia_lang['GeoLiteDB_new'] . ': 	<span class="text-red">		' . $geolite_new_version . '</span> <span style="font-weight: normal;">('.$geolite_update_filesize.' MB)</span>
 				</p>
 
           <div class="row" style="margin-top: 30px;">
@@ -118,7 +119,7 @@ if (($temp_geolite_new_version > $temp_geolite_cur_version) && ($geolite_cur_ver
 	echo '<div class="box">
     		<div class="box-body">
 				<h4 class="text-aqua" style="text-align: center;">' . $pia_lang['GeoLiteDB_Title'] . '</h4>
-				<p class="text-yellow" style="font-size: 16px; font-weight: bold;">' . $pia_lang['GeoLiteDB_absent'] . '</p>
+				<p class="text-yellow updatechk_font_a">' . $pia_lang['GeoLiteDB_absent'] . '</p>
 				<p>' . $pia_lang['GeoLiteDB_Installnotes'] . '</p>
 			</div>
 		  </div>';
@@ -128,7 +129,7 @@ if (($temp_geolite_new_version > $temp_geolite_cur_version) && ($geolite_cur_ver
 	echo '<div class="box">
     		<div class="box-body">
 				<h4 class="text-aqua" style="text-align: center;">' . $pia_lang['GeoLiteDB_Title'] . '</h4>
-				<p class="text-green" style="font-size: 16px; font-weight: bold;">' . $pia_lang['Updatecheck_U2D'] . '</p>
+				<p class="text-green updatechk_font_a">' . $pia_lang['Updatecheck_U2D'] . '</p>
 			</div>
 		  </div>';
 	pialert_logging('a_060', $_SERVER['REMOTE_ADDR'], 'LogStr_0064', '', '');
@@ -139,8 +140,8 @@ if ($pialert_cur_version != $pialert_new_version && $valid_update_notes) {
 // github version is not equal to local version (only a local dev version could be newer than github version)
 	echo '<div class="box">
     		<div class="box-body">
-				<h4 class="text-aqua" style="text-align: center;">' . $pia_lang['Maintenance_Github_package_a'] . ' ' . $local_time . ' ' . $pia_lang['Maintenance_Github_package_b'] . '</h4>
-				<p style="font-size: 16px; font-weight: bold;">
+				<h4 class="text-aqua" style="text-align: center;">' . $pia_lang['MT_Github_package_a'] . ' ' . $local_time . ' ' . $pia_lang['MT_Github_package_b'] . '</h4>
+				<p class="updatechk_font_a">
 				' . $pia_lang['Updatecheck_cur'] . ': 	<span class="text-green">	' . $pialert_cur_version . '</span><br>
 				' . $pia_lang['Updatecheck_new'] . ': 	<span class="text-red">		' . $pialert_new_version . '</span>
 				</p>
@@ -150,8 +151,8 @@ if ($pialert_cur_version != $pialert_new_version && $valid_update_notes) {
 // github not reachable or no json response
 	echo '<div class="box">
     		<div class="box-body">
-				<h4 class="text-aqua" style="text-align: center;"><span class="text-red">' . $pia_lang['Gen_error'] . '</span> ' . $local_time . ' ' . $pia_lang['Maintenance_Github_package_b'] . '</h4>
-				<p style="font-size: 16px; font-weight: bold;">
+				<h4 class="text-aqua" style="text-align: center;"><span class="text-red">' . $pia_lang['Gen_error'] . '</span> ' . $local_time . ' ' . $pia_lang['MT_Github_package_b'] . '</h4>
+				<p class="updatechk_font_a">
 				' . $pia_lang['Updatecheck_cur'] . ': 	<span class="text-green">	' . $pialert_cur_version . '</span><br>
 				' . $pia_lang['Updatecheck_new'] . ': 	<span class="text-red">		' . $pia_lang['Gen_error'] . '</span>
 				</p>
@@ -169,26 +170,34 @@ if ($pialert_cur_version != $pialert_new_version && $valid_update_notes) {
 	foreach ($updatenotes_array as $row) {
 		$row = str_replace("BREAKING CHANGES", "<span class=\"text-red\">BREAKING CHANGES</span>", $row);
 		if (stristr($row, "Update Notes: ")) {
-			echo '<span style="font-size: 16px; font-weight: bold; text-decoration: underline;">' . $row . '</span><br>';
+			echo '<span class="updatechk_font_a" style="text-decoration: underline;">' . $row . '</span><br>';
 		} elseif (stristr($row, "New:")) {
-			echo '<br><span style="font-size: 16px; font-weight: bold;">' . $row . '</span><br>';
+			echo '<br><span class="updatechk_font_a">' . $row . '</span><br>';
 		} elseif (stristr($row, "Fixed:")) {
-			echo '<br><span style="font-size: 16px; font-weight: bold;">' . $row . '</span><br>';
+			echo '<br><span class="updatechk_font_a">' . $row . '</span><br>';
 		} elseif (stristr($row, "Updated:")) {
-			echo '<br><span style="font-size: 16px; font-weight: bold;">' . $row . '</span><br>';
+			echo '<br><span class="updatechk_font_a">' . $row . '</span><br>';
 		} elseif (stristr($row, "Changed:")) {
-			echo '<br><span style="font-size: 16px; font-weight: bold;">' . $row . '</span><br>';
+			echo '<br><span class="updatechk_font_a">' . $row . '</span><br>';
 		} elseif (stristr($row, "Note:")) {
-			echo '<br><span style="font-size: 16px; font-weight: bold;">' . $row . '</span><br>';
+			echo '<br><span class="updatechk_font_a">' . $row . '</span><br>';
 		} elseif (stristr($row, "Removed:")) {
-			echo '<br><span style="font-size: 16px; font-weight: bold;">' . $row . '</span><br>';
+			echo '<br><span class="updatechk_font_a">' . $row . '</span><br>';
 		} else {
 			echo '<div style="display: list-item; margin-left : 2em;">' . str_replace('* ', '', $row) . '</div>';
 		}
 	}
+	if (!file_exists("/opt/pialert")) {
+		$updatecommand = 'bash -c &quot;$(wget -qLO - https://github.com/leiweibau/Pi.Alert/raw/main/install/pialert_update.sh)&quot;';
+		$updateenv = '';
+	} else {
+		$updatecommand = 'bash -c &quot;$(wget -qLO - https://github.com/tteck/Proxmox/raw/main/ct/pialert.sh)&quot;';
+		$updateenv = ' (LXC Container Env.)';
+	}
+
 	echo '<br><br>
-			<lable for="bashupdatecommand" class="text-red"><i>Update command:</i></lable>
-			<input id="bashupdatecommand" readonly value="bash -c &quot;$(wget -qLO - https://github.com/leiweibau/Pi.Alert/raw/main/install/pialert_update.sh)&quot;" style="width:100%; overflow-x: scroll; border: none; background: transparent; margin: 0px; padding: 0px;">
+			<lable for="bashupdatecommand" class="text-red"><i>Update command'.$updateenv.':</i></lable>
+			<input id="bashupdatecommand" readonly value="'.$updatecommand.'" style="width:100%; overflow-x: scroll; border: none; background: transparent; margin: 0px; padding: 0px;">
 		  <br><br>
 		</div>
     <div class="box-footer">
@@ -204,7 +213,7 @@ if ($pialert_cur_version == $pialert_new_version) {
 	echo '<div class="box">
     		<div class="box-body">
 				<h4 class="text-aqua" style="text-align: center;">' . $pia_lang['Updatecheck_RN2'] . '</h4>
-				<p class="text-green" style="font-size: 16px; font-weight: bold;">' . $pia_lang['Updatecheck_U2D'] . '</p>
+				<p class="text-green updatechk_font_a">' . $pia_lang['Updatecheck_U2D'] . '</p>
 			</div>
 		  </div>';
 	pialert_logging('a_060', $_SERVER['REMOTE_ADDR'], 'LogStr_0062', '', '');

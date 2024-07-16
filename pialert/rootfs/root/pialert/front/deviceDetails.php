@@ -5,7 +5,7 @@
 #  deviceDetails.php - Front module. Device management page
 #-------------------------------------------------------------------------------
 #  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
-#  leiweibau 2023                                          GNU GPLv3
+#  leiweibau 2024                                          GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php
@@ -132,19 +132,12 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
         
           <div id="navDevice" class="nav-tabs-custom">
             <ul class="nav nav-tabs">
-              <li> <a id="tabDetails"  href="#panDetails"  data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Details'];?>  </a></li>
-<?php
-if ($_REQUEST['mac'] == 'Internet') {$DevDetail_Tap_temp = "Tools";} else { $DevDetail_Tap_temp = $pia_lang['DevDetail_Tab_Nmap'];}
-?>
-              <li> <a id="tabNmap"     href="#panNmap"     data-toggle="tab"> <?=$DevDetail_Tap_temp;?>     </a></li>
-              <li> <a id="tabSessions" href="#panSessions" data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Sessions'];?> </a></li>
-              <li> <a id="tabPresence" href="#panPresence" data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Presence'];?> </a></li>
-              <li> <a id="tabEvents"   href="#panEvents"   data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Events'];?>   </a></li>
-<?php
-if ($_REQUEST['mac'] == 'Internet') {
-	echo '<li> <a id="tabSpeedtest"   href="#panSpeedtest"   data-toggle="tab">' . $pia_lang['ookla_devdetails_tab_title'] . '  </a></li>';
-}
-?>
+              <li id="DetailsNavTab_detail">   <a id="tabDetails"    href="#panDetails"   data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Details'];?>  </a></li>
+              <li id="DetailsNavTab_tools">    <a id="tabNmap"       href="#panNmap"      data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Nmap'];;?>     </a></li>
+              <li id="DetailsNavTab_session">  <a id="tabSessions"   href="#panSessions"  data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Sessions'];?> </a></li>
+              <li id="DetailsNavTab_presence"> <a id="tabPresence"   href="#panPresence"  data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Presence'];?> </a></li>
+              <li id="DetailsNavTab_events">   <a id="tabEvents"     href="#panEvents"    data-toggle="tab"> <?=$pia_lang['DevDetail_Tab_Events'];?>   </a></li>
+              <li id="DetailsNavTab_internet"> <a id="tabSpeedtest"  href="#panSpeedtest" data-toggle="tab"> <?=$pia_lang['ookla_devdetails_tab_title'];?></a></li>
               <div class="btn-group pull-right">
                 <button type="button" class="btn btn-default" id="btnPrevious" onclick="previousRecord()"><i class="fa fa-chevron-left"></i></button>
                 <div class="btn pa-btn-records" id="txtRecord"> 0 / 0 </div>
@@ -279,6 +272,13 @@ if ($_REQUEST['mac'] == 'Internet') {
                         <label class="col-sm-3 control-label"><?=$pia_lang['DevDetail_MainInfo_Comments'];?></label>
                         <div class="col-sm-9"><textarea class="form-control" rows="3" id="txtComments"></textarea></div>
                       </div>
+
+                      <!-- ScanSource -->
+                      <div class="form-group hide_element">
+                        <label class="col-sm-3 control-label">ScanSource</label>
+                        <div class="col-sm-9"><textarea class="form-control" rows="3" id="txtScanSource" readonly></textarea></div>
+                      </div>
+
                     </div>
                   </div>
 
@@ -355,6 +355,7 @@ if ($_REQUEST['mac'] == 'Internet') {
                                 <span class="fa fa-caret-down"></span></button>
                               <ul id="dropdownLocation" class="dropdown-menu dropdown-menu-right">
                                 <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Ethernet')">        Ethernet</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Fibre')">           Fibre</a></li>
                                 <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','WiFi')">            WiFi</a></li>
                                 <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Bluetooth')">       Bluetooth</a></li>
                                 <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Virtual Machine')"> Virtual Machine</a></li>
@@ -364,6 +365,31 @@ if ($_REQUEST['mac'] == 'Internet') {
                           </div>
                         </div>
                       </div>
+
+                      <!-- Link Speed -->
+                      <div class="form-group">
+                        <label class="col-sm-6 control-label"><?=$pia_lang['DevDetail_MainInfo_Network_LinkSpeed'];?></label>
+                        <div class="col-sm-6">
+                          <div class="input-group">
+                            <input class="form-control" id="txtLinkSpeed" type="text" value="--">
+                            <div class="input-group-btn">
+                              <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                <span class="fa fa-caret-down"></span></button>
+                              <ul id="dropdownLocation" class="dropdown-menu dropdown-menu-right">
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','10 Mbps')">    10 Mbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','100 Mbps')">  100 Mbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','1.0 Gbps')">  1.0 Gbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','2.5 Gbps')">  2.5 Gbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','10 Gbps')">    10 Gbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','20 Gbps')">    20 Gbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','25 Gbps')">    25 Gbps</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','40 Gbps')">    40 Gbps</a></li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
 
                   </div>
@@ -383,9 +409,9 @@ if ($_REQUEST['mac'] == 'Internet') {
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" id="dropdownButtonScanCycle">
                                 <span class="fa fa-caret-down"></span></button>
                               <ul id="dropdownScanCycle" class="dropdown-menu dropdown-menu-right">
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','1 min')"><?=$pia_lang['DevDetail_EveandAl_ScanCycle_a'];?></a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','1')"><?=$pia_lang['DevDetail_EveandAl_ScanCycle_a'];?></a></li>
                                 <!-- <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','15 min');"> Scan 12 min every 15 min</a></li> -->
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','0 min');"><?=$pia_lang['DevDetail_EveandAl_ScanCycle_z'];?></a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','0');"><?=$pia_lang['DevDetail_EveandAl_ScanCycle_z'];?></a></li>
                               </ul>
                             </div>
                           </div>
@@ -554,9 +580,7 @@ if ($_REQUEST['mac'] != 'Internet') {
                 <h4 class="">Wake-on-LAN</h4>
                 <div style="width:100%; text-align: center;">
                   <script>
-                      setTimeout(function(){
-                        document.getElementById('btnwakeonlan').innerHTML='<?=$pia_lang['DevDetail_Tools_WOL'];?> ' + document.getElementById('txtLastIP').value + '';
-                      }, 2000);
+                      
                   </script>
                   <button type="button" id="btnwakeonlan" class="btn btn-primary pa-btn" onclick="askwakeonlan()">Loading...</button>
                 </div>
@@ -565,28 +589,14 @@ if ($_REQUEST['mac'] != 'Internet') {
 ?>
                 <h4 class="">Nmap Scans</h4>
                 <div style="width:100%; text-align: center;">
-                  <script>
-                      setTimeout(function(){
-                        document.getElementById('manualnmap_fast').innerHTML='<?=$pia_lang['DevDetail_Tools_nmap_buttonFast'];?> (' + document.getElementById('txtLastIP').value +')';
-                        document.getElementById('manualnmap_normal').innerHTML='<?=$pia_lang['DevDetail_Tools_nmap_buttonDefault'];?> (' + document.getElementById('txtLastIP').value +')';
-                        document.getElementById('manualnmap_detail').innerHTML='<?=$pia_lang['DevDetail_Tools_nmap_buttonDetail'];?> (' + document.getElementById('txtLastIP').value +')';
-                      }, 2000);
-                  </script>
-
                   <button type="button" id="manualnmap_fast" class="btn btn-primary pa-btn" onclick="manualnmapscan(document.getElementById('txtLastIP').value, 'fast')">Loading...</button>
                   <button type="button" id="manualnmap_normal" class="btn btn-primary pa-btn" onclick="manualnmapscan(document.getElementById('txtLastIP').value, 'normal')">Loading...</button>
                   <button type="button" id="manualnmap_detail" class="btn btn-primary pa-btn" onclick="manualnmapscan(document.getElementById('txtLastIP').value, 'detail')">Loading...</button>
-
-                  <div style="text-align: left;">
-                    <ul style="padding:20px;">
-                      <li><?=$pia_lang['DevDetail_Tools_nmap_buttonFast_text'];?></li>
-                      <li><?=$pia_lang['DevDetail_Tools_nmap_buttonDefault_text'];?></li>
-                      <li><?=$pia_lang['DevDetail_Tools_nmap_buttonDetail_text'];?></li>
-                    </ul>
-                  </div>
                 </div>
 
-                <div id="scanoutput" style="margin-top: 30px;"></div>
+                <div id="scanoutput" style="margin-top: 30px;">
+
+                </div>
                   <script>
                   function manualnmapscan(targetip, mode) {
                     $( "#scanoutput" ).empty();
@@ -782,6 +792,9 @@ if ($ENABLED_DARKMODE === True) {
 
 // -----------------------------------------------------------------------------
 function main () {
+  // set page defaults
+  $('#DetailsNavTab_internet').addClass    ('hidden');
+
   // Initialize MAC
   var urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has ('mac') == true) {
@@ -953,11 +966,17 @@ function initializeCombo (HTMLelement, queryAction, txtDataField) {
       {
         id = item['id'];
       }
-
-      // add dropdown item
-      HTMLelement.innerHTML +=
-        '<li><a href="javascript:void(0)" onclick="setTextValue(\''+
-        txtDataField +'\',\''+ id +'\')">'+ item['name'] + '</a></li>'
+      if (queryAction == "getNetworkNodes") {
+      // add NetworkNodes dropdown item
+        HTMLelement.innerHTML +=
+          '<li><a href="javascript:void(0)" onclick="setTextValue(\''+
+          txtDataField +'\',\''+ id +'\')">'+ item['name'] + ' [' + id + ']</a></li>'
+      } else {
+        // add dropdown item
+        HTMLelement.innerHTML +=
+          '<li><a href="javascript:void(0)" onclick="setTextValue(\''+
+          txtDataField +'\',\''+ id +'\')">'+ item['name'] + '</a></li>'        
+      }
     });
   });
 }
@@ -1259,6 +1278,7 @@ function getDeviceData (readAllData=false) {
       $('#txtNetworkNodeMac').val  ('--');
       $('#txtNetworkPort').val     ('--');
       $('#txtConnectionType').val  ('--');
+      $('#txtLinkSpeed').val       ('--');
 
       $('#txtFirstConnection').val ('--');
       $('#txtLastConnection').val  ('--');
@@ -1351,25 +1371,40 @@ function getDeviceData (readAllData=false) {
         $('#txtNetworkNodeMac').val                  (deviceData['dev_Network_Node_MAC']);
         $('#txtNetworkPort').val                     (deviceData['dev_Network_Node_port']);
         $('#txtConnectionType').val                  (deviceData['dev_ConnectionType']);
+        $('#txtLinkSpeed').val                       (deviceData['dev_LinkSpeed']);
 
         $('#txtFirstConnection').val                 (deviceData['dev_FirstConnection']);
         $('#txtLastConnection').val                  (deviceData['dev_LastConnection']);
         $('#txtLastIP').val                          (deviceData['dev_LastIP']);
+        $('#txtScanSource').val                      (deviceData['dev_ScanSource']);
         $('#txtStatus').val                          (deviceData['dev_Status'].replace('-', ''));
         if (deviceData['dev_StaticIP'] == 1)         {$('#chkStaticIP').iCheck('check');}    else {$('#chkStaticIP').iCheck('uncheck');}
 
-        $('#txtScanCycle').val                       (deviceData['dev_ScanCycle'] +' min');
+        $('#txtScanCycle').val                       (deviceData['dev_ScanCycle']);
         if (deviceData['dev_AlertEvents'] == 1)      {$('#chkAlertEvents').iCheck('check');} else {$('#chkAlertEvents').iCheck('uncheck');}
         if (deviceData['dev_AlertDeviceDown'] == 1)  {$('#chkAlertDown').iCheck('check');}   else {$('#chkAlertDown').iCheck('uncheck');}
         $('#txtSkipRepeated').val                    (findSkipRepeated (deviceData['dev_SkipRepeated']));
         if (deviceData['dev_NewDevice'] == 1)        {$('#chkNewDevice').iCheck('check');}   else {$('#chkNewDevice').iCheck('uncheck');}
         if (deviceData['dev_Archived'] == 1)         {$('#chkArchived').iCheck('check');}    else {$('#chkArchived').iCheck('uncheck');}
 
-        if (deviceData['dev_RandomMAC'] == 1)        {$('#iconRandomMACactive').removeClass   ('hidden');
-                                                      $('#iconRandomMACinactive').addClass    ('hidden'); }
-        else                                         {$('#iconRandomMACactive').addClass      ('hidden');
-                                                      $('#iconRandomMACinactive').removeClass ('hidden'); };
+        if (deviceData['dev_RandomMAC'] == 1)        {$('#iconRandomMACactive').removeClass    ('hidden');
+                                                      $('#iconRandomMACinactive').addClass     ('hidden'); }
+        else                                         {$('#iconRandomMACactive').addClass       ('hidden');
+                                                      $('#iconRandomMACinactive').removeClass  ('hidden'); };
+        if (deviceData['dev_ScanSource'] !== 'local') {$('#DetailsNavTab_tools').addClass       ('hidden'); }
+        if (deviceData['dev_MAC'] === 'Internet')     {$('#DetailsNavTab_internet').removeClass ('hidden'); }
+        else                                         {$('#DetailsNavTab_internet').addClass    ('hidden'); };
+
         deactivateSaveRestoreData ();
+        initToolsSection();
+
+        if (deviceData['dev_ScanSource'] !== 'local') {
+            var navbarBackButton = $('#navbar-back-button');
+            var originalHref = navbarBackButton.attr('href');
+            var newHref = originalHref + '?scansource=' + deviceData['dev_ScanSource'];
+            navbarBackButton.attr('href', newHref);
+        }
+
       }
 
       // Check if device is part of the devicesList
@@ -1429,6 +1464,7 @@ function previousRecord () {
     pos--;
     mac = devicesList[pos].toString();
     getDeviceData (true);
+    initToolsSection();
   }
 }
 
@@ -1444,6 +1480,7 @@ function nextRecord () {
     pos++;
     mac = devicesList[pos].toString();
     getDeviceData (true);
+    initToolsSection();
   }
 }
 
@@ -1456,11 +1493,11 @@ function setDeviceData (refreshCallback='') {
 
   // update data to server
   $.get('php/server/devices.php?action=setDeviceData&mac='+ mac
-    + '&name='            + $('#txtName').val()
-    + '&owner='           + $('#txtOwner').val()
+    + '&name='            + encodeURIComponent($('#txtName').val())
+    + '&owner='           + encodeURIComponent($('#txtOwner').val())
     + '&type='            + $('#txtDeviceType').val()
     + '&vendor='          + $('#txtVendor').val()
-    + '&model='           + $('#txtModel').val()
+    + '&model='           + encodeURIComponent($('#txtModel').val())
     + '&serialnumber='    + $('#txtSerialnumber').val()
     + '&favorite='        + ($('#chkFavorite')[0].checked * 1)
     + '&group='           + $('#txtGroup').val()
@@ -1469,8 +1506,9 @@ function setDeviceData (refreshCallback='') {
     + '&networknode='     + $('#txtNetworkNodeMac').val()
     + '&networknodeport=' + $('#txtNetworkPort').val()
     + '&connectiontype='  + $('#txtConnectionType').val()
+    + '&linkspeed='       + $('#txtLinkSpeed').val()
     + '&staticIP='        + ($('#chkStaticIP')[0].checked * 1)
-    + '&scancycle='       + $('#txtScanCycle').val().split(' ')[0]
+    + '&scancycle='       + $('#txtScanCycle').val()
     + '&alertevents='     + ($('#chkAlertEvents')[0].checked * 1)
     + '&alertdown='       + ($('#chkAlertDown')[0].checked * 1)
     + '&skiprepeated='    + $('#txtSkipRepeated').val().split(' ')[0]
@@ -1664,4 +1702,25 @@ function wakeonlan() {
   });
 }
 
+function showmanualnmapscan(targetip) {
+  $( "#scanoutput" ).empty();
+  $.ajax({
+    method: "POST",
+    url: "./php/server/nmap_scan.php",
+    timeout: 60000,
+    data: { scan: targetip, mode: "view" },
+    success: function(data, textStatus) {
+        $("#scanoutput").html(data);
+    }
+  })
+}
+function initToolsSection () {
+setTimeout(function(){
+   document.getElementById('manualnmap_fast').innerHTML='<?=$pia_lang['DevDetail_Tools_nmap_buttonFast'];?> (' + document.getElementById('txtLastIP').value +')';
+   document.getElementById('manualnmap_normal').innerHTML='<?=$pia_lang['DevDetail_Tools_nmap_buttonDefault'];?> (' + document.getElementById('txtLastIP').value +')';
+   document.getElementById('manualnmap_detail').innerHTML='<?=$pia_lang['DevDetail_Tools_nmap_buttonDetail'];?> (' + document.getElementById('txtLastIP').value +')';
+   document.getElementById('btnwakeonlan').innerHTML='<?=$pia_lang['DevDetail_Tools_WOL'];?> ' + document.getElementById('txtLastIP').value + '';
+   showmanualnmapscan(document.getElementById('txtLastIP').value);
+}, 1000);
+}
 </script>

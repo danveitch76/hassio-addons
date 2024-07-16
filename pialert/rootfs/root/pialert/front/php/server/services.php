@@ -15,15 +15,11 @@ if ($_SESSION["login"] != 1) {
 	exit;
 }
 
-foreach (glob("../../../db/setting_language*") as $filename) {
-	$pia_lang_selected = str_replace('setting_language_', '', basename($filename));
-}
-if (strlen($pia_lang_selected) == 0) {$pia_lang_selected = 'en_us';}
-
 // External files
 require 'db.php';
 require 'util.php';
 require 'journal.php';
+require 'language_switch.php';
 require '../templates/language/' . $pia_lang_selected . '.php';
 
 //  Action selector
@@ -59,6 +55,30 @@ if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
 		break;
 	case 'getServiceMonTotals':getServiceMonTotals();
 		break;
+	case 'DeleteAllWebServices':DeleteAllWebServices();
+		break;
+	default:logServerConsole('Action: ' . $action);
+		break;
+	}
+}
+
+//  Delete all devices
+function DeleteAllWebServices() {
+	global $db;
+	global $pia_lang;
+
+	$sql = 'DELETE FROM Services';
+	$result = $db->query($sql);
+
+	if ($result == TRUE) {
+		echo $pia_lang['BackDevices_DBTools_DelServ'];
+		// Logging
+		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0039', '', '');
+		echo ("<meta http-equiv='refresh' content='2; URL=./services.php'>");
+	} else {
+		echo $pia_lang['BackDevices_DBTools_DelServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		// Logging
+		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0040', '', '');
 	}
 }
 

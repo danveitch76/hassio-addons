@@ -13,18 +13,16 @@
 session_start();
 
 if ($_SESSION["login"] != 1) {
+	if ($_REQUEST['action'] != "getDevicesTotals") {
 	header('Location: ../../index.php');
 	exit;
+	}
 }
-
-foreach (glob("../../../db/setting_language*") as $filename) {
-	$pia_lang_selected = str_replace('setting_language_', '', basename($filename));
-}
-if (strlen($pia_lang_selected) == 0) {$pia_lang_selected = 'en_us';}
 
 require 'db.php';
 require 'util.php';
 require 'journal.php';
+require 'language_switch.php';
 require '../templates/language/' . $pia_lang_selected . '.php';
 
 // Action selector
@@ -62,6 +60,8 @@ if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
 		break;
 	case 'DeleteInactiveHosts':DeleteInactiveHosts();
 		break;
+	case 'ListInactiveHosts':ListInactiveHosts();
+		break;
 	case 'wakeonlan':wakeonlan();
 		break;
 	case 'BulkDeletion':BulkDeletion();
@@ -82,7 +82,7 @@ if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
 		break;
 	case 'EnableMainScan':EnableMainScan();
 		break;
-	case 'GetARPStatus':GetARPStatus();
+	case 'EnableSatelliteScan':EnableSatelliteScan();
 		break;
 	case 'DeleteDeviceFilter':DeleteDeviceFilter();
 		break;
@@ -90,17 +90,163 @@ if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
 		break;
 	case 'DeleteSpeedtestResults':DeleteSpeedtestResults();
 		break;
-	default:logServerConsole('Action: ' . $action);
+	case 'DeleteNmapScansResults':DeleteNmapScansResults();
+		break;
+	case 'SaveFilterID':SaveFilterID();
+		break;
+	case 'CreateNewSatellite':CreateNewSatellite();
+		break;
+	case 'SaveSatellite':SaveSatellite();
+		break;
+	case 'DeleteSatellite':DeleteSatellite();
+		break;
+     default:logServerConsole('Action: ' . $action);
 		break;
 	}
+}
+
+function SaveSatellite() {
+	global $db;
+	global $pia_lang;
+
+	$currentDateTime = date('Y-m-d H:i');
+
+	$satellite_name = htmlspecialchars($_REQUEST['satellite_name']);
+	$new_satellite_name = htmlspecialchars($_REQUEST['changed_satellite_name']);
+	$satellite_id = htmlspecialchars($_REQUEST['sat_id']);
+
+	// sql
+	$sql_insert_data = 'UPDATE Satellites SET
+                 sat_name                 = "' . quotes($new_satellite_name) . '",
+                 sat_lastupdate           = "' . quotes($currentDateTime) . '"
+          WHERE sat_id="' . $satellite_id . '" AND sat_name="' . $satellite_name . '"';
+	$result = $db->query($sql_insert_data);
+
+	if ($result == TRUE) {
+		echo $pia_lang['BE_Dev_SatUpdate'] . '<br>' . $satellite_name . ' &#8594; ' . $new_satellite_name;
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0002', '', 'ID: '.$satellite_id.' ('.$satellite_name.'/'.$new_satellite_name.')');
+	} else {
+		echo $pia_lang['BE_Dev_SatUpdateError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0004', '', 'ID: '.$satellite_id.' ('.$satellite_name.'/'.$new_satellite_name.')');
+	}
+	echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=5'>");
+}
+
+function DeleteSatellite() {
+	global $db;
+	global $pia_lang;
+
+	$satellite_name = htmlspecialchars($_REQUEST['satellite_name']);
+	$satellite_id = htmlspecialchars($_REQUEST['sat_id']);
+
+	$sql = 'DELETE FROM Devices WHERE dev_ScanSource IN (SELECT sat_token FROM Satellites WHERE sat_id="' . $satellite_id . '");';
+	$result = $db->query($sql);
+
+	$sql = 'DELETE FROM Satellites WHERE sat_id="' . $satellite_id . '" AND sat_name="' . $satellite_name . '"';
+	$result = $db->query($sql);
+
+	if ($result == TRUE) {
+		echo $pia_lang['BE_Dev_SatDelete'];
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0003', '', 'ID: '.$satellite_id.' ('.$satellite_name.')');
+	} else {
+		echo $pia_lang['BE_Dev_SatDeleteError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0005', '', 'ID: '.$satellite_id.' ('.$satellite_name.')');
+	}
+
+	echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=5'>");
+}
+
+function generateRandomString($length) {
+	$keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	$pieces = [];
+	$max = strlen($keyspace)-1;
+	for ($i = 0; $i < $length; ++$i) {
+	   $pieces []= $keyspace[random_int(0, $max)];
+	}
+	return implode('', $pieces);
+}
+
+function CreateNewSatellite() {
+	global $db;
+	global $pia_lang;
+
+	$currentDateTime = date('Y-m-d H:i');
+	if ($_REQUEST['new_satellite_name'] == "") {$satellite_name = "Satellite";} else {$satellite_name = htmlspecialchars($_REQUEST['new_satellite_name']);}
+	$satellite_token = generateRandomString(48);
+	$satellite_password = generateRandomString(96);
+
+	$sql_insert_data = 'INSERT INTO Satellites ("sat_name", "sat_token", "sat_password", "sat_lastupdate") 
+                          VALUES ("' . $satellite_name . '", "' . $satellite_token . '", "' . $satellite_password . '", "'.$currentDateTime.'")';
+	$result = $db->query($sql_insert_data);
+
+	if ($result == TRUE) {
+		echo $pia_lang['BE_Dev_SatCreate'];
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0001', '', 'Name: '.$satellite_name);
+	} else {
+		echo $pia_lang['BE_Dev_SatCreateError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0000', '', 'Name: '.$satellite_name);
+	}
+	echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=5'>");
+}
+
+function SaveFilterID() {
+	global $db;
+	global $pia_lang;
+
+	$filterid = htmlspecialchars($_REQUEST['filterid']);
+	$filtername = htmlspecialchars($_REQUEST['filtername']);
+	$filterstring = htmlspecialchars($_REQUEST['filterstring']);
+	$filterindex = htmlspecialchars($_REQUEST['filterindex']);
+	$filtercolumn = htmlspecialchars($_REQUEST['filtercolumn']);
+	$filtergroup = htmlspecialchars($_REQUEST['filtergroup']);
+
+	// sql
+	$sql = 'UPDATE Devices_table_filter SET
+                 filtername      = "' . quotes($filtername) . '",
+                 filterstring    = "' . quotes($filterstring) . '",
+                 reserve_a       = "' . quotes($filterindex) . '",
+                 reserve_b       = "' . quotes($filtercolumn) . '",
+                 reserve_c       = "' . quotes($filtergroup) . '"
+          WHERE id="' . $filterid . '"';
+	$result = $db->query($sql);
+
+	if ($result == TRUE) {
+		echo $pia_lang['BackDevices_Upd_Filter'];
+		// Logging
+		pialert_logging('a_005', $_SERVER['REMOTE_ADDR'], 'LogStr_0046', '', 'ID: '.$filterid);
+	} else {
+		echo $pia_lang['BackDevices_Upd_FilterError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		// Logging
+		pialert_logging('a_005', $_SERVER['REMOTE_ADDR'], 'LogStr_0047', '', 'ID: '.$filterid);
+	}
+	echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=4'>");
 }
 
 function SetDeviceFilter() {
 	global $db;
 	global $pia_lang;
 
+	$colfilterarray = array();
+	if ($_REQUEST['fname'] == 0) {array_push($colfilterarray, "0");}
+	if ($_REQUEST['fowner'] == 0) {array_push($colfilterarray, "2");}
+	if ($_REQUEST['fgroup'] == 0) {array_push($colfilterarray, "5");}
+	if ($_REQUEST['flocation'] == 0) {array_push($colfilterarray, "6");}
+	if ($_REQUEST['ftype'] == 0) {array_push($colfilterarray, "3");}
+	if ($_REQUEST['fip'] == 0) {array_push($colfilterarray, "9");}
+	if ($_REQUEST['fmac'] == 0) {array_push($colfilterarray, "11");}
+	if ($_REQUEST['fconnectiont'] == 0) {array_push($colfilterarray, "1");}
+
+	$newcolfilter = implode(",", $colfilterarray);
+
 	$filtername = filter_var($_REQUEST['filtername'], FILTER_SANITIZE_STRING);
 	$filterstring = filter_var($_REQUEST['filterstring'], FILTER_SANITIZE_STRING);
+	$filtergroup = filter_var($_REQUEST['filtergroup'], FILTER_SANITIZE_STRING);
 	// Create table if not exist
 	$sql = "CREATE TABLE IF NOT EXISTS Devices_table_filter (
 	            id INTEGER PRIMARY KEY,
@@ -111,13 +257,14 @@ function SetDeviceFilter() {
 	            reserve_c TEXT
 	        )";
 	// Write filter in db
+	// reserve_b is for select column for search
 	try {
 		$result = $db->query($sql);
 		
 		if ($filtername != "" && $filterstring != "") {
 			try {
-				$sql_insert_data = 'INSERT INTO Devices_table_filter ("filtername", "filterstring") 
-		                               VALUES ("' . $filtername . '", "' . $filterstring . '")';
+				$sql_insert_data = 'INSERT INTO Devices_table_filter ("filtername", "filterstring", "reserve_b", "reserve_c") 
+		                               VALUES ("' . $filtername . '", "' . $filterstring . '", "' . $newcolfilter . '", "' . $filtergroup . '")';
 
 				$result = $db->query($sql_insert_data);
 				echo $pia_lang['BackDevices_table_filter_ok_a'] . '"' .$filtername . '"' . $pia_lang['BackDevices_table_filter_ok_b'] . '"' .$filterstring . '"' . $pia_lang['BackDevices_table_filter_ok_c'];
@@ -139,23 +286,16 @@ function SetDeviceFilter() {
 
 function DeleteDeviceFilter() {
 	global $db;
+	global $pia_lang;
 
 	$filterstring = filter_var($_REQUEST['filterstring'], FILTER_SANITIZE_STRING);
 	$sql = 'DELETE FROM Devices_table_filter WHERE filterstring="' . $filterstring . '"';
 	// execute sql
 	$result = $db->query($sql);
 
-	echo 'Dieser Filter wurde gelöscht: '. $filterstring;
+	echo $pia_lang['BackDevices_table_delfilter_ok'] . $filterstring;
 	pialert_logging('a_005', $_SERVER['REMOTE_ADDR'], 'LogStr_0045', '', $filterstring);
 	echo ("<meta http-equiv='refresh' content='2; URL=./devices.php'>");
-}
-
-function GetARPStatus() {
-	$execstring = 'ps -aux | grep "/pialert/back/pialert.py 1" | grep -v grep | grep -v "/pialert/log/pialert.1.log"';
-	$pia_arpscans = "";
-	exec($execstring, $pia_arpscans);
-	$result = array(sizeof($pia_arpscans));
-	echo json_encode($result);
 }
 
 //  Query Device Data
@@ -240,6 +380,7 @@ function setDeviceData() {
                  dev_Infrastructure       = "' . quotes($_REQUEST['networknode']) . '",
                  dev_Infrastructure_port  = "' . quotes($_REQUEST['networknodeport']) . '",
                  dev_ConnectionType       = "' . quotes($_REQUEST['connectiontype']) . '",
+                 dev_LinkSpeed            = "' . quotes($_REQUEST['linkspeed']) . '",
                  dev_StaticIP             = "' . quotes($_REQUEST['staticIP']) . '",
                  dev_ScanCycle            = "' . quotes($_REQUEST['scancycle']) . '",
                  dev_AlertEvents          = "' . quotes($_REQUEST['alertevents']) . '",
@@ -399,7 +540,6 @@ function deleteActHistory() {
 
 //  Test Notification
 function TestNotificationSystem() {
-	//$file = '../../../db/setting_noonlinehistorygraph';
 	global $pia_lang;
 
 	exec('../../../back/pialert-cli reporting_test', $output);
@@ -413,15 +553,16 @@ function TestNotificationSystem() {
 function getDevicesTotals() {
 	global $db;
 
+	if (!$_REQUEST['scansource']) {$scansource = 'local';} else {$scansource = $_REQUEST['scansource'];}
 	// combined query
 	$result = $db->query(
 		'SELECT
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('all') . ') as devices,
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('connected') . ') as connected,
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('favorites') . ') as favorites,
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('new') . ') as new,
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('down') . ') as down,
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('archived') . ') as archived
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('all',$scansource) . ') as devices,
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('connected',$scansource) . ') as connected,
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('favorites',$scansource) . ') as favorites,
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('new',$scansource) . ') as new,
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('down',$scansource) . ') as down,
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('archived',$scansource) . ') as archived
    ');
 	$row = $result->fetchArray(SQLITE3_NUM);
 	echo json_encode(array($row[0], $row[1], $row[2], $row[3], $row[4], $row[5]));
@@ -431,10 +572,11 @@ function getDevicesTotals() {
 function getDevicesList() {
 	global $db;
 
-	$condition = getDeviceCondition($_REQUEST['status']);
+	$condition = getDeviceCondition($_REQUEST['status'],$_REQUEST['scansource']);
 	$sql = 'SELECT rowid, *, CASE
             WHEN dev_AlertDeviceDown=1 AND dev_PresentLastScan=0 THEN "Down"
-            WHEN dev_NewDevice=1 THEN "New"
+            WHEN dev_NewDevice=1 AND dev_PresentLastScan=1 THEN "NewON"
+            WHEN dev_NewDevice=1 AND dev_PresentLastScan=0 THEN "NewOFF"
             WHEN dev_PresentLastScan=1 THEN "On-line"
             ELSE "Off-line"
           END AS dev_Status
@@ -457,6 +599,7 @@ function getDevicesList() {
 			$row['dev_MAC'], // MAC (hidden)
 			$row['dev_Status'],
 			formatIPlong($row['dev_LastIP']), // IP orderable
+			$row['dev_ScanSource'],
 			$row['rowid'], // Rowid (hidden)
 		);
 	}
@@ -472,7 +615,7 @@ function getDevicesList() {
 function getDevicesListCalendar() {
 	global $db;
 
-	$condition = getDeviceCondition($_REQUEST['status']);
+	$condition = getDeviceCondition($_REQUEST['status'],$_REQUEST['scansource']);
 	$result = $db->query('SELECT * FROM Devices ' . $condition);
 
 	// arrays of rows
@@ -529,7 +672,7 @@ function getDeviceTypes() {
                  "Laptop", "PC", "Printer", "Server", "Singleboard Computer (SBC)",
                  "Game Console", "SmartTV", "Virtual Assistance",
                  "House Appliance", "Phone", "Radio",
-                 "AP", "NAS", "Router")
+                 "AP", "NAS", "Router", "Hypervisor", "USB WIFI Adapter", "USB LAN Adapter")
 
           UNION SELECT 1 as dev_Order, "Smartphone"
           UNION SELECT 1 as dev_Order, "Tablet"
@@ -537,8 +680,9 @@ function getDeviceTypes() {
           UNION SELECT 2 as dev_Order, "Laptop"
           UNION SELECT 2 as dev_Order, "PC"
           UNION SELECT 2 as dev_Order, "Printer"
-          UNION SELECT 2 as dev_Order, "Server"
           UNION SELECT 2 as dev_Order, "Singleboard Computer (SBC)"
+          UNION SELECT 2 as dev_Order, "USB LAN Adapter"
+          UNION SELECT 2 as dev_Order, "USB WIFI Adapter"
 
           UNION SELECT 3 as dev_Order, "Game Console"
           UNION SELECT 3 as dev_Order, "SmartTV"
@@ -551,8 +695,8 @@ function getDeviceTypes() {
           UNION SELECT 5 as dev_Order, "AP"
           UNION SELECT 5 as dev_Order, "NAS"
           UNION SELECT 5 as dev_Order, "Router"
-          UNION SELECT 5 as dev_Order, "USB LAN Adapter"
-          UNION SELECT 5 as dev_Order, "USB WIFI Adapter"
+          UNION SELECT 5 as dev_Order, "Server"
+          UNION SELECT 5 as dev_Order, "Hypervisor"
 
           UNION SELECT 10 as dev_Order, "Other"
 
@@ -662,21 +806,22 @@ function getNetworkNodes() {
 }
 
 //  Status Where conditions
-function getDeviceCondition($deviceStatus) {
+function getDeviceCondition($deviceStatus, $scansource) {
+	if ($scansource == "all") {$scansource_query = "";} else {$scansource_query = 'dev_ScanSource="'.$scansource.'" AND ';}
 	switch ($deviceStatus) {
-	case 'all':return 'WHERE dev_Archived=0';
+	case 'all':return 'WHERE '.$scansource_query.'dev_Archived=0';
 		break;
-	case 'connected':return 'WHERE dev_Archived=0 AND dev_PresentLastScan=1';
+	case 'connected':return 'WHERE '.$scansource_query.'dev_Archived=0 AND dev_PresentLastScan=1';
 		break;
-	case 'favorites':return 'WHERE dev_Archived=0 AND dev_Favorite=1';
+	case 'favorites':return 'WHERE '.$scansource_query.'dev_Archived=0 AND dev_Favorite=1';
 		break;
-	case 'new':return 'WHERE dev_Archived=0 AND dev_NewDevice=1';
+	case 'new':return 'WHERE '.$scansource_query.'dev_Archived=0 AND dev_NewDevice=1';
 		break;
-	case 'down':return 'WHERE dev_Archived=0 AND dev_AlertDeviceDown=1 AND dev_PresentLastScan=0';
+	case 'down':return 'WHERE '.$scansource_query.'dev_Archived=0 AND dev_AlertDeviceDown=1 AND dev_PresentLastScan=0';
 		break;
-	case 'archived':return 'WHERE dev_Archived=1';
+	case 'archived':return 'WHERE '.$scansource_query.'dev_Archived=1';
 		break;
-	default:return 'WHERE 1=0';
+	default:return 'WHERE '.$scansource_query.'AND 1=0';
 		break;
 	}
 }
@@ -704,6 +849,21 @@ function DeleteInactiveHosts() {
 		// Logging
 		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0014', '', '');
 	}
+}
+
+//  List Inactive Hosts
+function ListInactiveHosts() {
+	global $pia_lang;
+	global $db;
+
+	$i=1;
+	$sql = 'SELECT * FROM Devices WHERE dev_PresentLastScan = 0 AND dev_LastConnection <= date("now", "-30 day") ORDER BY dev_LastConnection DESC';
+	$result = $db->query($sql);
+	while ($res = $result->fetchArray(SQLITE3_ASSOC)) {
+		$inactive_hosts[0] .= $i .'.&nbsp;&nbsp;&nbsp;'.$res['dev_Name'] . '&nbsp;&nbsp;/&nbsp;&nbsp;' . $res['dev_MAC'] . '&nbsp;&nbsp;/&nbsp;&nbsp;' . $res['dev_LastConnection'] ."<br>";
+		$i++;
+	}
+	echo (json_encode($inactive_hosts));
 }
 
 //  Delete All Notification in WebGUI
@@ -791,7 +951,26 @@ function BulkDeletion() {
 
 }
 
-//  Toggle Web Service Monitoring
+//  Toggle Satellites
+function EnableSatelliteScan() {
+	global $pia_lang;
+
+	if ($_SESSION['Scan_Satellite'] == True) {
+		exec('../../../back/pialert-cli disable_satellites', $output);
+		echo $pia_lang['BE_Dev_satellites_disabled'];
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0306', '', '');
+		echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=1'>");
+	} else {
+		exec('../../../back/pialert-cli enable_satellites', $output);
+		echo $pia_lang['BE_Dev_satellites_enabled'];
+		// Logging
+		pialert_logging('a_033', $_SERVER['REMOTE_ADDR'], 'LogStr_0305', '', '');
+		echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=1'>");
+	}
+}
+
+//  Toggle Arp Scan
 function EnableMainScan() {
 	global $pia_lang;
 
@@ -810,7 +989,7 @@ function EnableMainScan() {
 	}
 }
 
-//  Delete all Events
+//  Delete all Speedtests
 function DeleteSpeedtestResults() {
 	global $db;
 	global $pia_lang;
@@ -826,6 +1005,25 @@ function DeleteSpeedtestResults() {
 		echo $pia_lang['BackDevices_DBTools_DelSpeedtestError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
 		// Logging
 		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0029', '', '');
+	}
+}
+
+//  Delete all Nmap Scans
+function DeleteNmapScansResults() {
+	global $db;
+	global $pia_lang;
+
+	$sql = 'DELETE FROM Tools_Nmap_ManScan';
+	$result = $db->query($sql);
+
+	if ($result == TRUE) {
+		echo $pia_lang['BackDevices_DBTools_DelNmapScans'];
+		// Logging
+		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0037', '', '');
+	} else {
+		echo $pia_lang['BackDevices_DBTools_DelNmapScansError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		// Logging
+		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0038', '', '');
 	}
 }
 //  End

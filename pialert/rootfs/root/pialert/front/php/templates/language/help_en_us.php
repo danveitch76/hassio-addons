@@ -118,6 +118,18 @@ $help_lang['Cat_General_107_text'] = 'The file <span class="text-maroon help_faq
 									        <td class="help_table_gen_b">Enables or disables the password protection of the Pi.Alert web interface.</td></tr>
 									    <tr><td class="help_table_gen_a">PIALERT_WEB_PASSWORD</td>
 									        <td class="help_table_gen_b">This field contains the hashed password for the web interface. The password cannot be entered here in plain text, but must be set with <span class="text-maroon help_faq_code">pialert-cli</span></td></tr>
+										<tr><td class="help_table_gen_a">NETWORK_DNS_SERVER</td>
+										    <td class="help_table_gen_b">IP address of the DNS server in the network. This entry is required to attempt to resolve a hostname in the network.</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_UPDATE_CHECK</td>
+										    <td class="help_table_gen_b">Enables or disables automatic search for Pi.Alert updates.</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_UPDATE_CHECK_CRON</td>
+										    <td class="help_table_gen_b">Interval, in crontab syntax, at which to search for new updates from Pi.Alert. The shortest interval is 3 minutes. All larger intervals must be integer multiples of 3 minutes (15, 30, 36, etc).</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_DB_BACKUP</td>
+										    <td class="help_table_gen_b">Enables or disables automatic creation of database and configuration backups.</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_DB_BACKUP_CRON</td>
+										    <td class="help_table_gen_b">Interval, in crontab syntax, at which the automatic backups should be created. The shortest interval is 3 minutes. All larger intervals must be integer multiples of 3 minutes (15, 30, 36, etc).</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_DB_BACKUP_KEEP</td>
+											<td class="help_table_gen_b">This specifies how many automatic backups should be retained, including the current backup. This includes both configuration backups and database backup. This value is not relevant during manual cleanup, where the last 3 backups are retained.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Other Modules</td></tr>
@@ -131,7 +143,7 @@ $help_lang['Cat_General_107_text'] = 'The file <span class="text-maroon help_faq
 									    <tr><td class="help_table_gen_a">SCAN_ROGUE_DHCP</td>
 									        <td class="help_table_gen_b">Activates the search for foreign, also called "rogue", DHCP servers. This function is used to detect whether there is a foreign DHCP server in the network that could take control of IP management.</td></tr>
 									    <tr><td class="help_table_gen_a">DHCP_SERVER_ADDRESS</td>
-									        <td class="help_table_gen_b">The IP of the known DHCP server is stored here.</td></tr>
+									        <td class="help_table_gen_b">The IP of the known DHCP server is stored here. Only ONE DHCP server can be entered.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Mail-Account Settings</td></tr>
@@ -184,6 +196,10 @@ $help_lang['Cat_General_107_text'] = 'The file <span class="text-maroon help_faq
 									        <td class="help_table_gen_b">This is the private key that can be viewed on the pushsafer page.</td></tr>
 									    <tr><td class="help_table_gen_a">PUSHSAFER_DEVICE</td>
 									        <td class="help_table_gen_b">The device ID to which the message will be sent. &lsquo;<span class="text-maroon help_faq_code">a</span>&rsquo; means the message will be sent to all configuring devices and will consume a corresponding number of API calls.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHSAFER_PRIO</td>
+										    <td class="help_table_gen_b">Priority level of the message.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHSAFER_SOUND</td>
+										    <td class="help_table_gen_b">Notification sound (integer).</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Pushover</td></tr>
@@ -195,40 +211,29 @@ $help_lang['Cat_General_107_text'] = 'The file <span class="text-maroon help_faq
 									        <td class="help_table_gen_b">Also called "APP TOKEN" or "API TOKEN". This token can be queried on the pushover page.</td></tr>
 									    <tr><td class="help_table_gen_a">PUSHOVER_USER</td>
 									        <td class="help_table_gen_b">Also called "USER KEY". This key is displayed right after login on the start page.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHOVER_PRIO</td>
+										    <td class="help_table_gen_b">Priority level of the message.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHOVER_SOUND</td>
+										    <td class="help_table_gen_b">Notification sound.</td></tr>
 									</table>
 									<table class="help_table_gen">
-			    						<tr><td class="help_table_gen_section" colspan="2">NTFY</td></tr>
+									    <tr><td class="help_table_gen_section" colspan="2">NTFY</td></tr>
 									    <tr><td class="help_table_gen_a">REPORT_NTFY</td>
-									        <td class="help_table_gen_b">Enables/disables the notifications about changes in the network via NTFY.</td></tr>
+									        <td class="help_table_gen_b">Enables/Disables notifications about changes in the network via NTFY</td></tr>
 									    <tr><td class="help_table_gen_a">REPORT_NTFY_WEBMON</td>
-									        <td class="help_table_gen_b">Enables/disables the notifications about changes in the monitored web services via NTFY.</td></tr>
+									        <td class="help_table_gen_b">Enables/Disables notifications about changes in monitored web services via NTFY</td></tr>
 									    <tr><td class="help_table_gen_a">NTFY_HOST</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">The hostname or IP address of the NTFY server.</td></tr>
 									    <tr><td class="help_table_gen_a">NTFY_TOPIC</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">The subject of notifications sent via NTFY.</td></tr>
 									    <tr><td class="help_table_gen_a">NTFY_USER</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">The username used for authentication with the NTFY server.</td></tr>
 									    <tr><td class="help_table_gen_a">NTFY_PASSWORD</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">The password used for authentication with the NTFY server.</td></tr>
 									    <tr><td class="help_table_gen_a">NTFY_PRIORITY</td>
-									        <td class="help_table_gen_b">    </td></tr>
-									</table>
-									<table class="help_table_gen">
-			    						<tr><td class="help_table_gen_section" colspan="2">MQTT</td></tr>
-									    <tr><td class="help_table_gen_a">REPORT_MQTT</td>
-									        <td class="help_table_gen_b">Enables/disables the notifications about changes in the network via MQTT.</td></tr>
-									    <tr><td class="help_table_gen_a">REPORT_MQTT_WEBMON</td>
-									        <td class="help_table_gen_b">Enables/disables the notifications about changes in the monitored web services via MQTT.</td></tr>
-									    <tr><td class="help_table_gen_a">MQTT_BROKER</td>
-									        <td class="help_table_gen_b">Address of the MQTT Broker; can be IP or Hostname.</td></tr>
-									    <tr><td class="help_table_gen_a">MQTT_PORT</td>
-									        <td class="help_table_gen_b">Port of the MQTT Broker.</td></tr>
-									    <tr><td class="help_table_gen_a">MQTT_TOPIC</td>
-									        <td class="help_table_gen_b">Topic to publish to MQTT.</td></tr>
-									    <tr><td class="help_table_gen_a">MQTT_USER</td>
-									        <td class="help_table_gen_b">(NOT USED)</td></tr>
-									    <tr><td class="help_table_gen_a">MQTT_PASSWORD</td>
-									        <td class="help_table_gen_b">(NOT USED)</td></tr>
+									        <td class="help_table_gen_b">Priority of notifications sent via NTFY</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_CLICKABLE</td>
+									        <td class="help_table_gen_b">Enables or disables the click action for the notification.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Shoutrrr</td></tr>
@@ -242,29 +247,29 @@ $help_lang['Cat_General_107_text'] = 'The file <span class="text-maroon help_faq
 									    <tr><td class="help_table_gen_a">REPORT_TELEGRAM_WEBMON</td>
 									        <td class="help_table_gen_b">Enables/disables the notifications about changes in the monitored web services via Telegram</td></tr>
 									    <tr><td class="help_table_gen_a">TELEGRAM_BOT_TOKEN_URL</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">Here the URL created by the shoutrrr setup wizard is entered.</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">DynDNS and IP</td></tr>
 									    <tr><td class="help_table_gen_a">QUERY_MYIP_SERVER</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">Server URL that determines and returns the current public IP.</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_ACTIVE</td>
-									        <td class="help_table_gen_b">Enables/disables the configured DDNS service in Pi.Alert. DDNS, also known as DynDNS, allows you to update a domain name with a regularly changing IP address. This service is offered by several service providers.</td></tr>
+									        <td class="help_table_gen_b">Enables/Disables the configured DDNS service in Pi.Alert. DDNS, also known as DynDNS, allows a domain name to be updated with a regularly changing IP address. This service is provided by various providers.</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_DOMAIN</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b"></td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_USER</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">Username</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_PASSWORD</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">Password</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_UPDATE_URL</td>
-									        <td class="help_table_gen_b">    </td></tr>
+									        <td class="help_table_gen_b">URL to update the current IP with the DDNS service</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Automatic Speedtest</td></tr>
 									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_ACTIVE</td>
 									        <td class="help_table_gen_b">Activate/deactivate the automatic speed test. This requires the installation of the Ookla speed test in the "Tools" tab of the "Internet" device. Follow the instructions during installation.</td></tr>
-									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_HOUR</td>
-									        <td class="help_table_gen_b">Full hour, or comma-separated hours, at which the speed test is to be started.</td></tr>
+									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_CRON</td>
+									        <td class="help_table_gen_b">Full hour, or comma-separated hours, at which the speed test is to be started. The shortest interval is 3 minutes. All larger intervals must be integer multiples of 3 minutes (15, 30, 36, etc).</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Arp-scan Options & Samples</td></tr>
@@ -369,13 +374,26 @@ $help_lang['Cat_Detail_301_text'] = 'The time interval between the scans is defi
 									Depending on the network configuration, this time may vary. To edit the cronjob, you can use the following command in the terminal/console <span class="text-maroon help_faq_code">crontab -e</span>
 									and change the interval.';
 $help_lang['Cat_Detail_302_head_a'] = 'What means ';
-$help_lang['Cat_Detail_302_head_b'] = 'and why can\'t I select that?';
+$help_lang['Cat_Detail_302_head_b'] = 'and why can&apos;t I select that?';
 $help_lang['Cat_Detail_302_text'] = 'Some modern devices generate random MAC addresses for privacy reasons, which can no longer be associated with any manufacturer and which change again with each new connection.
 									Pi.Alert detects if it is such a random MAC address and activates this "field" automatically. To disable this behavior you have to look in your device how to disable
-									MAC address randomization.';
+									MAC address randomization. MAC addresses with the following scheme are marked as "random":
+									<ul style="list-style-type: none">
+									    <li>x2:xx:xx:xx:xx:xx</li>
+									    <li>x6:xx:xx:xx:xx:xx</li>
+									    <li>xA:xx:xx:xx:xx:xx</li>
+									    <li>xE:xx:xx:xx:xx:xx</li>
+									</ul>';
 $help_lang['Cat_Detail_303_head'] = 'What is Nmap and what is it for?';
-$help_lang['Cat_Detail_303_text'] = 'Nmap is a network scanner with multiple capabilities.<br>
-									When a new device appears in your list, you have the possibility to get more detailed information about the device via the Nmap scan.';
+$help_lang['Cat_Detail_303_text'] = 'Nmap is a network scanner with various capabilities.<br>
+                                    When a new device appears in your list, you have the option to obtain more detailed information about the device through the Nmap scan.
+                                    <br>Pi.Alert offers 3 different preset scans:
+                                    <br>
+                                    <ul>
+                                    <li>Quick Scan: Checks only the most important 100 ports (a few seconds)</li>
+                                    <li>Standard Scan: Nmap scans the first 1,000 ports for each requested scan protocol. (approx. 5-10 seconds)</li>
+                                    <li>Detailed Scan (Timeout 60s): The scan has been expanded to include some UDP ports. Also, the range of TCP ports has been increased.</li>
+                                    </ul>';
 $help_lang['Cat_Presence_400_head'] = 'Devices are displayed with a yellow marker and the note "missing event".';
 $help_lang['Cat_Presence_400_text'] = 'If this happens, you have the option to delete the events on the device in question (details view). Another possibility would be to switch on the device and wait until Pi.Alert detects the device as "online" with the next
 									  scan and then simply turn the device off again. Now Pi.Alert should properly note the state of the device in the database with the next scan.';

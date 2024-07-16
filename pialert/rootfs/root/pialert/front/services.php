@@ -4,7 +4,7 @@
 #
 #  services.php - Front module. Server side. Manage Devices
 #-------------------------------------------------------------------------------
-#  leiweibau 2023                                          GNU GPLv3
+#  leiweibau 2024                                          GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php
@@ -494,8 +494,8 @@ function insertNewService(refreshCallback='') {
     + '&url='             + $('#serviceURL').val()
     + '&tags='            + $('#serviceTag').val()
     + '&mac='             + $('#serviceMAC').val()
-    + '&alertdown='       + ($('#insAlertEvents')[0].checked * 1)
-    + '&alertevents='     + ($('#insAlertDown')[0].checked * 1)
+    + '&alertdown='       + ($('#insAlertDown')[0].checked * 1)
+    + '&alertevents='     + ($('#insAlertEvents')[0].checked * 1)
     , function(msg) {
     showMessage (msg);
     // Callback fuction

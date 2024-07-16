@@ -7,9 +7,9 @@
 #  pialert.py - Back module. Network scanner, Web service monitor
 #-------------------------------------------------------------------------------
 #  Puche 2021                                              GNU GPLv3
-#  leiweibau 2023                                          GNU GPLv3
+#  leiweibau 2024                                          GNU GPLv3
 #  piapiacz, hspindel
-#  danveitch76 2023                                        GNU GPLv3
+#  danveitch76 2024                                        GNU GPLv3
 #-------------------------------------------------------------------------------
 
 #===============================================================================
@@ -26,9 +26,8 @@ from urllib.parse import urlparse
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from pathlib import Path
-from datetime import datetime
-import sys, subprocess, os, re, datetime, sqlite3, socket, io, smtplib, csv, requests, time, pwd, glob, ipaddress, ssl, json, uuid
-import paho.mqtt.publish as publish
+from datetime import datetime, timedelta
+import sys, subprocess, os, re, datetime, sqlite3, socket, io, smtplib, csv, requests, time, pwd, glob, ipaddress, ssl, json
 
 #===============================================================================
 # CONFIG CONSTANTS
@@ -36,9 +35,12 @@ import paho.mqtt.publish as publish
 PIALERT_BACK_PATH = os.path.dirname(os.path.abspath(__file__))
 PIALERT_PATH = PIALERT_BACK_PATH + "/.."
 PIALERT_WEBSERVICES_LOG = PIALERT_PATH + "/log/pialert.webservices.log"
-STOPPIALERT = PIALERT_PATH + "/db/setting_stoppialert"
+STOPPIALERT = PIALERT_PATH + "/config/setting_stoppialert"
 PIALERT_DB_FILE = PIALERT_PATH + "/db/pialert.db"
+PIALERT_DB_PATH = PIALERT_PATH + "/db"
 REPORTPATH_WEBGUI = PIALERT_PATH + "/front/reports/"
+STATUS_FILE_SCAN = PIALERT_BACK_PATH + "/.scanning"
+STATUS_FILE_BACKUP = PIALERT_BACK_PATH + "/.backup"
 MQTT_UUID = uuid.uuid4()
 
 if (sys.version_info > (3,0)):
@@ -80,21 +82,19 @@ def main():
         return
     cycle = str(sys.argv[1])
 
-    ## Main Commands
-    if cycle == 'internet_IP':
-        res = check_internet_IP()
-    elif cycle == 'cleanup':
-        res = cleanup_database()
-    elif cycle == 'update_vendors':
-        res = update_devices_MAC_vendors()
-    elif cycle == 'update_vendors_silent':
-        res = update_devices_MAC_vendors('-s')
-    elif os.path.exists(STOPPIALERT) == True :
-        res = start_arpscan_countdown()
-    elif os.path.exists(STOPPIALERT) == False :
-        res = scan_network()
-    else:
-        res = 0
+    if os.path.exists(STOPPIALERT) == True :
+        res = check_pialert_countdown()
+    else :
+        if cycle == 'internet_IP':
+            res = check_internet_IP()
+        elif cycle == 'cleanup':
+            res = cleanup_database()
+        elif cycle == 'update_vendors':
+            res = update_devices_MAC_vendors()
+        elif cycle == 'update_vendors_silent':
+            res = update_devices_MAC_vendors('-s')
+        else:
+            res = scan_network()
 
     # Check error
     if res != 0 :
@@ -102,11 +102,15 @@ def main():
         return res
 
     # Reporting
-    if cycle != 'internet_IP' and cycle != 'cleanup':
+    if cycle not in ['internet_IP', 'cleanup']:
         email_reporting()
 
     # Close SQL
     closeDB()
+
+    # Remove scan status file created in scan_network()
+    if cycle not in ['internet_IP', 'cleanup', 'update_vendors', 'update_vendors_silent'] and os.path.exists(STATUS_FILE_SCAN):
+        os.remove(STATUS_FILE_SCAN)
 
     # Final menssage
     print('\nDONE!!!\n\n')
@@ -120,16 +124,16 @@ def get_username():
 
 # ------------------------------------------------------------------------------
 def set_db_file_permissions():
-    print(f"\nPrepare Scan...")
-    print(f"    Force file permissions on Pi.Alert db...")
+    print_log(f"\nPrepare Scan...")
+    print_log(f"    Force file permissions on Pi.Alert db...")
     # Set permissions
-    os.system("chown " + get_username() + ":www-data " + PIALERT_DB_FILE)
-    os.system("chmod 775 " + PIALERT_DB_FILE)
+    os.system("/usr/bin/chown " + get_username() + ":www-data " + PIALERT_DB_FILE)
+    os.system("/usr/bin/chmod 775 " + PIALERT_DB_FILE)
     # Get permissions
     fileinfo = Path(PIALERT_DB_FILE)
     file_stat = fileinfo.stat()
-    print(f"        DB permission mask: {oct(file_stat.st_mode)[-3:]}")
-    print(f"        DB Owner and Group: {fileinfo.owner()}:{fileinfo.group()}")
+    print_log(f"        DB permission mask: {oct(file_stat.st_mode)[-3:]}")
+    print_log(f"        DB Owner and Group: {fileinfo.owner()}:{fileinfo.group()}")
 
 # ------------------------------------------------------------------------------
 def set_reports_file_permissions():
@@ -139,7 +143,7 @@ def set_reports_file_permissions():
 #===============================================================================
 # Countdown
 #===============================================================================
-def start_arpscan_countdown():
+def check_pialert_countdown():
 
     openDB()
     if os.path.exists(STOPPIALERT):
@@ -149,26 +153,25 @@ def start_arpscan_countdown():
             # print("Timer in min: %s" % data)
 
         FILETIME = int(os.path.getctime(STOPPIALERT))
-
-        print(f"Timer Start: {time.ctime(FILETIME)}")
-        STOPTIME = FILETIME+data*60
-        print(f"Timer Ende : {time.ctime(STOPTIME)}")
-        print("----------------------------------------")
-
         ACTUALTIME = int(time.time())
+        STOPTIME = FILETIME+(data*60)-60
 
         if ( ACTUALTIME > STOPTIME ):
-           print("File will be deleted")
-           os.remove(STOPPIALERT)
-           os.system('/usr/bin/python3 ' + PIALERT_BACK_PATH + '/pialert_reporting_test.py reporting_stoptimer')
+            print("The file \"setting_stoppialert\" will be deleted")
+            os.remove(STOPPIALERT)
+            os.system('/usr/bin/python3 ' + PIALERT_BACK_PATH + '/pialert_reporting_test.py reporting_stoptimer')
 
-           sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+            sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
                            VALUES (?, 'c_002', 'cronjob', 'LogStr_0513', '', '') """, (startTime,))
 
-           sql_connection.commit()
-           scan_network()
+            sql_connection.commit()
         else:
-           print("Timer still running")
+            print(f"Timer Start: {time.ctime(FILETIME)}")
+            # Check 1min before countdown ends
+            # Delete stop file 1 min before countdown ends
+            print(f"Timer End : {time.ctime(STOPTIME+60)}")
+            print("----------------------------------------")
+            print("Timer still running")
 
     closeDB()
 
@@ -227,29 +230,131 @@ def check_internet_IP():
         print('\nSkipping Dynamic DNS update...')
 
     # Run automated Speedtest
+    print(f"\nAuto Speedtest...")
     if SPEEDTEST_TASK_ACTIVE :
         # Check if Speedtest is installed
         speedtest_binary = PIALERT_BACK_PATH + '/speedtest/speedtest'
         if os.path.exists(speedtest_binary):
-            print('\nRun daily Speedtest...')
-            run_speedtest_task()
+            print(f"    Crontab: {SPEEDTEST_TASK_CRON}")
+            run_speedtest_task(startTime, SPEEDTEST_TASK_CRON)
         else:
-            print('\nSkipping Speedtest... Not installed!')
+            print('    Skipping Speedtest... Not installed!')
     else :
-        print('\nSkipping Speedtest...')
+        print('    Skipping Speedtest... Not activated!')
 
     # Run automated UpdateCheck
+    print(f"\nAuto Update-Check...")
     if AUTO_UPDATE_CHECK :
-        if startTime.hour in [3, 9, 15, 21] and startTime.minute == 0:
-            checkNewVersion()
-        else:
-            print(f"\nAuto Update-Check...")
-            print(f"    Time to search for a new version has not yet been reached\n    (3, 9, 15 or 21 o'clock).")
+        print(f"    Crontab: {AUTO_UPDATE_CHECK_CRON}")
+        checkNewVersion(startTime, AUTO_UPDATE_CHECK_CRON)
     else:
         NewVersion_FrontendNotification(False,"")
-        print(f"\nAuto Update-Check...")
         print(f"    Skipping Auto Update-Check... Not activated!")
+
+    # Run automated Backup
+    print(f"\nAuto Backup...")
+    if AUTO_DB_BACKUP :
+        print(f"    Crontab: {AUTO_DB_BACKUP_CRON}")
+        if not os.path.exists(STATUS_FILE_BACKUP):
+            create_autobackup(startTime, AUTO_DB_BACKUP_CRON)
+        else:
+            print("    Backup function pending.")
+    else:
+        print(f"    Skipping Auto Backup... Not activated!")
+
     return 0
+
+# ------------------------------------------------------------------------------
+def create_autobackup(start_time, crontab_string):
+    # create status file
+    with open(STATUS_FILE_BACKUP, "w") as f:
+        f.write("")
+
+    # convert cron string
+    crontab_parts = crontab_string.split()
+    minute = parse_cron_part(crontab_parts[0], start_time.minute, 0, 60) # last value is the exit value, meaning the 1. invalid value
+    hour = parse_cron_part(crontab_parts[1], start_time.hour, 0, 60)
+    day_of_month = parse_cron_part(crontab_parts[2], start_time.day, 1, 32)
+    month = parse_cron_part(crontab_parts[3], start_time.month, 1, 13)
+    day_of_week = parse_cron_part(crontab_parts[4], start_time.weekday(), 0, 7)
+
+    # Compare cron
+    if (start_time.minute in minute) and (start_time.hour in hour) and (start_time.day in day_of_month) and \
+       (start_time.month in month) and (start_time.weekday() in day_of_week):
+
+        while os.path.exists(STATUS_FILE_SCAN):
+            if time.time() - start_time.timestamp() >= 300:  # Check whether 5 minutes have passed
+                #print("The status file has not been deleted after 5 minutes. The script is terminated.")
+                if os.path.exists(STATUS_FILE_BACKUP):
+                    os.remove(STATUS_FILE_BACKUP)
+                return
+            time.sleep(1)  # wait 1 second
+        else:
+            print("    Backup is started...")
+            BACKUP_FILE_DATE = str(start_time)
+            BACKUP_FILE = PIALERT_DB_PATH + "/pialertdb_" + BACKUP_FILE_DATE.replace("-", "").replace(" ", "_").replace(":", "") + ".zip"
+            time.sleep(20)  # wait 20s to finish the reporting
+
+            # Backup DB (no further checks)
+            sqlite_command = ['sqlite3', PIALERT_DB_PATH + '/pialert.db', '.backup ' + PIALERT_DB_PATH + '/temp/pialert.db']
+            subprocess.check_output(sqlite_command, universal_newlines=True)
+            subprocess.check_output(['zip', '-j', '-qq', BACKUP_FILE, PIALERT_PATH + '/db/temp/pialert.db'], universal_newlines=True)
+            time.sleep(4)
+            os.remove(PIALERT_DB_PATH + '/temp/pialert.db')
+            # Set Permissions for www-data (testing)
+            os.system("chown www-data:www-data " + BACKUP_FILE)
+            os.system("chmod 644 " + BACKUP_FILE)
+            # Cleanup
+            bak_files = glob.glob(os.path.join(PIALERT_DB_PATH, "pialertdb_20*.zip"))
+            bak_files.sort(key=os.path.getmtime, reverse=True)
+            for file in bak_files[AUTO_DB_BACKUP_KEEP:]:
+                os.remove(file)
+            print(f"    Cleanup DB Backups")
+
+            # Backup config file
+            BACKUP_CONF_FILE = PIALERT_PATH + "/config/pialert-" + BACKUP_FILE_DATE.replace("-", "").replace(" ", "_").replace(":", "") + ".bak"
+            subprocess.check_output('cp ' + PIALERT_PATH + '/config/pialert.conf ' + BACKUP_CONF_FILE, shell=True)
+            # Set Permissions for www-data (testing)
+            os.system("chown www-data:www-data " + BACKUP_CONF_FILE)
+            os.system("chmod 644 " + BACKUP_CONF_FILE)
+            # Cleanup
+            bak_files = glob.glob(os.path.join(PIALERT_PATH + "/config", "pialert-20*.bak"))
+            bak_files.sort(key=os.path.getmtime, reverse=True)
+            for file in bak_files[AUTO_DB_BACKUP_KEEP:]:
+                os.remove(file)
+            print(f"    Cleanup Config Backups")
+
+            openDB()
+            sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+                           VALUES (?, 'c_010', 'cronjob', 'LogStr_0011', '', '') """, (startTime,))
+            sql_connection.commit()
+            sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+                           VALUES (?, 'c_000', 'cronjob', 'LogStr_0007', '', '') """, (startTime,))
+            sql_connection.commit()
+            closeDB()
+
+    else:
+        print(f"    Backup function was NOT executed.")
+
+    # remove status file
+    if os.path.exists(STATUS_FILE_BACKUP):
+        os.remove(STATUS_FILE_BACKUP)
+
+# ------------------------------------------------------------------------------
+def parse_cron_part(cron_part, current_value, cron_min_value, cron_max_value):
+    if cron_part == '*':
+        return set(range(cron_min_value, cron_max_value))
+    elif '/' in cron_part:
+        step = int(cron_part.split('/')[1])
+        return set(range(cron_min_value, cron_max_value, step))
+    elif '-' in cron_part:
+        start, end = map(int, cron_part.split('-'))
+        return set(range(start, end + 1))
+    elif ',' in cron_part:
+        values = cron_part.split(',')
+        return set(int(value) for value in values)
+    else:
+        return {int(cron_part)}
 
 # ------------------------------------------------------------------------------
 def NewVersion_FrontendNotification(newVersion,update_notes):
@@ -267,94 +372,118 @@ def NewVersion_FrontendNotification(newVersion,update_notes):
             print("    Remove Frontend Notification.")
 
 # ------------------------------------------------------------------------------
-def checkNewVersion():
-    newVersion = False
-    currentversion = VERSION_DATE
+def checkNewVersion(start_time, crontab_string):
 
-    print(f"\nAuto Update-Check...")
-    print(f"    Current Version: {currentversion}")
+    # convert cron string
+    crontab_parts = crontab_string.split()
+    minute = parse_cron_part(crontab_parts[0], start_time.minute, 0, 60) # last value is the exit value, meaning the 1. invalid value
+    hour = parse_cron_part(crontab_parts[1], start_time.hour, 0, 60)
+    day_of_month = parse_cron_part(crontab_parts[2], start_time.day, 1, 32)
+    month = parse_cron_part(crontab_parts[3], start_time.month, 1, 13)
+    day_of_week = parse_cron_part(crontab_parts[4], start_time.weekday(), 0, 7)
 
-    UPDATE_CHECK_URL = "https://api.github.com/repos/leiweibau/Pi.Alert/commits?path=tar%2Fpialert_latest.tar&page=1&per_page=1"
+    # Compare cron
+    if (start_time.minute in minute) and (start_time.hour in hour) and (start_time.day in day_of_month) and \
+       (start_time.month in month) and (start_time.weekday() in day_of_week):
+
+        newVersion = False
+        currentversion = VERSION_DATE
+
+        print(f"    Current Version: {currentversion}")
+
+        UPDATE_CHECK_URL = "https://api.github.com/repos/leiweibau/Pi.Alert/commits?path=tar%2Fpialert_latest.tar&page=1&per_page=1"
         #UPDATE_CHECK_URL = "https://api.github.com/repos/leiweibau/Pi.Alert/commits?path=tar%2Fpialert_latest.tar&sha=next_update&page=1&per_page=1"
-    data = ""
-    update_notes = ""
-
-    try:
-        url = requests.get(UPDATE_CHECK_URL)
-        text = url.text
-        data = json.loads(text)
-    except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError) as e:
-        print("    ERROR: Couldn't check for new release.")
         data = ""
+        update_notes = ""
 
-    openDB()
-    if data != "" and len(data) > 0 and isinstance(data, list) and "commit" in data[0]:
-        dateTimeStr = data[0]['commit']['author']['date']
-        update_notes = data[0]['commit']['message']
-        date_obj = datetime.datetime.strptime(dateTimeStr, '%Y-%m-%dT%H:%M:%SZ')
-        latestversion = date_obj.strftime('%Y-%m-%d')
+        try:
+            url = requests.get(UPDATE_CHECK_URL)
+            text = url.text
+            data = json.loads(text)
+        except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError) as e:
+            print("    ERROR: Couldn't check for new release.")
+            data = ""
 
-        if latestversion > currentversion:
-            print(f"    New version {latestversion} is available!")
-            newVersion = True
-            NewVersion_FrontendNotification(newVersion,update_notes)
-            sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
-                           VALUES (?, 'c_060', 'cronjob', 'LogStr_0061', '', '') """, (startTime,))
+        openDB()
+        if data != "" and len(data) > 0 and isinstance(data, list) and "commit" in data[0]:
+            dateTimeStr = data[0]['commit']['author']['date']
+            update_notes = data[0]['commit']['message']
+            date_obj = datetime.datetime.strptime(dateTimeStr, '%Y-%m-%dT%H:%M:%SZ')
+            latestversion = date_obj.strftime('%Y-%m-%d')
+
+            if latestversion > currentversion:
+                print(f"    New version {latestversion} is available!")
+                newVersion = True
+                NewVersion_FrontendNotification(newVersion,update_notes)
+                sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+                               VALUES (?, 'c_060', 'cronjob', 'LogStr_0061', '', '') """, (startTime,))
+            else:
+                print("    Running the latest version.")
+                # newVersion is still FALSE
+                NewVersion_FrontendNotification(newVersion,update_notes)
+                sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+                               VALUES (?, 'c_060', 'cronjob', 'LogStr_0067', '', '') """, (startTime,))
         else:
-            print("    Running the latest version.")
+            # newVersion is still FALSE
             NewVersion_FrontendNotification(newVersion,update_notes)
             sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
-                           VALUES (?, 'c_060', 'cronjob', 'LogStr_0067', '', '') """, (startTime,))
+                   VALUES (?, 'c_060', 'cronjob', 'LogStr_0066', '', '') """, (startTime,))
+        closeDB()
+
     else:
-        NewVersion_FrontendNotification(newVersion,update_notes)
-        sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
-               VALUES (?, 'c_060', 'cronjob', 'LogStr_0066', '', '') """, (startTime,))
-    closeDB()
+        print(f"    Version Check function was NOT executed.")
 
 #-------------------------------------------------------------------------------
-def run_speedtest_task():
+def run_speedtest_task(start_time, crontab_string):
+    # convert cron string
+    crontab_parts = crontab_string.split()
+    minute = parse_cron_part(crontab_parts[0], start_time.minute, 0, 60) # last value is the exit value, meaning the 1. invalid value
+    hour = parse_cron_part(crontab_parts[1], start_time.hour, 0, 60)
+    day_of_month = parse_cron_part(crontab_parts[2], start_time.day, 1, 32)
+    month = parse_cron_part(crontab_parts[3], start_time.month, 1, 13)
+    day_of_week = parse_cron_part(crontab_parts[4], start_time.weekday(), 0, 7)
+
     # Define the command and arguments
     command = [PIALERT_BACK_PATH + "/speedtest/speedtest", "--accept-license", "--accept-gdpr", "-p", "no", "-f", "json"]
-    if len(SPEEDTEST_TASK_HOUR) != 0:
+    # Compare cron
+    if (start_time.minute in minute) and (start_time.hour in hour) and (start_time.day in day_of_month) and \
+       (start_time.month in month) and (start_time.weekday() in day_of_week):
         openDB()
-        for value in SPEEDTEST_TASK_HOUR:
-            if value == startTime.hour and startTime.minute == 0:
-                try:
-                    output = subprocess.check_output(command, text=True)
-                    # Parse the JSON output
-                    result = json.loads(output)
-                    # Access the speed test results
-                    speedtest_isp = result['isp']
-                    speedtest_server = result['server']['name'] + ' (' + result['server']['location'] + ') (' + result['server']['host'] + ')'
-                    speedtest_ping = result['ping']['latency']
-                    speedtest_down = round(result['download']['bandwidth'] / 125000, 2)
-                    speedtest_up = round(result['upload']['bandwidth'] / 125000, 2)
-                    # Build output
-                    speedtest_output = ""
-                    speedtest_output += f"    ISP:            {speedtest_isp}\n"
-                    speedtest_output += f"    Server:         {speedtest_server}\n\n"
-                    speedtest_output += f"    Ping:           {speedtest_ping} ms\n"
-                    speedtest_output += f"    Download Speed: {speedtest_down} Mbps\n"
-                    speedtest_output += f"    Upload Speed:   {speedtest_up} Mbps\n"
-                    print(speedtest_output)
-                    # Prepare db string
-                    speedtest_db_output = speedtest_output.replace("\n", "<br>")
-                    # Insert in db
-                    sql.execute ("""INSERT INTO Tools_Speedtest_History (speed_date, speed_isp, speed_server, speed_ping, speed_down, speed_up)
-                                    VALUES (?, ?, ?, ?, ?, ?) """, (startTime, speedtest_isp, speedtest_server, speedtest_ping, speedtest_down, speedtest_up))
-                    # Logging
-                    sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
-                                    VALUES (?, 'c_002', 'cronjob', 'LogStr_0255', '', ?) """, (startTime, speedtest_db_output))
-                    sql_connection.commit()
-                except subprocess.CalledProcessError as e:
-                    print(f"Error running 'speedtest': {e}")
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing JSON output: {e}")
-            else :
-                print (f"    Planned time ({value}:00) not reached yet")
+        try:
+            output = subprocess.check_output(command, text=True)
+            # Parse the JSON output
+            result = json.loads(output)
+            # Access the speed test results
+            speedtest_isp = result['isp']
+            speedtest_server = result['server']['name'] + ' (' + result['server']['location'] + ') (' + result['server']['host'] + ')'
+            speedtest_ping = result['ping']['latency']
+            speedtest_down = round(result['download']['bandwidth'] / 125000, 2)
+            speedtest_up = round(result['upload']['bandwidth'] / 125000, 2)
+            # Build output
+            speedtest_output = ""
+            speedtest_output += f"    ISP:            {speedtest_isp}\n"
+            speedtest_output += f"    Server:         {speedtest_server}\n\n"
+            speedtest_output += f"    Ping:           {speedtest_ping} ms\n"
+            speedtest_output += f"    Download Speed: {speedtest_down} Mbps\n"
+            speedtest_output += f"    Upload Speed:   {speedtest_up} Mbps\n"
+            print(speedtest_output)
+            # Prepare db string
+            speedtest_db_output = speedtest_output.replace("\n", "<br>")
+            # Insert in db
+            sql.execute ("""INSERT INTO Tools_Speedtest_History (speed_date, speed_isp, speed_server, speed_ping, speed_down, speed_up)
+                            VALUES (?, ?, ?, ?, ?, ?) """, (startTime, speedtest_isp, speedtest_server, speedtest_ping, speedtest_down, speedtest_up))
+            # Logging
+            sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+                            VALUES (?, 'c_002', 'cronjob', 'LogStr_0255', '', ?) """, (startTime, speedtest_db_output))
+            sql_connection.commit()
+        except subprocess.CalledProcessError as e:
+            print(f"Error running 'speedtest': {e}")
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON output: {e}")
+
         closeDB()
     else:
-        print("    The Parameter SPEEDTEST_TASK_HOUR is not set.")
+        print("    Speedtest function was NOT executed.")
     return 0
 
 #-------------------------------------------------------------------------------
@@ -435,21 +564,40 @@ def cleanup_database():
     except NameError: # variable not defined, use a default
         strdaystokeepEV = str(90) # 90 days
     print('    Online_History, up to the lastest '+strdaystokeepOH+' days...')
-    sql.execute ("DELETE FROM Online_History WHERE Scan_Date <= date('now', '-"+strdaystokeepOH+" day')")
+    sql.execute("DELETE FROM Online_History WHERE Scan_Date <= date('now', '-"+strdaystokeepOH+" day')")
     print('    Events, up to the lastest '+strdaystokeepEV+' days...')
-    sql.execute ("DELETE FROM Events WHERE eve_DateTime <= date('now', '-"+strdaystokeepEV+" day')")
+    sql.execute("DELETE FROM Events WHERE eve_DateTime <= date('now', '-"+strdaystokeepEV+" day')")
+    print('        ...Fixing missing or VOIDED events')
+    RepairedEventTime = startTime - timedelta(days=int(strdaystokeepEV))
+    sql.execute("DELETE FROM Events WHERE eve_EventType LIKE 'VOIDED%'")
+    sql.execute("SELECT dev_MAC, dev_LastIP FROM Devices WHERE dev_PresentLastScan = 1")
+    repair_devices = sql.fetchall()
+    for device in repair_devices:
+        dev_mac, dev_lastip = device
+        
+        sql.execute("SELECT 1 FROM Events WHERE eve_MAC = ? AND eve_EventType='Connected'", (dev_mac,))
+        event_exists = sql.fetchone()
+        
+        if not event_exists:
+            sql.execute(
+                "INSERT INTO Events (eve_MAC, eve_EventType, eve_IP, eve_DateTime, eve_PendingAlertEmail) VALUES (?, ?, ?, ?, ?)",
+                (dev_mac, "Connected", dev_lastip, str(RepairedEventTime), 0)
+            )
+
     print('    Services_Events, up to the lastest '+strdaystokeepOH+' days...')
-    sql.execute ("DELETE FROM Services_Events WHERE moneve_DateTime <= date('now', '-"+strdaystokeepOH+" day')")
+    sql.execute("DELETE FROM Services_Events WHERE moneve_DateTime <= date('now', '-"+strdaystokeepOH+" day')")
     print('    ICMP_Mon_Events, up to the lastest '+strdaystokeepOH+' days...')
-    sql.execute ("DELETE FROM ICMP_Mon_Events WHERE icmpeve_DateTime <= date('now', '-"+strdaystokeepOH+" day')")
+    sql.execute("DELETE FROM ICMP_Mon_Events WHERE icmpeve_DateTime <= date('now', '-"+strdaystokeepOH+" day')")
     print('    Trim Journal to the lastest 1000 entries')
-    sql.execute ("DELETE FROM pialert_journal WHERE journal_id NOT IN (SELECT journal_id FROM pialert_journal ORDER BY journal_id DESC LIMIT 1000) AND (SELECT COUNT(*) FROM pialert_journal) > 1000")
+    sql.execute("DELETE FROM pialert_journal WHERE journal_id NOT IN (SELECT journal_id FROM pialert_journal ORDER BY journal_id DESC LIMIT 1000) AND (SELECT COUNT(*) FROM pialert_journal) > 1000")
     print('    Speedtest_History, up to the lastest '+strdaystokeepOH+' days...')
-    sql.execute ("DELETE FROM Tools_Speedtest_History WHERE speed_date <= date('now', '-"+strdaystokeepOH+" day')")
+    sql.execute("DELETE FROM Tools_Speedtest_History WHERE speed_date <= date('now', '-"+strdaystokeepOH+" day')")
+    print('    Nmap Scan Results, up to the lastest '+strdaystokeepOH+' days...')
+    sql.execute("DELETE FROM Tools_Nmap_ManScan WHERE scan_date <= date('now', '-"+strdaystokeepOH+" day')")
     print('    Shrink Database...')
-    sql.execute ("VACUUM;")
-    sql.execute ("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
-                    VALUES (?, 'c_010', 'cronjob', 'LogStr_0101', '', '') """, (startTime,))
+    sql.execute("VACUUM;")
+    sql.execute("""INSERT INTO pialert_journal (Journal_DateTime, LogClass, Trigger, LogString, Hash, Additional_Info)
+                    VALUES (?, 'c_010', 'cronjob', 'LogStr_0101', '', 'Cleanup') """, (startTime,))
     closeDB()
     return 0
 
@@ -538,6 +686,10 @@ def query_MAC_vendor(pMAC):
 # SCAN NETWORK
 #===============================================================================
 def scan_network():
+    # Create scan status file
+    with open(STATUS_FILE_SCAN, "w") as f:
+        f.write("")
+
     # Header
     print('Scan Devices')
     print('    Timestamp:', startTime )
@@ -556,7 +708,7 @@ def scan_network():
 
     # ScanCycle data        
     cycle_interval  = scanCycle_data['cic_EveryXmin']
-    arpscan_retries = scanCycle_data['cic_arpscanCycles']
+    #arpscan_retries = scanCycle_data['cic_arpscanCycles']
     # arp-scan command
     print('\nScanning...')
     print('    arp-scan Method...')
@@ -586,6 +738,9 @@ def scan_network():
     openDB()
     print_log ('UniFi copy starts...')
     read_unifi_clients()
+    # Import Satellites Scans
+    print('    Satellite Import...')
+    get_satellite_scans()
     # Load current scan data 1/2
     print('\nProcessing scan results...')
     # Load current scan data 2/2
@@ -919,6 +1074,153 @@ def read_DHCP_leases():
                      """, data)
 
 #-------------------------------------------------------------------------------
+def get_satellite_scans():
+    sql.execute ("DELETE FROM Satellites_Network")
+    if not SATELLITES_ACTIVE:
+        print('        ...Skipped')
+        return
+
+    print_log('        ...Mode detection')
+    get_satellites = "SELECT sat_password, sat_token FROM Satellites"
+    sql.execute(get_satellites)
+
+    rows = sql.fetchall()
+    satellite_list = {}
+    for row in rows:
+        sat_password, sat_token = row
+        satellite_list[sat_token] = sat_password
+
+    if SATELLITE_PROXY_MODE:
+        print_log('        ...Proxy Mode')
+        get_satellite_proxy_scans(satellite_list)
+        decrypt_satellite_proxy_scans(satellite_list)
+
+    process_satellites(satellite_list)
+    cleanup_satellite_scans(satellite_list)
+
+#-------------------------------------------------------------------------------
+def process_satellites(satellite_list):
+    print("        ...Processing satellite scans")
+
+    WORKING_DIR = PIALERT_PATH + "/front/satellites/"
+    for token, password in satellite_list.items():
+        satellite_scanresult = WORKING_DIR+token+".json"
+        if os.path.exists(satellite_scanresult):
+            with open(satellite_scanresult, 'r') as file:
+                data = json.load(file)
+
+                try:
+                    satellite_meta_data = data['satellite_meta_data'][0]
+                    satellite_version = satellite_meta_data.get('satellite_version', "-")
+                except (KeyError, IndexError, TypeError):
+                    satellite_version = "-"
+
+                try:
+                    satellite_scan_config = data['satellite_scan_config'][0]
+                    scan_arp = 1 if satellite_scan_config.get('scan_arp', False) else 0
+                    scan_fritzbox = 1 if satellite_scan_config.get('scan_fritzbox', False) else 0
+                    scan_mikrotik = 1 if satellite_scan_config.get('scan_mikrotik', False) else 0
+                    scan_unifi = 1 if satellite_scan_config.get('scan_unifi', False) else 0
+                except (KeyError, IndexError, TypeError):
+                    scan_arp = 0
+                    scan_fritzbox = 0
+                    scan_mikrotik = 0
+                    scan_unifi = 0
+
+                for result in data['scan_results']:
+                    if result['cur_ScanMethod'] != 'Internet Check':
+                        sat_MAC = result['cur_MAC']
+                        sat_IP = result['cur_IP']
+                        sat_hostname = result['cur_hostname']
+                        sat_Vendor = result['cur_Vendor']
+                        sat_ScanMethod = result['cur_ScanMethod']
+                        sat_ScanSource = result['cur_SatelliteID']                
+
+                        sql.execute("""SELECT 1 FROM Satellites_Network WHERE Sat_MAC = ?""", (sat_MAC,))
+                        if sql.fetchone() is None:
+                            sql.execute("""INSERT INTO Satellites_Network (
+                                              Sat_MAC, Sat_IP, Sat_Name, Sat_Vendor, Sat_ScanMethod, Sat_Token)
+                                              VALUES (?, ?, ?, ?, ?, ?)""",
+                                              (sat_MAC, sat_IP, sat_hostname, sat_Vendor, sat_ScanMethod, sat_ScanSource))
+
+                satUpdateTime = datetime.datetime.now()
+                satUpdateTime = satUpdateTime.replace(microsecond=0)
+                sql.execute("""UPDATE Satellites 
+                                SET 
+                                    sat_lastupdate = ?, 
+                                    sat_remote_version = ?,
+                                    sat_conf_scan_arp = ?,
+                                    sat_conf_scan_fritzbox = ?,
+                                    sat_conf_scan_mikrotik = ?,
+                                    sat_conf_scan_unifi = ?
+                                WHERE sat_token = ?""", (satUpdateTime, satellite_version, scan_arp, scan_fritzbox, scan_mikrotik, scan_unifi, token))
+
+#-------------------------------------------------------------------------------
+def get_satellite_proxy_scans(satellite_list):
+    # print('        ...Get data from proxy')
+
+    SAVE_DIR = PIALERT_PATH + "/front/satellites/"
+    
+    received_results = 0
+
+    for token, password in satellite_list.items():
+        url = f"{SATELLITE_PROXY_URL}?mode=get&token={token}"
+        try:
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            response = requests.get(url, verify=False)  # Accept insecure SSL connections
+            if response.status_code == 200:
+                received_results += 1
+                file_name = f"encrypted_{token}"
+                save_path = os.path.join(SAVE_DIR, file_name)
+                with open(save_path, 'wb') as file:
+                    file.write(response.content)
+
+                # update satellite db Last Update
+        except requests.exceptions.SSLError:
+            pass
+        except requests.RequestException as e:
+            # print(f"        Download failed for token {token}")
+            pass
+
+    print(f"        ...Get data from proxy ({received_results})")
+    # get data from url to local storage
+
+#-------------------------------------------------------------------------------
+def decrypt_satellite_proxy_scans(satellite_list):
+    print_log('        ...decrypt data from proxy')
+    WORKING_DIR = PIALERT_PATH + "/front/satellites/"
+
+    for token, password in satellite_list.items():
+        
+        if os.path.exists(WORKING_DIR+"encrypted_"+token):
+            openssl_command = [
+                "openssl", "enc", "-d", "-aes-256-cbc", "-in", WORKING_DIR+"encrypted_"+token,
+                "-pbkdf2", "-pass", "pass:{}".format(password)
+            ]
+
+            with subprocess.Popen(openssl_command, stdout=subprocess.PIPE) as proc:
+                decrypted_data = proc.stdout.read()
+
+            decrypted_dict = json.loads(decrypted_data.decode('utf-8'))
+
+            with open(WORKING_DIR+token+'.json', 'w') as outfile:
+                json.dump(decrypted_dict, outfile, indent=4)
+
+            os.remove(WORKING_DIR+"encrypted_"+token) 
+
+#-------------------------------------------------------------------------------
+def cleanup_satellite_scans(satellite_list):
+    print_log('        ...cleanup satellite scans')
+    WORKING_DIR = PIALERT_PATH + "/front/satellites/"
+
+    for token, password in satellite_list.items():
+        if os.path.exists(WORKING_DIR+"encrypted_"+token):
+            os.remove(WORKING_DIR+"encrypted_"+token)
+
+        if os.path.exists(WORKING_DIR+token+".json"):
+            os.remove(WORKING_DIR+token+".json") 
+
+#-------------------------------------------------------------------------------
 def save_scanned_devices(p_arpscan_devices, p_cycle_interval):
     # Delete previous scan data
     sql.execute ("DELETE FROM CurrentScan WHERE cur_ScanCycle = ?",
@@ -968,6 +1270,15 @@ def save_scanned_devices(p_arpscan_devices, p_cycle_interval):
                     FROM Unifi_Network
                     WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
                                       WHERE cur_MAC = UF_MAC )""",
+                    (cycle) )
+
+    # Insert Satellite devices
+    sql.execute ("""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, 
+                        cur_IP, cur_Vendor, cur_ScanMethod, cur_ScanSource)
+                    SELECT ?, Sat_MAC, Sat_IP, Sat_Vendor, Sat_ScanMethod, Sat_Token
+                    FROM Satellites_Network
+                    WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
+                                      WHERE cur_MAC = Sat_MAC )""",
                     (cycle) )
 
     # Check Internet connectivity
@@ -1153,7 +1464,8 @@ def create_new_devices():
                     WHERE cur_ScanCycle = ? 
                       AND NOT EXISTS (SELECT 1 FROM Devices
                                       WHERE dev_MAC = cur_MAC) """,
-                    (startTime, startTime, cycle) ) 
+                    (startTime, startTime, cycle) )
+
 
     # Pi-hole - Insert events for new devices
     print_log ('New devices - 3 Pi-hole Events')
@@ -1269,14 +1581,27 @@ def insert_events():
                       AND dev_ScanCycle = ?
                       AND dev_LastIP <> cur_IP """,
                     (startTime, cycle) )
+
+    # Inter-Satellite movement
+    print_log ('Events 5 - Inter-Satellite movement')
+    sql.execute("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+                                       eve_EventType, eve_AdditionalInfo,
+                                       eve_PendingAlertEmail)
+                   SELECT cur_MAC, cur_IP, ?, 'Inter-Satellite movement', 'previous Satellite: ' || COALESCE(sat_name, 'local'), dev_AlertEvents
+                   FROM Devices
+                   JOIN CurrentScan ON dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
+                   LEFT JOIN Satellites ON (dev_ScanSource = sat_token AND dev_ScanSource != 'local')
+                   WHERE dev_ScanSource != cur_ScanSource
+                     AND dev_ScanCycle = ?""",
+                (startTime, cycle))
+
     print_log ('Events end')
 
 #-------------------------------------------------------------------------------
 def update_devices_data_from_scan():
     # Update Last Connection
     print_log ('Update devices - 1 Last Connection')
-    sql.execute ("""UPDATE Devices SET dev_LastConnection = ?,
-                        dev_PresentLastScan = 1
+    sql.execute("""UPDATE Devices SET dev_LastConnection = ?, dev_PresentLastScan = 1
                     WHERE dev_ScanCycle = ?
                       AND dev_PresentLastScan = 0
                       AND EXISTS (SELECT 1 FROM CurrentScan 
@@ -1331,7 +1656,7 @@ def update_devices_data_from_scan():
                       AND EXISTS (SELECT 1 FROM DHCP_Leases
                                   WHERE DHCP_MAC = dev_MAC)""")
 
-    # Fritzbox Leases - Update (unknown) Name
+    # Fritzbox - Update (unknown) Name
     sql.execute ("""UPDATE Devices
                     SET dev_Name = (SELECT FB_Name FROM Fritzbox_Network
                                     WHERE FB_MAC = dev_MAC)
@@ -1343,7 +1668,7 @@ def update_devices_data_from_scan():
                                     AND FB_NAME IS NOT NULL
                                     AND FB_NAME <> '') """)
 
-    # Mikrotik Leases - Update (unknown) Name
+    # Mikrotik - Update (unknown) Name
     sql.execute ("""UPDATE Devices
                     SET dev_Name = (SELECT MT_Name FROM Mikrotik_Network
                                     WHERE MT_MAC = dev_MAC)
@@ -1355,7 +1680,7 @@ def update_devices_data_from_scan():
                                     AND MT_NAME IS NOT NULL
                                     AND MT_NAME <> '') """)
 
-    # Unifi Leases - Update (unknown) Name
+    # Unifi - Update (unknown) Name
     sql.execute ("""UPDATE Devices
                     SET dev_Name = (SELECT UF_Name FROM Unifi_Network
                                     WHERE UF_MAC = dev_MAC)
@@ -1366,6 +1691,18 @@ def update_devices_data_from_scan():
                                   WHERE UF_MAC = dev_MAC
                                     AND UF_Name IS NOT NULL
                                     AND UF_Name <> '') """)
+
+    # Satellite - Update (unknown) Name
+    sql.execute ("""UPDATE Devices
+                    SET dev_Name = (SELECT Sat_Name FROM Satellites_Network
+                                    WHERE Sat_MAC = dev_MAC)
+                    WHERE (dev_Name = "(unknown)"
+                           OR dev_Name = ""
+                           OR dev_Name IS NULL)
+                      AND EXISTS (SELECT 1 FROM Satellites_Network
+                                  WHERE Sat_MAC = dev_MAC
+                                    AND Sat_NAME IS NOT NULL
+                                    AND Sat_NAME <> '') """)
 
     # DHCP Leases - Vendor
     print_log ('Update devices - 5 Vendor')
@@ -1389,6 +1726,17 @@ def update_devices_data_from_scan():
                     WHERE dev_FirstConnection = ?
                       AND UPPER(dev_Vendor) LIKE '%APPLE%' """,
                 (startTime,) )
+
+    # Update inter-satellite movements
+    print_log ('Update devices - 7 inter-satellite movements')
+    sql.execute("""UPDATE Devices 
+                   SET dev_ScanSource = (SELECT cur_ScanSource 
+                                         FROM CurrentScan 
+                                         WHERE cur_MAC = dev_MAC)
+                   WHERE EXISTS (SELECT 1 
+                                 FROM CurrentScan 
+                                 WHERE cur_MAC = dev_MAC)""")
+
 
     print_log ('Update devices end')
 
@@ -1664,7 +2012,17 @@ def rogue_dhcp_detection():
     for _ in range(dhcp_probes):
         stream = os.popen('nmap --script broadcast-dhcp-discover 2>/dev/null | grep "Server Identifier" | awk \'{ print $4 }\'')
         output = stream.read()
-        dhcp_server_list.append(output.replace("\n", ""))
+        # dhcp_server_list.append(output.replace("\n", ""))
+
+        multiple_dhcp_ips = output.split("\n")
+
+        if multiple_dhcp_ips:
+            dhcp_server_list.append(multiple_dhcp_ips[0])
+
+        for multiple_dhcp in multiple_dhcp_ips[1:]:
+            # Condition to prevent empty entries in the database
+            if len(multiple_dhcp) >= 7:
+                dhcp_server_list.append(multiple_dhcp)
 
     for i in range(len(dhcp_server_list)):
         # Insert list in database
@@ -1672,8 +2030,10 @@ def rogue_dhcp_detection():
                          (scan_num, dhcp_server) 
                          VALUES (?, ?);"""
 
-        table_data = (i, dhcp_server_list[i])
-        sql.execute(sqlite_insert, table_data)
+        # Redundant condition to prevent empty entries in the database
+        if len(dhcp_server_list[i]) >= 7:
+            table_data = (i, dhcp_server_list[i])
+            sql.execute(sqlite_insert, table_data)
     
     sql_connection.commit()
 
@@ -2226,7 +2586,7 @@ def icmp_save_scandata(data):
 
 # -----------------------------------------------------------------------------
 def get_icmphost_list():
-    sql.execute("SELECT icmp_ip FROM ICMP_Mon")
+    sql.execute("SELECT icmp_ip FROM ICMP_Mon  WHERE icmp_Archived = 0 ")
     rows = sql.fetchall()
 
     return [row[0] for row in rows]
@@ -2314,9 +2674,13 @@ def get_icmphost_name(_icmp_ip):
 
 # -----------------------------------------------------------------------------
 def calc_activity_history_icmp(History_Online_Devices, History_Offline_Devices):
-    History_ALL_Devices = History_Online_Devices + History_Offline_Devices
-    sql.execute ("INSERT INTO Online_History (Scan_Date, Online_Devices, Down_Devices, All_Devices, Data_Source) "+
-                 "VALUES ( ?, ?, ?, ?, ?)", (startTime, History_Online_Devices, History_Offline_Devices, History_ALL_Devices, 'icmp_scan') )
+    sql.execute("SELECT * FROM ICMP_Mon WHERE icmp_Archived = 1")
+    Querry_Archived_Devices = sql.fetchall()
+    History_Archived_Devices  = len(Querry_Archived_Devices)
+
+    History_ALL_Devices = History_Online_Devices + History_Offline_Devices + History_Archived_Devices
+    sql.execute ("INSERT INTO Online_History (Scan_Date, Online_Devices, Down_Devices, All_Devices, Archived_Devices, Data_Source) "+
+                 "VALUES ( ?, ?, ?, ?, ?, ?)", (startTime, History_Online_Devices, History_Offline_Devices, History_ALL_Devices, History_Archived_Devices, 'icmp_scan') )
     sql_connection.commit()
 
 # -----------------------------------------------------------------------------
@@ -2421,10 +2785,20 @@ def icmphost_monitoring_notification():
 def email_reporting():
     global mail_text
     global mail_html
-    
+
     # Reporting section
     print('\nReporting...')
     openDB()
+
+    sql.execute("""SELECT sat_name, sat_token FROM Satellites""")
+    rows = sql.fetchall()
+
+    # Dictionary erstellen
+    satellite_dict = {}
+    for row in rows:
+        sat_name = row[0]
+        sat_token = row[1]
+        satellite_dict[sat_token] = sat_name
 
     # Disable reporting on events for devices where reporting is disabled based on the MAC address
     sql.execute ("""UPDATE Events SET eve_PendingAlertEmail = 0
@@ -2459,9 +2833,9 @@ def email_reporting():
     mail_html_Internet = ''
     text_line_template = '{} \t{}\t{}\t{}\n'
     html_line_template = '<tr>\n'+ \
-        '  <td> <a href="{}{}"> {} </a> </td>\n  <td> {} </td>\n'+ \
-        '  <td style="font-size: 24px; color:#D02020"> {} </td>\n'+ \
-        '  <td> {} </td>\n</tr>\n'
+        '  <td> <a href="{}{}"> {} </a> </td><td> {} </td>'+ \
+        '  <td style="font-size: 24px; color:#D02020"> {} </td>'+ \
+        '  <td> {} </td></tr>\n'
 
     sql.execute ("""SELECT * FROM Events
                     WHERE eve_PendingAlertEmail = 1 AND eve_MAC = 'Internet'
@@ -2484,10 +2858,10 @@ def email_reporting():
     mail_section_new_devices = False
     mail_text_new_devices = ''
     mail_html_new_devices = ''
-    text_line_template = '{}\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t{}\n\n'
+    text_line_template = '{}\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t{}\n\t{}\t{}\n\n'
     html_line_template    = '<tr>\n'+ \
-        '  <td> <a href="{}{}"> {} </a> </td>\n  <td> {} </td>\n'+\
-        '  <td> {} </td>\n  <td> {} </td>\n  <td> {} </td>\n</tr>\n'
+        '  <td> <a href="{}{}"> {} </a></td><td> {} </td>'+\
+        '  <td> {} </td><td> {} </td><td> {} </td><td> {} </td></tr>\n'
     
     sql.execute ("""SELECT * FROM Events_Devices
                     WHERE eve_PendingAlertEmail = 1
@@ -2495,14 +2869,28 @@ def email_reporting():
                     ORDER BY eve_DateTime""")
 
     for eventAlert in sql :
+        # Get currentvSatellite Name
+        dev_scan_source = eventAlert["dev_ScanSource"]
+        if dev_scan_source != 'local':
+            if dev_scan_source in satellite_dict:
+                sat_name = satellite_dict[dev_scan_source]
+            else:
+                sat_name = dev_scan_source
+        else:
+            sat_name = 'local'
+
         mail_section_new_devices = True
         mail_text_new_devices += text_line_template.format (
-            'Name: ', eventAlert['dev_Name'], 'MAC: ', eventAlert['eve_MAC'], 'IP: ', eventAlert['eve_IP'],
-            'Time: ', eventAlert['eve_DateTime'], 'More Info: ', eventAlert['eve_AdditionalInfo'])
+            'Name: ', eventAlert['dev_Name'],
+            'MAC: ', eventAlert['eve_MAC'],
+            'IP: ', eventAlert['eve_IP'],
+            'Time: ', eventAlert['eve_DateTime'],
+            'Source: ', sat_name,
+            'More Info: ', eventAlert['eve_AdditionalInfo'])
         mail_html_new_devices += html_line_template.format (
             REPORT_DEVICE_URL, eventAlert['eve_MAC'], eventAlert['eve_MAC'],
             eventAlert['eve_DateTime'], eventAlert['eve_IP'],
-            eventAlert['dev_Name'], eventAlert['eve_AdditionalInfo'])
+            eventAlert['dev_Name'], eventAlert['eve_AdditionalInfo'], sat_name)
 
     format_report_section (mail_section_new_devices, 'SECTION_NEW_DEVICES',
         'TABLE_NEW_DEVICES', mail_text_new_devices, mail_html_new_devices)
@@ -2511,10 +2899,10 @@ def email_reporting():
     mail_section_devices_down = False
     mail_text_devices_down = ''
     mail_html_devices_down = ''
-    text_line_template = '{}\t{}\n\t{}\t{}\n\t{}\t{}\n\t{}\t{}\n\n'
+    text_line_template = '{}\t{}\n\t{}\t{}\n\t{}\t{}\n\t{}\t{}\n\t{}\t{}\n\n'
     html_line_template     = '<tr>\n'+ \
-        '  <td> <a href="{}{}"> {} </a>  </td>\n  <td> {} </td>\n'+ \
-        '  <td> {} </td>\n  <td> {} </td>\n</tr>\n'
+        '  <td> <a href="{}{}"> {} </a>  </td><td> {} </td>'+ \
+        '  <td> {} </td><td> {} </td><td> {} </td></tr>\n'
 
     sql.execute ("""SELECT * FROM Events_Devices
                     WHERE eve_PendingAlertEmail = 1
@@ -2522,14 +2910,27 @@ def email_reporting():
                     ORDER BY eve_DateTime""")
 
     for eventAlert in sql :
+        # Get currentvSatellite Name
+        dev_scan_source = eventAlert["dev_ScanSource"]
+        if dev_scan_source != 'local':
+            if dev_scan_source in satellite_dict:
+                sat_name = satellite_dict[dev_scan_source]
+            else:
+                sat_name = dev_scan_source
+        else:
+            sat_name = 'local'
+
         mail_section_devices_down = True
         mail_text_devices_down += text_line_template.format (
-            'Name: ', eventAlert['dev_Name'], 'MAC: ', eventAlert['eve_MAC'],
-            'Time: ', eventAlert['eve_DateTime'],'IP: ', eventAlert['eve_IP'])
+            'Name: ', eventAlert['dev_Name'],
+            'MAC: ', eventAlert['eve_MAC'],
+            'Time: ', eventAlert['eve_DateTime'],
+            'Source: ', sat_name,
+            'IP: ', eventAlert['eve_IP'])
         mail_html_devices_down += html_line_template.format (
             REPORT_DEVICE_URL, eventAlert['eve_MAC'], eventAlert['eve_MAC'],
             eventAlert['eve_DateTime'], eventAlert['eve_IP'],
-            eventAlert['dev_Name'])
+            eventAlert['dev_Name'], sat_name)
 
     format_report_section (mail_section_devices_down, 'SECTION_DEVICES_DOWN',
         'TABLE_DEVICES_DOWN', mail_text_devices_down, mail_html_devices_down)
@@ -2538,28 +2939,41 @@ def email_reporting():
     mail_section_events = False
     mail_text_events   = ''
     mail_html_events   = ''
-    text_line_template = '{}\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t{}\n\n'
-    html_line_template = '<tr>\n  <td>'+ \
-            ' <a href="{}{}"> {} </a> </td>\n  <td> {} </td>\n'+ \
-            '  <td> {} </td>\n  <td> {} </td>\n  <td> {} </td>\n'+ \
-            '  <td> {} </td>\n</tr>\n'
+    text_line_template = '{}\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t\t{}\n\t{}\t{}\n\t{}\t{}\n\n'
+    html_line_template = '<tr>\n '+ \
+            '  <td><a href="{}{}"> {} </a></td><td> {} </td>'+ \
+            '  <td> {} </td><td> {} </td><td> {} </td>'+ \
+            '  <td> {} </td><td> {} </td></tr>\n'
 
     sql.execute ("""SELECT * FROM Events_Devices
                     WHERE eve_PendingAlertEmail = 1
-                      AND eve_EventType IN ('Connected','Disconnected',
-                          'IP Changed')
+                      AND eve_EventType IN ('Connected', 'Disconnected', 'IP Changed', 'Inter-Satellite movement')
                     ORDER BY eve_DateTime""")
 
     for eventAlert in sql :
+        # Get currentvSatellite Name
+        dev_scan_source = eventAlert["dev_ScanSource"]
+        if dev_scan_source != 'local':
+            if dev_scan_source in satellite_dict:
+                sat_name = satellite_dict[dev_scan_source]
+            else:
+                sat_name = dev_scan_source
+        else:
+            sat_name = 'local'
+
         mail_section_events = True
         mail_text_events += text_line_template.format (
-            'Name: ', eventAlert['dev_Name'], 'MAC: ', eventAlert['eve_MAC'], 
-            'IP: ', eventAlert['eve_IP'],'Time: ', eventAlert['eve_DateTime'],
-            'Event: ', eventAlert['eve_EventType'],'More Info: ', eventAlert['eve_AdditionalInfo'])
+            'Name: ', eventAlert['dev_Name'], 
+            'MAC: ', eventAlert['eve_MAC'], 
+            'IP: ', eventAlert['eve_IP'],
+            'Time: ', eventAlert['eve_DateTime'],
+            'Event: ', eventAlert['eve_EventType'],
+            'Source: ', sat_name,
+            'More Info: ', eventAlert['eve_AdditionalInfo'])
         mail_html_events += html_line_template.format (
             REPORT_DEVICE_URL, eventAlert['eve_MAC'], eventAlert['eve_MAC'],
             eventAlert['eve_DateTime'], eventAlert['eve_IP'],
-            eventAlert['eve_EventType'], eventAlert['dev_Name'],
+            eventAlert['eve_EventType'], eventAlert['dev_Name'], sat_name,
             eventAlert['eve_AdditionalInfo'])
 
     format_report_section (mail_section_events, 'SECTION_EVENTS',
@@ -2614,6 +3028,11 @@ def send_pushsafer(_Text):
     except NameError:
         PUSHSAFER_PRIO = 0
 
+    try:
+        notification_sound = PUSHSAFER_SOUND
+    except NameError:
+        notification_sound = 22
+
     # Remove one linebrake between "Server" and the headline of the event type
     _pushsafer_Text = _Text.replace('\n\n\n', '\n\n')
     # extract event type headline to use it in the notification headline
@@ -2623,7 +3042,7 @@ def send_pushsafer(_Text):
     post_fields = {
         "t" : 'Pi.Alert Message - '+subheadline,
         "m" : _pushsafer_Text,
-        "s" : 22,
+        "s" : notification_sound,
         "v" : 3,
         "i" : 148,
         "c" : '#ef7f7f',
@@ -2650,6 +3069,11 @@ def send_pushover (_Text):
     except NameError:
         PUSHOVER_PRIO = 0
 
+    try:
+        notification_sound = PUSHOVER_SOUND
+    except NameError:
+        notification_sound = 'siren'
+
     url = 'https://api.pushover.net/1/messages.json'
     post_fields = {
         "token": PUSHOVER_TOKEN,
@@ -2657,6 +3081,7 @@ def send_pushover (_Text):
         "title" : 'Pi.Alert Message - '+subheadline,
         "message" : _pushover_Text,
         "priority" : PUSHOVER_PRIO,
+        "sound" : notification_sound,
         }
     requests.post(url, data=post_fields)
 
@@ -2669,6 +3094,9 @@ def send_ntfy (_Text):
         "Priority": NTFY_PRIORITY,
         "Tags": "warning"
     }
+
+    if NTFY_CLICKABLE == True:
+        headers["Click"] = REPORT_DASHBOARD_URL
     # if username and password are set generate hash and update header
     if NTFY_USER != "" and NTFY_PASSWORD != "":
     # Generate hash for basic auth
@@ -2769,7 +3197,7 @@ def send_mqtt (_Text):    # Settings for sending MQTT to Broker
     publish.single(topic, payload = message, hostname = broker, port = port, client_id = client_id, retain = True)
 
 #===============================================================================
-# Sending Notofications
+# Sending Notifications
 #===============================================================================
 def sending_notifications (_type, _html_text, _txt_text):
     if _type in ['webservice']:
@@ -2802,13 +3230,13 @@ def sending_notifications (_type, _html_text, _txt_text):
             print('    Save report to file...')
             send_webgui (_txt_text)
         else :
-            print ('    Skip WebUI...')
+            print('    Skip WebUI...')
         if REPORT_MQTT_WEBMON :
-            print ('    Sending report by MQTT...')
-            send_mqtt (_txt_text)
+            print('    Sending report by MQTT...')
+            send_mqtt(_txt_text)
         else :
-            print ('    Skip MQTT...')
-    elif _type == 'pialert' or _type == 'rogue_dhcp' or _type == 'icmp_mon' :
+            print('    Skip MQTT...')
+    elif _type in ['pialert', 'icmp_mon', 'rogue_dhcp']:
         if REPORT_MAIL :
             print('    Sending report by email...')
             send_email (_txt_text, _html_text)
@@ -2838,12 +3266,12 @@ def sending_notifications (_type, _html_text, _txt_text):
             print('    Save report to file...')
             send_webgui (_txt_text)
         else :
-            print ('    Skip WebUI...')
+            print('    Skip WebUI...')
         if REPORT_MQTT :
-            print ('    Sending report by MQTT...')
-            send_mqtt (_txt_text)
+            print('    Sending report by MQTT...')
+            send_mqtt(_txt_text)
         else :
-            print ('    Skip MQTT...')
+            print('    Skip MQTT...')
 #-------------------------------------------------------------------------------
 def format_report_section (pActive, pSection, pTable, pText, pHTML):
     global mail_text

@@ -5,8 +5,7 @@
 //
 //  file.php - Back module. Server side. FileSystem Operations
 //------------------------------------------------------------------------------
-//  leiweibau   2023        https://github.com/leiweibau     GNU GPLv3
-//  danveitch76 2023        https://github.com/danveitch76   GNU GPLv3
+//  leiweibau  2023        https://github.com/leiweibau     GNU GPLv3
 //------------------------------------------------------------------------------
 
 session_start();
@@ -16,14 +15,10 @@ if ($_SESSION["login"] != 1) {
 	exit;
 }
 
-foreach (glob("../../../db/setting_language*") as $filename) {
-	$pia_lang_selected = str_replace('setting_language_', '', basename($filename));
-}
-if (strlen($pia_lang_selected) == 0) {$pia_lang_selected = 'en_us';}
-
 require 'db.php';
 require 'util.php';
 require 'journal.php';
+require 'language_switch.php';
 require '../templates/language/' . $pia_lang_selected . '.php';
 
 // Action selector
@@ -81,9 +76,40 @@ if (isset($_REQUEST['action']) && !empty($_REQUEST['action'])) {
 		break;
 	case 'GetUpdateStatus':GetUpdateStatus();
 		break;
+	case 'GetARPStatus':GetARPStatus();
+		break;
+	case 'GetAutoBackupStatus':GetAutoBackupStatus();
+		break;
 	default:logServerConsole('Action: ' . $action);
 		break;
 	}
+}
+
+function GetAutoBackupStatus() {
+	global $pia_lang;
+	if (file_exists("../../../back/.backup")) {$result = array($pia_lang['BE_Files_autobkp_pending']);} else {$result = array($pia_lang['BE_Files_autobkp_pause']);}
+	//Count db backups
+	$backupdir = "../../../db";
+	$backupfiles = glob($backupdir . "/pialertdb_20*.zip");
+	$result[] = count($backupfiles);
+	//Calc Backup size
+	$backupfile_size = 0;
+	foreach ($backupfiles as $file) {
+		$backupfile_size = $backupfile_size + filesize($file);
+	}
+	//Count config backups
+	$backupdir = "../../../config";
+	$backupfiles = glob($backupdir . "/pialert-20*.bak");
+	$result[] = count($backupfiles);
+
+	$result[] = number_format(($backupfile_size / 1000000), 2, ",", ".") . ' MB';
+	echo json_encode($result);
+}
+
+function GetARPStatus() {
+	global $pia_lang;
+	if (file_exists("../../../back/.scanning")) {$result = array('');} else {$result = array($pia_lang['MT_arpscancout_norun']);}
+	echo json_encode($result);
 }
 
 function GetUpdateStatus() {
@@ -106,7 +132,7 @@ function GetLogfiles() {
 	global $pia_lang;
 
 	$logfiles = ["pialert.1.log", "pialert.IP.log", "pialert.vendors.log", "pialert.cleanup.log", "pialert.webservices.log"];
-	$logmessage = [$pia_lang['Maintenance_Tools_Logviewer_Scan_empty'], $pia_lang['Maintenance_Tools_Logviewer_IPLog_empty'], '', $pia_lang['Maintenance_Tools_Logviewer_Cleanup_empty'], $pia_lang['Maintenance_Tools_Logviewer_WebServices_empty']];
+	$logmessage = [$pia_lang['MT_Tools_Logviewer_Scan_empty'], $pia_lang['MT_Tools_Logviewer_IPLog_empty'], '', $pia_lang['MT_Tools_Logviewer_Cleanup_empty'], $pia_lang['MT_Tools_Logviewer_WebServices_empty']];
 
 	$i = 0;
 	$logs = array();
@@ -115,7 +141,7 @@ function GetLogfiles() {
 		if ($file == "") {
 			array_push($logs, $logmessage[$i]);
 		} else {
-			if ($logfile[$i] == "pialert.webservices.log") {
+			if ($logfiles[$i] == "pialert.webservices.log") {
 				$file = str_replace("Start Services Monitoring\n\n", "Start Services Monitoring\n\n<pre style=\"border: solid 1px #666; background-color: transparent;\">", $file);
 				$file = str_replace("\nServices Monitoring Changes:", "\n</pre>Services Monitoring Changes:", $file);
 			}
@@ -186,11 +212,18 @@ PIALERT_WEB_PROTECTION = " . convert_bool($configArray['PIALERT_WEB_PROTECTION']
 PIALERT_WEB_PASSWORD   = '" . $configArray['PIALERT_WEB_PASSWORD'] . "'
 NETWORK_DNS_SERVER     = '" . $configArray['NETWORK_DNS_SERVER'] . "'
 AUTO_UPDATE_CHECK      = " . convert_bool($configArray['AUTO_UPDATE_CHECK']) . "
+AUTO_UPDATE_CHECK_CRON = '" . $configArray['AUTO_UPDATE_CHECK_CRON'] . "'
+# The shortest interval is 3 minutes. All larger intervals must be integer multiples of 3 minutes.
+AUTO_DB_BACKUP         = " . convert_bool($configArray['AUTO_DB_BACKUP']) . "
+AUTO_DB_BACKUP_CRON    = '" . $configArray['AUTO_DB_BACKUP_CRON'] . "'
+# The shortest interval is 3 minutes. All larger intervals must be integer multiples of 3 minutes.
+AUTO_DB_BACKUP_KEEP    = " . $configArray['AUTO_DB_BACKUP_KEEP'] . "
 
 # Other Modules
 # ----------------------
-SCAN_WEBSERVICES = " . convert_bool($configArray['SCAN_WEBSERVICES']) . "
-ICMPSCAN_ACTIVE  = " . convert_bool($configArray['ICMPSCAN_ACTIVE']) . "
+SCAN_WEBSERVICES  = " . convert_bool($configArray['SCAN_WEBSERVICES']) . "
+ICMPSCAN_ACTIVE   = " . convert_bool($configArray['ICMPSCAN_ACTIVE']) . "
+SATELLITES_ACTIVE = " . convert_bool($configArray['SATELLITES_ACTIVE']) . "
 
 # Special Protocol Scanning
 # ----------------------
@@ -227,6 +260,7 @@ REPORT_PUSHSAFER_WEBMON  = " . convert_bool($configArray['REPORT_PUSHSAFER_WEBMO
 PUSHSAFER_TOKEN          = '" . $configArray['PUSHSAFER_TOKEN'] . "'
 PUSHSAFER_DEVICE         = '" . $configArray['PUSHSAFER_DEVICE'] . "'
 PUSHSAFER_PRIO           = " . $configArray['PUSHSAFER_PRIO'] . "
+PUSHSAFER_SOUND          = " . $configArray['PUSHSAFER_SOUND'] . "
 
 # Pushover
 # ----------------------
@@ -235,6 +269,7 @@ REPORT_PUSHOVER_WEBMON  = " . convert_bool($configArray['REPORT_PUSHOVER_WEBMON'
 PUSHOVER_TOKEN          = '" . $configArray['PUSHOVER_TOKEN'] . "'
 PUSHOVER_USER           = '" . $configArray['PUSHOVER_USER'] . "'
 PUSHOVER_PRIO           = " . $configArray['PUSHOVER_PRIO'] . "
+PUSHOVER_SOUND          = '" . $configArray['PUSHOVER_SOUND'] . "'
 
 # NTFY
 #---------------------------
@@ -245,29 +280,20 @@ NTFY_TOPIC          = '" . $configArray['NTFY_TOPIC'] . "'
 NTFY_USER           = '" . $configArray['NTFY_USER'] . "'
 NTFY_PASSWORD	    = '" . $configArray['NTFY_PASSWORD'] . "'
 NTFY_PRIORITY 	    = '" . $configArray['NTFY_PRIORITY'] . "'
+NTFY_CLICKABLE 	    = " . convert_bool($configArray['NTFY_CLICKABLE']) . "
 
 # Shoutrrr
 # ----------------------
 SHOUTRRR_BINARY    = '" . $configArray['SHOUTRRR_BINARY'] . "'
-#SHOUTRRR_BINARY    = 'armhf'
-#SHOUTRRR_BINARY    = 'arm64'
-#SHOUTRRR_BINARY    = 'x86'
+# SHOUTRRR_BINARY    = 'armhf'
+# SHOUTRRR_BINARY    = 'arm64'
+# SHOUTRRR_BINARY    = 'x86'
 
 # Telegram via Shoutrrr
 # ----------------------
 REPORT_TELEGRAM         = " . convert_bool($configArray['REPORT_TELEGRAM']) . "
 REPORT_TELEGRAM_WEBMON  = " . convert_bool($configArray['REPORT_TELEGRAM_WEBMON']) . "
 TELEGRAM_BOT_TOKEN_URL  = '" . $configArray['TELEGRAM_BOT_TOKEN_URL'] . "'
-
-# MQTT
-#---------------------------
-REPORT_MQTT         = " . convert_bool($configArray['REPORT_MQTT']) . "
-REPORT_MQTT_WEBMON  = " . convert_bool($configArray['REPORT_MQTT_WEBMON']) . "
-MQTT_BROKER			= '" . $configArray['MQTT_BROKER'] . "'
-MQTT_PORT			= '" . $configArray['MQTT_PORT'] . "'
-MQTT_TOPIC          = '" . $configArray['MQTT_TOPIC'] . "'
-# MQTT_USER			= '" . $configArray['MQTT_USER'] . "'
-# MQTT_PASSWORD	    = '" . $configArray['MQTT_PASSWORD'] . "'
 
 # DynDNS and IP
 # ----------------------
@@ -281,7 +307,8 @@ DDNS_UPDATE_URL   = '" . $configArray['DDNS_UPDATE_URL'] . "'
 # Automatic Speedtest
 # ----------------------
 SPEEDTEST_TASK_ACTIVE = " . convert_bool($configArray['SPEEDTEST_TASK_ACTIVE']) . "
-SPEEDTEST_TASK_HOUR   = " . $configArray['SPEEDTEST_TASK_HOUR'] . "
+SPEEDTEST_TASK_CRON   = '" . $configArray['SPEEDTEST_TASK_CRON'] . "'
+# The shortest interval is 3 minutes. All larger intervals must be integer multiples of 3 minutes.
 
 # Arp-scan Options & Samples
 # ----------------------
@@ -326,6 +353,11 @@ UNIFI_API    = '" . $configArray['UNIFI_API'] . "'
 UNIFI_USER   = '" . $configArray['UNIFI_USER'] . "'
 UNIFI_PASS   = '" . $configArray['UNIFI_PASS'] . "'
 # Possible UNIFI APIs are v4, v5, unifiOS, UDMP-unifiOS, default
+
+# Satellite Configuration
+# -----------------------
+SATELLITE_PROXY_MODE = " . convert_bool($configArray['SATELLITE_PROXY_MODE']) . "
+SATELLITE_PROXY_URL  = '" . $configArray['SATELLITE_PROXY_URL'] . "'
 
 # Maintenance Tasks Cron
 # ----------------------
@@ -460,14 +492,9 @@ function BackupDBtoCSV() {
 function RestoreDBfromArchive() {
 	// prepare fast Backup
 	$file = '../../../db/pialert.db';
-	//$oldfile = '../../../db/pialert.db.prerestore';
+	
 	global $pia_lang;
 
-	// copy files as a fast Backup
-	// if (!copy($file, $oldfile)) {
-	// 	echo $pia_lang['BackDevices_Restore_CopError'];
-	// } else {
-	// extract latest archive and overwrite the actual pialert.db
 	$Pia_Archive_Path = '../../../db/';
 	exec('/bin/ls -Art ' . $Pia_Archive_Path . '*.zip | /bin/tail -n 1 | /usr/bin/xargs -n1 /bin/unzip -o -d ../../../db/', $output);
 	// check if the pialert.db exists
@@ -525,7 +552,7 @@ function setDeviceListCol() {
 	if (($_REQUEST['wakeonlan'] == 0) || ($_REQUEST['wakeonlan'] == 1)) {$Set_WakeOnLAN = $_REQUEST['wakeonlan'];} else {echo "Error. Wrong variable value!";exit;}
 	echo $pia_lang['BackDevices_DevListCol_noti_text'];
 	$config_array = array('ConnectionType' => $Set_ConnectionType, 'Favorites' => $Set_Favorites, 'Group' => $Set_Group, 'Owner' => $Set_Owner, 'Type' => $Set_Type, 'FirstSession' => $Set_First_Session, 'LastSession' => $Set_Last_Session, 'LastIP' => $Set_LastIP, 'MACType' => $Set_MACType, 'MACAddress' => $Set_MACAddress, 'Location' => $Set_Location, 'WakeOnLAN' => $Set_WakeOnLAN);
-	$DevListCol_file = '../../../db/setting_devicelist';
+	$DevListCol_file = '../../../config/setting_devicelist';
 	$DevListCol_new = fopen($DevListCol_file, 'w');
 	fwrite($DevListCol_new, json_encode($config_array));
 	fclose($DevListCol_new);
@@ -541,7 +568,7 @@ function PurgeDBBackups() {
 	// Clean DB Backups
 	$Pia_Archive_Path = '../../../db';
 	$Pia_Backupfiles = array();
-	$files = array_diff(scandir($Pia_Archive_Path, SCANDIR_SORT_DESCENDING), array('.', '..', 'pialert.db', 'pialertdb-reset.zip', 'temp', 'GeoLite2-Country.mmdb', 'pialert.db-shm', 'pialert.db-wal', 'pialertcsv.zip'));
+	$files = array_diff(scandir($Pia_Archive_Path, SCANDIR_SORT_DESCENDING), array('.', '..', 'pialert.db', 'temp', 'GeoLite2-Country.mmdb', 'pialert.db-shm', 'pialert.db-wal', 'pialertcsv.zip'));
 	foreach ($files as &$item) {
 		$item = $Pia_Archive_Path . '/' . $item;
 		if (stristr($item, 'setting_') == '') {array_push($Pia_Backupfiles, $item);}
@@ -561,7 +588,7 @@ function PurgeDBBackups() {
 	$files = array_diff(scandir($Pia_Archive_Path, SCANDIR_SORT_DESCENDING), array('.', '..', 'pialert.conf', 'version.conf', 'pialert-prev.bak', 'pialert.conf.back'));
 	foreach ($files as &$item) {
 		$item = $Pia_Archive_Path . '/' . $item;
-		array_push($Pia_Backupfiles, $item);
+		if (stristr($item, 'setting_') == '') {array_push($Pia_Backupfiles, $item);}
 	}
 	if (sizeof($Pia_Backupfiles) > 3) {
 		rsort($Pia_Backupfiles);
@@ -580,7 +607,7 @@ function PurgeDBBackups() {
 
 //  Toggle Dark/Light Themes
 function EnableDarkmode() {
-	$file = '../../../db/setting_darkmode';
+	$file = '../../../config/setting_darkmode';
 	global $pia_lang;
 
 	if (file_exists($file)) {
@@ -601,7 +628,7 @@ function EnableDarkmode() {
 
 //  Toggle History Graph Themes
 function EnableOnlineHistoryGraph() {
-	$file = '../../../db/setting_noonlinehistorygraph';
+	$file = '../../../config/setting_noonlinehistorygraph';
 	global $pia_lang;
 
 	if (file_exists($file)) {
@@ -653,7 +680,7 @@ function setTheme() {
 		'leiweibau_light');
 
 	if (isset($_REQUEST['SkinSelection'])) {
-		$skin_set_dir = '../../../db/';
+		$skin_set_dir = '../../../config/';
 		// echo "Enter Level 1";
 		$skin_selector = htmlspecialchars($_REQUEST['SkinSelection']);
 		if (in_array($skin_selector, $installed_skins)) {
@@ -723,7 +750,7 @@ function setLanguage() {
 		'it_it');
 
 	if (isset($_REQUEST['LangSelection'])) {
-		$pia_lang_set_dir = '../../../db/';
+		$pia_lang_set_dir = '../../../config/';
 		$pia_lang_selector = htmlspecialchars($_REQUEST['LangSelection']);
 		if (in_array($pia_lang_selector, $pia_installed_langs)) {
 			foreach ($pia_installed_langs as $file) {
@@ -756,8 +783,8 @@ function setArpTimer() {
 	global $pia_lang;
 
 	if (isset($_REQUEST['ArpTimer'])) {
-		$pia_lang_set_dir = '../../../db/';
-		$file = '../../../db/setting_stoppialert';
+		#$pia_lang_set_dir = '../../../config/';
+		$file = '../../../config/setting_stoppialert';
 		if (file_exists($file)) {
 			echo $pia_lang['BackDevices_Arpscan_enabled'];
 			// Logging
@@ -844,11 +871,8 @@ function deleteAllNotifications() {
 function getReportTotals() {
 	$files = array_diff(scandir('../../reports'), array('..', '.', 'download_report.php'));
 	$report_counter = count($files);
-	if ($report_counter == 0) {unset($report_counter);}
-
 	$totals = array($report_counter);
 	echo (json_encode($totals));
-
 }
 
 //  Set Language
@@ -922,7 +946,7 @@ function setFavIconURL() {
 				echo $pia_lang['BackFiles_FavIcon_ErrorURL'];
 			}
 		}
-		$file_path = '../../../db/setting_favicon';
+		$file_path = '../../../config/setting_favicon';
 		file_put_contents($file_path, $newfavicon_url);
 	}
 

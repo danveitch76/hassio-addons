@@ -4,7 +4,7 @@
 #
 #  systeminfo.php - Front module. SystemInfo page
 #-------------------------------------------------------------------------------
-#  leiweibau 2023                                          GNU GPLv3
+#  leiweibau 2024                                          GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php
@@ -21,7 +21,7 @@ if ($_SESSION["login"] != 1) {
 require 'php/templates/header.php';
 
 
-$prevVal = shell_exec("../back/pialert-cli show_usercron");
+$prevVal = shell_exec("sudo ../back/pialert-cli show_usercron");
 $prevArr = explode("\n", trim($prevVal));
 function filterValues($value) {
     return (substr($value, 0, 1) !== '#');
@@ -75,17 +75,17 @@ $net_interfaces_rx = explode("\n", trim($network_result));
 $network_result = shell_exec("cat /proc/net/dev | tail -n +3 | awk '{print $10}'");
 $net_interfaces_tx = explode("\n", trim($network_result));
 //hdd stat
-$hdd_result = shell_exec("df | awk '{print $1}'");
+$hdd_result = shell_exec("sudo df | awk '{print $1}'");
 $hdd_devices = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $2}'");
+$hdd_result = shell_exec("sudo df | awk '{print $2}'");
 $hdd_devices_total = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $3}'");
+$hdd_result = shell_exec("sudo df | awk '{print $3}'");
 $hdd_devices_used = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $4}'");
+$hdd_result = shell_exec("sudo df | awk '{print $4}'");
 $hdd_devices_free = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $5}'");
+$hdd_result = shell_exec("sudo df | awk '{print $5}'");
 $hdd_devices_percent = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $6}'");
+$hdd_result = shell_exec("sudo df | awk '{print $6}'");
 $hdd_devices_mount = explode("\n", trim($hdd_result));
 //usb devices
 $usb_result = shell_exec("lsusb");
@@ -118,21 +118,32 @@ $stat['process_count'] = shell_exec("ps -e --no-headers | wc -l");
     <!-- Main content ---------------------------------------------------------- -->
     <section class="content">
 <?php
+// Reboot Shutdown ----------------------------------------------------------
+echo '
+		<div class="row">
+		  <div class="col-sm-6" style="text-align: center; margin-bottom:20px;">
+			  <a href="#" class="btn btn-danger"><i class="fa-solid fa-power-off custom-menu-button-icon" id="Menu_Report_Envelope_Icon"></i><div class="custom-menu-button-text" onclick="askPialertShutdown()">'.$pia_lang['SysInfo_Shutdown_noti_head'].'</div></a>
+		  </div>
+		  <div class="col-sm-6" style="text-align: center; margin-bottom:20px;">
+		      <a href="#" class="btn btn-warning"><i class="fa-solid fa-rotate-right custom-menu-button-icon" id="Menu_Report_Envelope_Icon"></i><div class="custom-menu-button-text" onclick="askPialertReboot()">'.$pia_lang['SysInfo_Reboot_noti_head'].'</div></a>
+		  </div>
+		</div>';
+
+
+
 // Client ----------------------------------------------------------
 echo '<div class="box box-solid">
-            <div class="box-header">
-              <h3 class="box-title sysinfo_headline"><i class="bi bi-globe"></i> This Client</h3>
-            </div>
-            <div class="box-body">
-				<div class="row">
-				  <div class="col-sm-3 sysinfo_gerneral_a">User Agent</div>
-				  <div class="col-sm-9 sysinfo_gerneral_b">' . $_SERVER['HTTP_USER_AGENT'] . '</div>
-				</div>
-				<div class="row">
-				  <div class="col-sm-3 sysinfo_gerneral_a">Browser Resolution:</div>
-				  <div class="col-sm-9 sysinfo_gerneral_b" id="resolution"></div>
-				</div>
-            </div>
+        <div class="box-header"><h3 class="box-title sysinfo_headline"><i class="bi bi-globe"></i> This Client</h3></div>
+        <div class="box-body">
+					<div class="row">
+					  <div class="col-sm-3 sysinfo_gerneral_a">User Agent</div>
+					  <div class="col-sm-9 sysinfo_gerneral_b">' . $_SERVER['HTTP_USER_AGENT'] . '</div>
+					</div>
+					<div class="row">
+					  <div class="col-sm-3 sysinfo_gerneral_a">Browser Resolution:</div>
+					  <div class="col-sm-9 sysinfo_gerneral_b" id="resolution"></div>
+					</div>
+        </div>
       </div>';
 
 // General ----------------------------------------------------------
@@ -187,6 +198,44 @@ echo '<script>
 	resolutionDiv.innerHTML = "Width: " + w + "px / Height: " + h + "px<br> " + "Width: " + rw + "px / Height: " + rh + "px (native)";
 </script>';
 
+// DB Info ----------------------------------------------------------
+echo '<div class="box box-solid">
+        <div class="box-header"><h3 class="box-title sysinfo_headline"><i class="bi bi-database"></i> Pi.Alert Database Details</h3></div>
+        <div class="box-body">
+        	<div style="height: 300px; overflow-y: scroll; overflow-x: hidden;">';
+
+$DB_SOURCE = str_replace('front', 'db', getcwd()) . '/pialert.db';
+echo '<p>The directory of the Pi.Alert database is <b>' . $DB_SOURCE . '</b></p>';
+
+
+$db = new SQLite3('../db/pialert.db');
+$tablesQuery = $db->query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name ASC");
+echo '<table class="table table-bordered table-hover table-striped dataTable no-footer" style="margin-bottom: 10px;">';
+echo '<thead>
+		<tr role="row">
+			<th class="sysinfo_services col-sm-4 col-xs-8" style="padding: 8px;">Table Name</th>
+			<th class="sysinfo_services" style="padding: 8px;">Table Entries</th>
+		</tr>
+	  </thead>';
+while ($table = $tablesQuery->fetchArray()) {
+    $tableName = $table['name'];
+    
+    $rowCountQuery = $db->query("SELECT COUNT(*) as count FROM $tableName");
+    $rowCount = $rowCountQuery->fetchArray()['count'];
+
+    echo '<tr>
+    	<td style="padding: 3px; padding-left: 10px;">' . $tableName . '</td>
+    	<td style="padding: 3px; padding-left: 10px;">' . $rowCount . '</td>
+    	</tr>';
+}
+echo '</table>';
+
+$db->close();
+
+echo '		</div>
+        </div>
+      </div>';
+
 // User Crontab -----------------------------------------------------
 echo '<div class="box box-solid">
             <div class="box-header">
@@ -194,6 +243,42 @@ echo '<div class="box box-solid">
             </div>
             <div class="box-body">
             <pre style="background-color: transparent; border: none;">'.$stat['usercron'].'</pre>
+            </div>
+      </div>';
+
+// Pi.Alert Crontab -----------------------------------------------------
+echo '<div class="box box-solid">
+            <div class="box-header">
+              <h3 class="box-title sysinfo_headline"><i class="bi bi-list-task"></i> Pi.Alert Crons</h3>
+            </div>
+            <div class="box-body">
+            <table class="table table-bordered table-hover table-striped dataTable no-footer" style="margin-bottom: 10px;">
+			<thead>
+				<tr role="row">
+					<th class="sysinfo_services col-xs-4" style="padding: 8px;">Cron Name</th>
+					<th class="sysinfo_services col-xs-4" style="padding: 8px;">Cron</th>
+					<th class="sysinfo_services col-xs-4" style="padding: 8px;">Status</th>
+				</tr>
+	  		</thead>';
+function convert_bool_to_status($status) {
+	if ($status == True) {return "enabled";} else {return "disabled";}
+}
+echo '<tr>
+		<td style="padding: 3px; padding-left: 10px;">Update Check</td>
+		<td style="padding: 3px; padding-left: 10px;">'.$_SESSION['AUTO_UPDATE_CHECK_CRON'].'</td>
+		<td style="padding: 3px; padding-left: 10px;">'.convert_bool_to_status($_SESSION['Auto_Update_Check']).'</td>
+	  </tr>';
+echo '<tr>
+		<td style="padding: 3px; padding-left: 10px;">Backup</td>
+		<td style="padding: 3px; padding-left: 10px;">'.$_SESSION['AUTO_DB_BACKUP_CRON'].'</td>
+		<td style="padding: 3px; padding-left: 10px;">'.convert_bool_to_status($_SESSION['AUTO_DB_BACKUP']).'</td>
+	  </tr>';
+echo '<tr>
+		<td style="padding: 3px; padding-left: 10px;">Speedtest</td>
+		<td style="padding: 3px; padding-left: 10px;">'.$_SESSION['SPEEDTEST_TASK_CRON'].'</td>
+		<td style="padding: 3px; padding-left: 10px;">'.convert_bool_to_status($_SESSION['SPEEDTEST_TASK_ACTIVE']).'</td>
+	  </tr>';
+echo '      </table>
             </div>
       </div>';
 
@@ -215,16 +300,18 @@ for ($x = 0; $x < sizeof($storage_lsblk_line); $x++) {
 }
 
 for ($x = 0; $x < sizeof($storage_lsblk_line); $x++) {
-	echo '<div class="row">';
-	if (preg_match('~[0-9]+~', $storage_lsblk_line[$x][0])) {
-		echo '<div class="col-sm-4 sysinfo_gerneral_a">Mount point "' . $storage_lsblk_line[$x][3] . '"</div>';
-	} else {
-		echo '<div class="col-sm-4 sysinfo_gerneral_a">"' . str_replace('_', ' ', $storage_lsblk_line[$x][3]) . '"</div>';
+	if (strtolower($storage_lsblk_line[$x][2]) != "loop") {
+		echo '<div class="row">';
+		if (preg_match('~[0-9]+~', $storage_lsblk_line[$x][0])) {
+			echo '<div class="col-sm-4 sysinfo_gerneral_a">Mount point "' . $storage_lsblk_line[$x][3] . '"</div>';
+		} else {
+			echo '<div class="col-sm-4 sysinfo_gerneral_a">"' . str_replace('_', ' ', $storage_lsblk_line[$x][3]) . '"</div>';
+		}
+		echo '<div class="col-sm-3 sysinfo_gerneral_b">Device: /dev/' . $storage_lsblk_line[$x][0] . '</div>';
+		echo '<div class="col-sm-2 sysinfo_gerneral_b">Size: ' . $storage_lsblk_line[$x][1] . '</div>';
+		echo '<div class="col-sm-2 sysinfo_gerneral_b">Type: ' . $storage_lsblk_line[$x][2] . '</div>';
+		echo '</div>';
 	}
-	echo '<div class="col-sm-3 sysinfo_gerneral_b">Device: /dev/' . $storage_lsblk_line[$x][0] . '</div>';
-	echo '<div class="col-sm-2 sysinfo_gerneral_b">Size: ' . $storage_lsblk_line[$x][1] . '</div>';
-	echo '<div class="col-sm-2 sysinfo_gerneral_b">Type: ' . $storage_lsblk_line[$x][2] . '</div>';
-	echo '</div>';
 }
 echo '      </div>
       </div>';
@@ -296,16 +383,13 @@ echo '<thead>
 			<th class="sysinfo_services" style="padding: 8px;">Service Description</th>
 		</tr>
 	  </thead>';
-$table_color = 'odd';
 for ($x = 0; $x < sizeof($running_services); $x++) {
 	if (stristr($running_services[$x], '.service')) {
 		$temp_services_arr = array_values(array_filter(explode(' ', trim($running_services[$x]))));
 		$servives_name = $temp_services_arr[0];
 		unset($temp_services_arr[0], $temp_services_arr[1], $temp_services_arr[2], $temp_services_arr[3]);
 		$servives_description = implode(" ", $temp_services_arr);
-		if ($table_color == 'odd') {$table_color = 'even';} else { $table_color = 'odd';}
-
-		echo '<tr class="' . $table_color . '"><td style="padding: 3px; padding-left: 10px;">' . substr($servives_name, 0, -8) . '</td><td style="padding: 3px; padding-left: 10px;">' . $servives_description . '</td></tr>';
+		echo '<tr><td style="padding: 3px; padding-left: 10px;">' . substr($servives_name, 0, -8) . '</td><td style="padding: 3px; padding-left: 10px;">' . $servives_description . '</td></tr>';
 	}
 }
 echo '</table>';
@@ -321,15 +405,12 @@ echo '<div class="box box-solid">
             <div class="box-body">';
 echo '         <table class="table table-bordered table-hover table-striped dataTable no-footer" style="margin-bottom: 10px;">';
 
-$table_color = 'odd';
 sort($usb_devices_mount);
 for ($x = 0; $x < sizeof($usb_devices_mount); $x++) {
 	$cut_pos = strpos($usb_devices_mount[$x], ':');
 	$usb_bus = substr($usb_devices_mount[$x], 0, $cut_pos);
 	$usb_dev = substr($usb_devices_mount[$x], $cut_pos + 1);
-
-	if ($table_color == 'odd') {$table_color = 'even';} else { $table_color = 'odd';}
-	echo '<tr class="' . $table_color . '"><td style="padding: 3px; padding-left: 10px; width: 150px;"><b>' . str_replace('Device', 'Dev.', $usb_bus) . '</b></td><td style="padding: 3px; padding-left: 10px;">' . $usb_dev . '</td></tr>';
+	echo '<tr><td style="padding: 3px; padding-left: 10px; width: 150px;"><b>' . str_replace('Device', 'Dev.', $usb_bus) . '</b></td><td style="padding: 3px; padding-left: 10px;">' . $usb_dev . '</td></tr>';
 }
 echo '         </table>';
 echo '      </div>
@@ -347,3 +428,25 @@ echo '<br>';
 <?php
 require 'php/templates/footer.php';
 ?>
+
+<script type="text/javascript">
+
+// Pialert Reboot
+function askPialertReboot() {
+  showModalWarning('<?=$pia_lang['SysInfo_Reboot_noti_head'];?>', '<?=$pia_lang['SysInfo_Reboot_noti_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Run'];?>', 'PialertReboot');
+}
+function PialertReboot() {
+	$.get('php/server/commands.php?action=PialertReboot', function(msg) {showMessage (msg);});
+}
+
+
+// Pialert Shutdown
+function askPialertShutdown() {
+  showModalWarning('<?=$pia_lang['SysInfo_Shutdown_noti_head'];?>', '<?=$pia_lang['SysInfo_Shutdown_noti_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Run'];?>', 'PialertShutdown');
+}
+function PialertShutdown() {
+	$.get('php/server/commands.php?action=PialertShutdown', function(msg) {showMessage (msg);});
+}
+</script>

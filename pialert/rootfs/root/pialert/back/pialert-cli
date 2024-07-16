@@ -1,5 +1,5 @@
 #!/bin/bash
-SCRIPTVERSION='v1.17'
+SCRIPTVERSION='v1.25'
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 PIA_CONF_FILE=${SCRIPTPATH}'/../config/pialert.conf'
@@ -42,6 +42,10 @@ This is the list of supported commands
     Allows the start of new scans again. If the SCAN_WEBSERVICES parameter
     does not exist yet, it will be created and set to FALSE.
 
+ ${bold}disable_satellites${normal}
+    Allows the start of new scans again. If the SATELLITES_ACTIVE parameter
+    does not exist yet, it will be created and set to FALSE.
+
  ${bold}enable_scan${normal}
     Allows the start of new scans again.
 
@@ -57,6 +61,10 @@ This is the list of supported commands
  ${bold}enable_service_mon${normal}"
     Enable Web Service Monitoring. If the SCAN_WEBSERVICES parameter does not
     exist yet, it will be created and set to TRUE.
+
+ ${bold}enable_satellites${normal}"
+    Enable Satellites. If the SATELLITES_ACTIVE parameter does not exist yet,
+    it will be created and set to TRUE.
 
  ${bold}reporting_test${normal}
     Test reporting for all activated services.
@@ -107,10 +115,11 @@ This is the list of supported commands
  ${bold}update_db${normal}
     The script tries to make the database compatible for this fork.
 
-2023 leiweibau (https://github.com/leiweibau/Pi.Alert) (https://leiweibau.net)
+2024 leiweibau (https://github.com/leiweibau/Pi.Alert) (https://leiweibau.net)
+
 EOM
 
-    echo -e "$PIALERTCLI_MANUAL" | more
+    echo -e "$PIALERTCLI_MANUAL" | more -e
     ;;
 
   set_login)
@@ -205,7 +214,7 @@ EOM
        STOPTIMER=10
     fi
     killall arp-scan
-    echo $STOPTIMER > ${SCRIPTPATH}/../db/setting_stoppialert
+    echo $STOPTIMER > ${SCRIPTPATH}/../config/setting_stoppialert
     /usr/bin/python3 ${SCRIPTPATH}/pialert_reporting_test.py reporting_starttimer
     echo "Configured Pi.Alert scans are disabled"
     if [ "$CURRENT_USER" != "www-data" ]; then
@@ -215,7 +224,7 @@ EOM
     ;;
 
   enable_scan)
-    rm ${SCRIPTPATH}/../db/setting_stoppialert
+    rm ${SCRIPTPATH}/../config/setting_stoppialert
     /usr/bin/python3 ${SCRIPTPATH}/pialert_reporting_test.py reporting_stoptimer
     echo "Configured Pi.Alert scans are enabled"
     if [ "$CURRENT_USER" != "www-data" ]; then
@@ -229,10 +238,10 @@ EOM
     if [ $CHECK_PROT -eq 0 ]
     then
         ## Create SCAN_WEBSERVICES and enable it
-        sed -i "/^VENDORS_DB.*/a SCAN_WEBSERVICES = True" $PIA_CONF_FILE
+        sed -i "/^VENDORS_DB.*/a SCAN_WEBSERVICES  = True" $PIA_CONF_FILE
     else
         ## Switch SCAN_WEBSERVICES to enable
-        sed -i "/SCAN_WEBSERVICES/c\SCAN_WEBSERVICES = True" $PIA_CONF_FILE
+        sed -i "/SCAN_WEBSERVICES/c\SCAN_WEBSERVICES  = True" $PIA_CONF_FILE
     fi
     if [ "$CURRENT_USER" != "www-data" ]; then
         sqlite3 $PIA_DB_FILE "INSERT INTO 'pialert_journal' ('Journal_DateTime', 'LogClass', 'Trigger', 'LogString', 'Hash', 'Additional_Info') VALUES('$(date '+%Y-%m-%d %H:%M:%S')', 'b_030', 'pialert-cli', 'LogStr_0301', '', '');"
@@ -246,15 +255,49 @@ EOM
     if [ $CHECK_PROT -eq 0 ]
     then
         ## Create SCAN_WEBSERVICES and disable it
-        sed -i "/^VENDORS_DB.*/a SCAN_WEBSERVICES = False" $PIA_CONF_FILE
+        sed -i "/^VENDORS_DB.*/a SCAN_WEBSERVICES  = False" $PIA_CONF_FILE
     else
         ## Switch SCAN_WEBSERVICES to disable
-        sed -i "/SCAN_WEBSERVICES/c\SCAN_WEBSERVICES = False" $PIA_CONF_FILE
+        sed -i "/SCAN_WEBSERVICES/c\SCAN_WEBSERVICES  = False" $PIA_CONF_FILE
     fi
     if [ "$CURRENT_USER" != "www-data" ]; then
         sqlite3 $PIA_DB_FILE "INSERT INTO 'pialert_journal' ('Journal_DateTime', 'LogClass', 'Trigger', 'LogString', 'Hash', 'Additional_Info') VALUES('$(date '+%Y-%m-%d %H:%M:%S')', 'b_030', 'pialert-cli', 'LogStr_0302', '', '');"
     fi
     echo "Web Service Monitoring is now disabled"
+    ;;
+
+  enable_satellites)
+    ## Check if SCAN_WEBSERVICES exists
+    CHECK_PROT=$(grep "SATELLITES_ACTIVE" $PIA_CONF_FILE | wc -l)
+    if [ $CHECK_PROT -eq 0 ]
+    then
+        ## Create SCAN_WEBSERVICES and enable it
+        sed -i "/^VENDORS_DB.*/a SATELLITES_ACTIVE = True" $PIA_CONF_FILE
+    else
+        ## Switch SCAN_WEBSERVICES to enable
+        sed -i "/SATELLITES_ACTIVE/c\SATELLITES_ACTIVE = True" $PIA_CONF_FILE
+    fi
+    if [ "$CURRENT_USER" != "www-data" ]; then
+        sqlite3 $PIA_DB_FILE "INSERT INTO 'pialert_journal' ('Journal_DateTime', 'LogClass', 'Trigger', 'LogString', 'Hash', 'Additional_Info') VALUES('$(date '+%Y-%m-%d %H:%M:%S')', 'b_033', 'pialert-cli', 'LogStr_0305', '', '');"
+    fi
+    echo "Satellites are now enabled"
+    ;;
+
+  disable_satellites)
+    ## Check if SCAN_WEBSERVICES exists
+    CHECK_PROT=$(grep "SATELLITES_ACTIVE" $PIA_CONF_FILE | wc -l)
+    if [ $CHECK_PROT -eq 0 ]
+    then
+        ## Create SCAN_WEBSERVICES and disable it
+        sed -i "/^VENDORS_DB.*/a SATELLITES_ACTIVE = False" $PIA_CONF_FILE
+    else
+        ## Switch SCAN_WEBSERVICES to disable
+        sed -i "/SATELLITES_ACTIVE/c\SATELLITES_ACTIVE = False" $PIA_CONF_FILE
+    fi
+    if [ "$CURRENT_USER" != "www-data" ]; then
+        sqlite3 $PIA_DB_FILE "INSERT INTO 'pialert_journal' ('Journal_DateTime', 'LogClass', 'Trigger', 'LogString', 'Hash', 'Additional_Info') VALUES('$(date '+%Y-%m-%d %H:%M:%S')', 'b_033', 'pialert-cli', 'LogStr_0306', '', '');"
+    fi
+    echo "Satellites are now disabled"
     ;;
 
   enable_icmp_mon)
@@ -263,10 +306,10 @@ EOM
     if [ $CHECK_PROT -eq 0 ]
     then
         ## Create ICMPSCAN_ACTIVE and enable it
-        sed -i "/^VENDORS_DB.*/a ICMPSCAN_ACTIVE = True" $PIA_CONF_FILE
+        sed -i "/^VENDORS_DB.*/a ICMPSCAN_ACTIVE   = True" $PIA_CONF_FILE
     else
         ## Switch ICMPSCAN_ACTIVE to enable
-        sed -i "/ICMPSCAN_ACTIVE/c\ICMPSCAN_ACTIVE = True" $PIA_CONF_FILE
+        sed -i "/ICMPSCAN_ACTIVE/c\ICMPSCAN_ACTIVE   = True" $PIA_CONF_FILE
     fi
     if [ "$CURRENT_USER" != "www-data" ]; then
         sqlite3 $PIA_DB_FILE "INSERT INTO 'pialert_journal' ('Journal_DateTime', 'LogClass', 'Trigger', 'LogString', 'Hash', 'Additional_Info') VALUES('$(date '+%Y-%m-%d %H:%M:%S')', 'b_031', 'pialert-cli', 'LogStr_0303', '', '');"
@@ -280,10 +323,10 @@ EOM
     if [ $CHECK_PROT -eq 0 ]
     then
         ## Create ICMPSCAN_ACTIVE and disable it
-        sed -i "/^VENDORS_DB.*/a ICMPSCAN_ACTIVE = False" $PIA_CONF_FILE
+        sed -i "/^VENDORS_DB.*/a ICMPSCAN_ACTIVE   = False" $PIA_CONF_FILE
     else
         ## Switch ICMPSCAN_ACTIVE to disable
-        sed -i "/ICMPSCAN_ACTIVE/c\ICMPSCAN_ACTIVE = False" $PIA_CONF_FILE
+        sed -i "/ICMPSCAN_ACTIVE/c\ICMPSCAN_ACTIVE   = False" $PIA_CONF_FILE
     fi
     if [ "$CURRENT_USER" != "www-data" ]; then
         sqlite3 $PIA_DB_FILE "INSERT INTO 'pialert_journal' ('Journal_DateTime', 'LogClass', 'Trigger', 'LogString', 'Hash', 'Additional_Info') VALUES('$(date '+%Y-%m-%d %H:%M:%S')', 'b_031', 'pialert-cli', 'LogStr_0304', '', '');"
@@ -347,56 +390,6 @@ EOM
     rm ${PIA_DB_FILE_PATH}/pialert.db.bak
     echo -e "...Create backup before insert new table"
     sqlite3 "$PIA_DB_FILE" ".backup '${PIA_DB_FILE_PATH}/pialert.db.bak'"
-    # Online_History
-    echo -e "...Insert new table 'Online_History' to DB"
-    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Online_History' ('Index' INTEGER, 'Scan_Date' TEXT, 'Online_Devices' INTEGER, 'Down_Devices' INTEGER, 'All_Devices' INTEGER, 'Archived_Devices' INTEGER, PRIMARY KEY(\"Index\" AUTOINCREMENT));"
-    # network_infrastructure
-    echo -e "...Insert new table 'network_infrastructure' to DB"
-    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'network_infrastructure' ('device_id' INTEGER, 'net_device_name' TEXT NOT NULL, 'net_device_typ' TEXT NOT NULL, 'net_device_port' INTEGER, 'net_downstream_devices' TEXT, PRIMARY KEY(\"device_id\" AUTOINCREMENT));"
-    # Devices.dev_Infrastructure
-    echo -e "...Insert new column 'dev_Infrastructure' to table 'Devices' to DB"
-    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Devices');" | awk -F\| '{print $2}' | grep -wci "dev_Infrastructure")
-    if [ $existing -eq 0 ]; then
-      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Devices' ADD COLUMN 'dev_Infrastructure' INTEGER;"
-    else
-      echo "        Column 'dev_Infrastructure' already exists in the 'Devices' table."
-    fi
-    # Devices.dev_Infrastructure_port
-    echo -e "...Insert new column 'dev_Infrastructure_port' to table 'Devices' to DB"
-    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Devices');" | awk -F\| '{print $2}' | grep -wci "dev_Infrastructure_port")
-    if [ $existing -eq 0 ]; then
-      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Devices' ADD COLUMN 'dev_Infrastructure_port' INTEGER;"
-    else
-      echo "        Column 'dev_Infrastructure_port' already exists in the 'Devices' table."
-    fi
-    # network_infrastructure.net_downstream_devices
-    echo -e "...Insert new column 'net_downstream_devices' to table 'network_infrastructure' to DB"
-    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('network_infrastructure');" | awk -F\| '{print $2}' | grep -wci "net_downstream_devices")
-    if [ $existing -eq 0 ]; then
-      sqlite3 $PIA_DB_FILE "ALTER TABLE 'network_infrastructure' ADD COLUMN 'net_downstream_devices' TEXT;"
-    else
-      echo "        Column 'net_downstream_devices' already exists in the 'network_infrastructure' table."
-    fi
-    # network_dumb_dev
-    echo -e "...Insert new table 'network_dumb_dev' to DB"
-    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'network_dumb_dev' ('dev_Name' TEXT, 'dev_MAC' TEXT, 'dev_Infrastructure' INTEGER, 'dev_Infrastructure_port' INTEGER, 'dev_PresentLastScan' TEXT, 'dev_LastIP' TEXT, 'id' INTEGER, PRIMARY KEY(\"id\" AUTOINCREMENT));"
-    # Services_Events
-    echo -e "...Insert new table 'Services_Events' to DB"
-    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Services_Events' ('moneve_URL' TEXT NOT NULL, 'moneve_DateTime' TEXT NOT NULL, 'moneve_StatusCode' NUMERIC NOT NULL, 'moneve_Latency' TEXT NOT NULL, 'moneve_TargetIP' TEXT NOT NULL);"
-    # Services_CurrentScan
-    echo -e "...Insert new table 'Services_CurrentScan' to DB"
-    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Services_CurrentScan' ('cur_URL' TEXT NOT NULL, 'cur_DateTime' TEXT NOT NULL, 'cur_StatusCode' NUMERIC NOT NULL, 'cur_Latency' TEXT NOT NULL, 'cur_AlertEvents' INTEGER DEFAULT 0, 'cur_AlertDown' INTEGER DEFAULT 0, 'cur_StatusChanged' INTEGER DEFAULT 0, 'cur_LatencyChanged' INTEGER DEFAULT 0, 'cur_TargetIP' TEXT NOT NULL, 'cur_StatusCode_prev' NUMERIC, 'cur_TargetIP_prev' TEXT);"
-    # Services
-    echo -e "...Insert new table 'Services' to DB"
-    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Services' ('mon_URL' TEXT NOT NULL, 'mon_MAC' TEXT, 'mon_LastStatus' NUMERIC NOT NULL, 'mon_LastLatency' TEXT NOT NULL, 'mon_LastScan' TEXT NOT NULL, 'mon_Tags' TEXT, 'mon_AlertEvents' INTEGER DEFAULT 0, 'mon_AlertDown' INTEGER DEFAULT 0, 'mon_TargetIP' TEXT NOT NULL, PRIMARY KEY(\"mon_URL\"));"
-    # Services.mon_Notes
-    echo -e "...Insert new column 'mon_Notes' to table 'Services' to DB"
-    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Services');" | awk -F\| '{print $2}' | grep -wci "mon_Notes")
-    if [ $existing -eq 0 ]; then
-      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Services' ADD COLUMN 'mon_Notes' TEXT;"
-    else
-      echo "        Column 'mon_Notes' already exists in the 'Services' table."
-    fi
     # Pi.Alert Journal
     echo -e "...Insert new table 'pialert_journal' to DB"
     sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'pialert_journal' ('journal_id' INTEGER, 'Journal_DateTime' TEXT NOT NULL, 'LogClass' NUMERIC NOT NULL, 'Trigger' TEXT NOT NULL, 'LogString' TEXT NOT NULL, 'Hash' TEXT, 'Additional_Info' TEXT, PRIMARY KEY(\"journal_id\" AUTOINCREMENT));"
@@ -532,7 +525,88 @@ EOM
     # Tools_Speedtest_History
     echo -e "...Insert new table 'Tools_Speedtest_History' to DB"
     sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Tools_Speedtest_History' ('ID' INTEGER, 'speed_date' TEXT, 'speed_isp' TEXT, 'speed_server' TEXT, 'speed_ping' NUMERIC, 'speed_down' NUMERIC, 'speed_up' INUMERIC, PRIMARY KEY(\"ID\" AUTOINCREMENT));"
-
+    # Tools_Nmap_ManScan
+    echo -e "...Insert new table 'Tools_Nmap_ManScan' to DB"
+    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Tools_Nmap_ManScan' ('ID' INTEGER, 'scan_date' DATETIME NOT NULL, 'scan_target' STRING(50) NOT NULL, 'scan_type' STRING(50) NOT NULL, 'scan_result' TEXT, 'reserve_a' INTEGER, 'reserve_b' TEXT, 'reserve_c' TEXT, 'reserve_d' TEXT, PRIMARY KEY(\"ID\" AUTOINCREMENT));"
+    # ICMP_Mon.icmp_Archived
+    echo -e "...Insert new column 'icmp_Archived' to table 'ICMP_Mon' to DB"
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('ICMP_Mon');" | awk -F\| '{print $2}' | grep -wci "icmp_Archived")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'ICMP_Mon' ADD COLUMN 'icmp_Archived' BOOLEAN NOT NULL DEFAULT 0;"
+    else
+      echo "        Column 'icmp_Archived' already exists in the 'ICMP_Mon' table."
+    fi
+    # Devices.dev_LinkSpeed
+    echo -e "...Insert new column 'dev_LinkSpeed' to table 'Devices' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Devices');" | awk -F\| '{print $2}' | grep -wci "dev_LinkSpeed")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Devices' ADD COLUMN 'dev_LinkSpeed' STRING(30);"
+    else
+      echo "        Column 'dev_LinkSpeed' already exists in the 'Devices' table."
+    fi
+    # Satellites
+    # CurrentScan.cur_ScanSource (Satellite)
+    echo -e "...Insert new column 'cur_ScanSource' to table 'CurrentScan' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('CurrentScan');" | awk -F\| '{print $2}' | grep -wci "cur_ScanSource")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'CurrentScan' ADD COLUMN 'cur_ScanSource' STRING(250) NOT NULL DEFAULT 'local';"
+    else
+      echo "        Column 'cur_ScanSource' already exists in the 'CurrentScan' table."
+    fi
+    # Satellites
+    echo -e "...Insert new table 'Satellites' to DB"
+    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Satellites' ('sat_id' INTEGER NOT NULL, 'sat_name' STRING(150) NOT NULL UNIQUE, 'sat_token' STRING(250) NOT NULL UNIQUE, 'sat_password' STRING(250) NOT NULL UNIQUE, 'sat_lastupdate' DATETIME NOT NULL, PRIMARY KEY(\"sat_id\" AUTOINCREMENT));"
+    # Devices.dev_ScanSource
+    echo -e "...Insert new column 'dev_ScanSource' to table 'Devices' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Devices');" | awk -F\| '{print $2}' | grep -wci "dev_ScanSource")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Devices' ADD COLUMN 'dev_ScanSource' STRING(250) NOT NULL DEFAULT 'local';"
+    else
+      echo "        Column 'dev_ScanSource' already exists in the 'Devices' table."
+    fi
+    # Satellites_Network
+    echo -e "...Insert new table 'Satellites_Network' to DB"
+    sqlite3 $PIA_DB_FILE "CREATE TABLE IF NOT EXISTS 'Satellites_Network' ( 'Sat_MAC'   STRING(50) NOT NULL COLLATE NOCASE, 'Sat_IP'    STRING(50) COLLATE NOCASE, 'Sat_Name'  STRING(50), 'Sat_Vendor'    STRING(250), 'Sat_ScanMethod'    STRING(50), 'Sat_Token' STRING(250));"
+    # Satellites.sat_remote_version
+    echo -e "...Insert new column 'sat_remote_version' to table 'Satellites' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Satellites');" | awk -F\| '{print $2}' | grep -wci "sat_remote_version")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Satellites' ADD COLUMN 'sat_remote_version' STRING(20);"
+    else
+      echo "        Column 'sat_remote_version' already exists in the 'Satellites' table."
+    fi
+    # Satellites.sat_conf_scan_arp
+    echo -e "...Insert new column 'sat_conf_scan_arp' to table 'Satellites' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Satellites');" | awk -F\| '{print $2}' | grep -wci "sat_conf_scan_arp")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Satellites' ADD COLUMN 'sat_conf_scan_arp' BOOLEAN NOT NULL DEFAULT 0;"
+    else
+      echo "        Column 'sat_conf_scan_arp' already exists in the 'Satellites' table."
+    fi
+    # Satellites.sat_conf_scan_fritzbox
+    echo -e "...Insert new column 'sat_conf_scan_fritzbox' to table 'Satellites' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Satellites');" | awk -F\| '{print $2}' | grep -wci "sat_conf_scan_fritzbox")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Satellites' ADD COLUMN 'sat_conf_scan_fritzbox' BOOLEAN NOT NULL DEFAULT 0;"
+    else
+      echo "        Column 'sat_conf_scan_fritzbox' already exists in the 'Satellites' table."
+    fi
+    # Satellites.sat_conf_scan_mikrotik
+    echo -e "...Insert new column 'sat_conf_scan_mikrotik' to table 'Satellites' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Satellites');" | awk -F\| '{print $2}' | grep -wci "sat_conf_scan_mikrotik")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Satellites' ADD COLUMN 'sat_conf_scan_mikrotik' BOOLEAN NOT NULL DEFAULT 0;"
+    else
+      echo "        Column 'sat_conf_scan_mikrotik' already exists in the 'Satellites' table."
+    fi
+    # Satellites.sat_conf_scan_unifi
+    echo -e "...Insert new column 'sat_conf_scan_unifi' to table 'Satellites' to DB"    
+    existing=$(sqlite3 $PIA_DB_FILE "PRAGMA table_info('Satellites');" | awk -F\| '{print $2}' | grep -wci "sat_conf_scan_unifi")
+    if [ $existing -eq 0 ]; then
+      sqlite3 $PIA_DB_FILE "ALTER TABLE 'Satellites' ADD COLUMN 'sat_conf_scan_unifi' BOOLEAN NOT NULL DEFAULT 0;"
+    else
+      echo "        Column 'sat_conf_scan_unifi' already exists in the 'Satellites' table."
+    fi
 
     echo -e "\nUpdate finished!\n"
 
@@ -607,8 +681,6 @@ EOM
             echo "Group Permissions set"
             ;;
     esac
-
-
     ;;
 
   set_sudoers)
@@ -628,12 +700,15 @@ EOM
     echo "www-data ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/pialert-cli" | tee /etc/sudoers.d/pialert-frontend
     echo "www-data ALL=(ALL) NOPASSWD: /usr/bin/df" | tee -a /etc/sudoers.d/pialert-frontend
     echo "www-data ALL=(ALL) NOPASSWD: /usr/bin/nmap" | tee -a /etc/sudoers.d/pialert-frontend
+    echo "www-data ALL=(ALL) NOPASSWD: /usr/sbin/shutdown" | tee -a /etc/sudoers.d/pialert-frontend
     echo "www-data ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/speedtest/speedtest" | tee -a /etc/sudoers.d/pialert-frontend
     echo -e "\nBackend sudoer"
     echo "${PIA_USER} ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/pialert-cli" | tee /etc/sudoers.d/pialert-backend
     echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/sbin/arp-scan" | tee -a /etc/sudoers.d/pialert-backend
     echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/bin/nmap" | tee -a /etc/sudoers.d/pialert-backend
+    echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/bin/chown, /usr/bin/chmod" | tee -a /etc/sudoers.d/pialert-backend 
     echo "${PIA_USER} ALL=(ALL) NOPASSWD: ${SCRIPTPATH}/speedtest/speedtest" | tee -a /etc/sudoers.d/pialert-backend
+    echo "${PIA_USER} ALL=(ALL) NOPASSWD: /usr/bin/ping" | tee -a /etc/sudoers.d/pialert-backend
     ;;
 
   unset_sudoers)
@@ -657,7 +732,7 @@ EOM
     ;;
 
   arg_list)
-    echo disable_scan disable_mainscan disable_icmp_mon disable_service_mon enable_scan enable_mainscan enable_icmp_mon enable_service_mon reporting_test set_apikey set_autopassword set_login set_password set_permissions set_sudoers unset_login unset_sudoers update_db show_usercron
+    echo disable_scan disable_mainscan disable_icmp_mon disable_service_mon disable_satellites enable_scan enable_mainscan enable_icmp_mon enable_service_mon enable_satellites reporting_test set_apikey set_autopassword set_login set_password set_permissions set_sudoers unset_login unset_sudoers update_db show_usercron
     ;;
 
   *)

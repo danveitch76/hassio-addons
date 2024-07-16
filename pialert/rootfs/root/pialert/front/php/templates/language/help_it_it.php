@@ -113,6 +113,18 @@ $help_lang['Cat_General_107_text'] = 'Il file <span class="text-maroon help_faq_
                                             <td class="help_table_gen_b">Attiva o disattiva la protezione con password dell&apos;interfaccia web di Pi.Alert.</td></tr>
                                         <tr><td class="help_table_gen_a">PIALERT_WEB_PASSWORD</td>
                                             <td class="help_table_gen_b">Questo campo contiene la password "hashata" per l&apos;interfaccia web. La password non può essere inserita in chiaro qui ma deve essere impostata tramite <span class="text-maroon help_faq_code">pialert-cli</span>.</td></tr>
+										<tr><td class="help_table_gen_a">NETWORK_DNS_SERVER</td>
+										    <td class="help_table_gen_b">Indirizzo IP del server DNS nella rete. Questa voce è necessaria per tentare di risolvere un nome host nella rete.</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_UPDATE_CHECK</td>
+										    <td class="help_table_gen_b">Attiva o disattiva la ricerca automatica degli aggiornamenti di Pi.Alert.</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_UPDATE_CHECK_CRON</td>
+										    <td class="help_table_gen_b">Intervallo, nella sintassi di crontab, in cui cercare nuovi aggiornamenti da Pi.Alert. L&apos;intervallo più breve è di 3 minuti. Tutti gli intervalli più lunghi devono essere multipli interi di 3 minuti (15, 30, 36, ecc).</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_DB_BACKUP</td>
+										    <td class="help_table_gen_b">Attiva o disattiva la creazione automatica di backup del database e della configurazione.</td></tr>
+										<tr><td class="help_table_gen_a">AUTO_DB_BACKUP_CRON</td>
+										    <td class="help_table_gen_b">Intervallo, nella sintassi di crontab, in cui i backup automatici dovrebbero essere creati. L&apos;intervallo più breve è di 3 minuti. Tutti gli intervalli più lunghi devono essere multipli interi di 3 minuti (15, 30, 36, ecc).</td></tr>
+                                    	<tr><td class="help_table_gen_a">AUTO_DB_BACKUP_KEEP</td>
+											<td class="help_table_gen_b">Qui si specifica quanti backup automatici devono essere conservati, inclusi quello attuale. Questo include sia i backup di configurazione che quelli del database. Questo valore non è rilevante durante la pulizia manuale, dove vengono conservati gli ultimi 3 backup.</td></tr>
                                     </table>
                                     <table class="help_table_gen">
                                         <tr><td class="help_table_gen_section" colspan="2">Altri moduli</td></tr>
@@ -126,7 +138,7 @@ $help_lang['Cat_General_107_text'] = 'Il file <span class="text-maroon help_faq_
                                         <tr><td class="help_table_gen_a">SCAN_ROGUE_DHCP</td>
                                             <td class="help_table_gen_b">Attiva la ricerca di server DHCP "rogue" (sconosciuti). Questa funzione serve a rilevare la presenza di un server DHCP sconosciuto nella rete, che potrebbe assumere il controllo della gestione degli indirizzi IP.</td></tr>
                                         <tr><td class="help_table_gen_a">DHCP_SERVER_ADDRESS</td>
-                                            <td class="help_table_gen_b">Qui viene inserito l&apos;indirizzo IP del server DHCP noto.</td></tr>
+                                            <td class="help_table_gen_b">Qui viene inserito l&apos;indirizzo IP del server DHCP noto. Può essere registrato solo UN server DHCP.</td></tr>
                                     </table>
                                     <table class="help_table_gen">
                                         <tr><td class="help_table_gen_section" colspan="2">Impostazioni dell&apos;account e-mail</td></tr>
@@ -179,6 +191,10 @@ $help_lang['Cat_General_107_text'] = 'Il file <span class="text-maroon help_faq_
                                             <td class="help_table_gen_b">Questo è la chiave privata visualizzabile sulla pagina Pushsafer.</td></tr>
                                         <tr><td class="help_table_gen_a">PUSHSAFER_DEVICE</td>
                                             <td class="help_table_gen_b">L&apos;ID del dispositivo a cui inviare il messaggio. &apos;<span class="text-maroon help_faq_code">a</span>&apos; significa che il messaggio sarà inviato a tutti i dispositivi configurati e utilizzerà quindi molti API call.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHSAFER_PRIO</td>
+										    <td class="help_table_gen_b">Livello di priorità del messaggio.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHSAFER_SOUND</td>
+										    <td class="help_table_gen_b">Suono di notifica (intero).</td></tr>
                                     </table>
                                     <table class="help_table_gen">
                                         <tr><td class="help_table_gen_section" colspan="2">Pushover</td></tr>
@@ -190,24 +206,30 @@ $help_lang['Cat_General_107_text'] = 'Il file <span class="text-maroon help_faq_
                                             <td class="help_table_gen_b">Noti anche come "APP TOKEN" o "API TOKEN". Questo token può essere ottenuto dalla pagina Pushover.</td></tr>
                                         <tr><td class="help_table_gen_a">PUSHOVER_USER</td>
                                             <td class="help_table_gen_b">O "USER KEY". Questo codice viene mostrato sulla homepage di Pushover subito dopo il login.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHOVER_PRIO</td>
+										    <td class="help_table_gen_b">Livello di priorità del messaggio.</td></tr>
+										<tr><td class="help_table_gen_a">PUSHOVER_SOUND</td>
+										    <td class="help_table_gen_b">Suono di notifica.</td></tr>
                                     </table>
-                                    <table class="help_table_gen">
-                                        <tr><td class="help_table_gen_section" colspan="2">NTFY</td></tr>
-                                        <tr><td class="help_table_gen_a">REPORT_NTFY</td>
-                                            <td class="help_table_gen_b">Attiva o disattiva le notifiche sulle modifiche di rete tramite NTFY.</td></tr>
-                                        <tr><td class="help_table_gen_a">REPORT_NTFY_WEBMON</td>
-                                            <td class="help_table_gen_b">Attiva o disattiva le notifiche sulle modifiche dei servizi web monitorati tramite NTFY.</td></tr>
-                                        <tr><td class="help_table_gen_a">NTFY_HOST</td>
-                                            <td class="help_table_gen_b">L&apos;hostname o l&apos;indirizzo IP del server NTFY.</td></tr>
-                                        <tr><td class="help_table_gen_a">NTFY_TOPIC</td>
-                                            <td class="help_table_gen_b">Il soggetto delle notifiche inviate tramite NTFY.</td></tr>
-                                        <tr><td class="help_table_gen_a">NTFY_USER</td>
-                                            <td class="help_table_gen_b">Il nome utente utilizzato per l&apos;autenticazione presso il server NTFY.</td></tr>
-                                        <tr><td class="help_table_gen_a">NTFY_PASSWORD</td>
-                                            <td class="help_table_gen_b">La password utilizzata per l&apos;autenticazione presso il server NTFY.</td></tr>
-                                        <tr><td class="help_table_gen_a">NTFY_PRIORITY</td>
-                                            <td class="help_table_gen_b">La priorità delle notifiche inviate tramite NTFY.</td></tr>
-                                    </table>
+									<table class="help_table_gen">
+									    <tr><td class="help_table_gen_section" colspan="2">NTFY</td></tr>
+									    <tr><td class="help_table_gen_a">REPORT_NTFY</td>
+									        <td class="help_table_gen_b">Abilita/Disabilita le notifiche sui cambiamenti nella rete tramite NTFY</td></tr>
+									    <tr><td class="help_table_gen_a">REPORT_NTFY_WEBMON</td>
+									        <td class="help_table_gen_b">Abilita/Disabilita le notifiche sui cambiamenti dei servizi web monitorati tramite NTFY</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_HOST</td>
+									        <td class="help_table_gen_b">Il nome host o l&apos;indirizzo IP del server NTFY.</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_TOPIC</td>
+									        <td class="help_table_gen_b">L&apos;oggetto delle notifiche inviate tramite NTFY.</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_USER</td>
+									        <td class="help_table_gen_b">Il nome utente utilizzato per l&apos;autenticazione con il server NTFY.</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_PASSWORD</td>
+									        <td class="help_table_gen_b">La password utilizzata per l&apos;autenticazione con il server NTFY.</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_PRIORITY</td>
+									        <td class="help_table_gen_b">Priorità delle notifiche inviate tramite NTFY</td></tr>
+									    <tr><td class="help_table_gen_a">NTFY_CLICKABLE</td>
+									        <td class="help_table_gen_b">Abilita o disabilita l&apos;azione di clic per la notifica.</td></tr>
+									</table>
                                     <table class="help_table_gen">
                                         <tr><td class="help_table_gen_section" colspan="2">Shoutrrr</td></tr>
                                         <tr><td class="help_table_gen_a">SHOUTRRR_BINARY</td>
@@ -220,29 +242,30 @@ $help_lang['Cat_General_107_text'] = 'Il file <span class="text-maroon help_faq_
 									    <tr><td class="help_table_gen_a">REPORT_TELEGRAM_WEBMON</td>
 									        <td class="help_table_gen_b">Attiva/Disattiva le notifiche sulle modifiche nei servizi web monitorati tramite Telegram</td></tr>
 									    <tr><td class="help_table_gen_a">TELEGRAM_BOT_TOKEN_URL</td>
-									        <td class="help_table_gen_b">URL del token del bot Telegram</td></tr>
+									        <td class="help_table_gen_b">Qui viene inserita l&apos;URL creata dalla procedura guidata di configurazione di shoutrrr.</td></tr>
+
 									</table>
 									<table class="help_table_gen">
-									    <tr><td class="help_table_gen_section" colspan="2">DynDNS e IP</td></tr>
+									    <tr><td class="help_table_gen_section" colspan="2">DynDNS and IP</td></tr>
 									    <tr><td class="help_table_gen_a">QUERY_MYIP_SERVER</td>
-									        <td class="help_table_gen_b">URL del server che recupera e restituisce l&apos;indirizzo IP pubblico corrente</td></tr>
+									        <td class="help_table_gen_b">URL del server che determina e restituisce l&apos;attuale IP pubblico.</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_ACTIVE</td>
-									        <td class="help_table_gen_b">Attiva/Disattiva il servizio DDNS configurato in Pi.Alert. Il DDNS, noto anche come DynDNS, consente di aggiornare un nome di dominio con un indirizzo IP che cambia dinamicamente. Diversi fornitori di servizi offrono questo servizio.</td></tr>
+									        <td class="help_table_gen_b">Abilita/Disabilita il servizio DDNS configurato in Pi.Alert. DDNS, noto anche come DynDNS, consente di aggiornare un nome di dominio con un indirizzo IP che cambia regolarmente. Questo servizio è fornito da vari fornitori.</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_DOMAIN</td>
-									        <td class="help_table_gen_b">Dominio DDNS</td></tr>
+									        <td class="help_table_gen_b"></td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_USER</td>
 									        <td class="help_table_gen_b">Nome utente</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_PASSWORD</td>
 									        <td class="help_table_gen_b">Password</td></tr>
 									    <tr><td class="help_table_gen_a">DDNS_UPDATE_URL</td>
-									        <td class="help_table_gen_b">URL di aggiornamento DDNS</td></tr>
+									        <td class="help_table_gen_b">URL per aggiornare l&apos;IP attuale con il servizio DDNS</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Automatic Speedtest</td></tr>
 									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_ACTIVE</td>
 									        <td class="help_table_gen_b">Attivare/disattivare il test di velocità automatico. Ciò richiede l&apos;installazione dello speed test di Ookla nella scheda "Strumenti" del dispositivo "Internet". Seguire le istruzioni durante l&apos;installazione.</td></tr>
-									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_HOUR</td>
-									        <td class="help_table_gen_b">Ora intera, o ore separate da virgole, in cui deve essere avviato il test di velocità.</td></tr>
+									    <tr><td class="help_table_gen_a">SPEEDTEST_TASK_CRON</td>
+									        <td class="help_table_gen_b">Ora intera, o ore separate da virgole, in cui deve essere avviato il test di velocità. L&apos;intervallo più breve è di 3 minuti. Tutti gli intervalli più lunghi devono essere multipli interi di 3 minuti (15, 30, 36, ecc).</td></tr>
 									</table>
 									<table class="help_table_gen">
 									    <tr><td class="help_table_gen_section" colspan="2">Opzioni e campioni di arp-scan</td></tr>
@@ -351,9 +374,23 @@ $help_lang['Cat_Detail_302_head_a'] = 'Cosa significa ';
 $help_lang['Cat_Detail_302_head_b'] = ' e perché non posso selezionarlo?';
 $help_lang['Cat_Detail_302_text'] = 'Alcuni dispositivi moderni generano indirizzi MAC casuali per motivi di privacy, che non possono essere associati a un produttore specifico e che cambiano ogni volta che il dispositivo si
 									connette alla rete. Pi.Alert riconosce automaticamente se si tratta di un indirizzo MAC casuale e attiva automaticamente questo campo. Per disattivare questa funzionalità, è necessario verificare
-									le impostazioni del dispositivo per vedere come disattivare la generazione di indirizzi MAC casuali.';
+									le impostazioni del dispositivo per vedere come disattivare la generazione di indirizzi MAC casuali. Gli indirizzi MAC con il seguente schema sono contrassegnati come "casuali":
+									<ul style="list-style-type: none">
+									    <li>x2:xx:xx:xx:xx:xx</li>
+									    <li>x6:xx:xx:xx:xx:xx</li>
+									    <li>xA:xx:xx:xx:xx:xx</li>
+									    <li>xE:xx:xx:xx:xx:xx</li>
+									</ul>';
 $help_lang['Cat_Detail_303_head'] = 'Cos&apos;è Nmap e a cosa serve?';
-$help_lang['Cat_Detail_303_text'] = 'Nmap è uno scanner di rete con molte funzionalità. Quando un nuovo dispositivo appare nella tua lista, puoi utilizzare la scansione Nmap per ottenere informazioni dettagliate sul dispositivo.';
+$help_lang['Cat_Detail_303_text'] = 'Nmap è uno scanner di rete con diverse funzionalità.<br>
+                                    Quando appare un nuovo dispositivo nella tua lista, hai la possibilità di ottenere informazioni più dettagliate sul dispositivo tramite la scansione Nmap.
+                                    <br>Pi.Alert offre 3 scansioni predefinite diverse:
+                                    <br>
+                                    <ul>
+                                    <li>Scansione rapida: Verifica solo i 100 porte più importanti (alcuni secondi)</li>
+                                    <li>Scansione standard: Nmap esegue la scansione dei primi 1.000 porte per ogni protocollo di scansione richiesto. (circa 5-10 secondi)</li>
+                                    <li>Scansione dettagliata (Timeout 60s): La scansione è stata ampliata per includere alcune porte UDP. Inoltre, è stata aumentata la gamma di porte TCP.</li>
+                                    </ul>';
 $help_lang['Cat_Presence_400_head'] = 'I dispositivi vengono visualizzati con una barra gialla e la scritta "missing Event".';
 $help_lang['Cat_Presence_400_text'] = 'Se ciò accade, hai la possibilità di eliminare gli eventi per il dispositivo in questione (nella vista dettagli). Un&apos;altra opzione potrebbe essere quella di accendere il dispositivo e
 									  attendere che Pi.Alert lo riconosca come "Online" con la successiva scansione, quindi spegnere nuovamente il dispositivo. Ora Pi.Alert dovrebbe registrare correttamente lo stato del dispositivo nella prossima scansione.';
