@@ -47,7 +47,11 @@ if ($MAC_IGNORE_LIST_LINE == "" || $MAC_IGNORE_LIST_LINE == "[]") {$MAC_IGNORE_L
 	$MAC_IGNORE_LIST = str_replace("[", "", str_replace("]", "", str_replace("'", "", trim($MAC_IGNORE_LIST_LINE))));
 	$MAC_IGNORE_LIST = str_replace(",", ", ", trim($MAC_IGNORE_LIST));
 }
-
+$IP_IGNORE_LIST_LINE = get_config_parmeter('IP_IGNORE_LIST');
+if ($IP_IGNORE_LIST_LINE == "" || $IP_IGNORE_LIST_LINE == "[]") {$IP_IGNORE_LIST = $pia_lang['MT_Tool_ignorelist_false'];} else {
+    $IP_IGNORE_LIST = str_replace("[", "", str_replace("]", "", str_replace("'", "", trim($IP_IGNORE_LIST_LINE))));
+    $IP_IGNORE_LIST = str_replace(",", ", ", trim($IP_IGNORE_LIST));
+}
 // Get Notification Settings --------------------------------------------------
 $CONFIG_FILE_SOURCE = "../config/pialert.conf";
 $CONFIG_FILE_KEY_LINE = file($CONFIG_FILE_SOURCE);
@@ -86,14 +90,14 @@ if ($_REQUEST['tab'] == '1') {
 	$pia_tab_tool = 'active';
 	$pia_tab_setting = $pia_tab_backup = $pia_tab_satellites = $pia_tab_gui = '';
 } elseif ($_REQUEST['tab'] == '3') {
+    $pia_tab_backup = 'active';
 	$pia_tab_setting = $pia_tab_tool = $pia_tab_satellites = $pia_tab_gui = '';
-	$pia_tab_backup = 'active';
 } elseif ($_REQUEST['tab'] == '4') {
+    $pia_tab_gui = 'active';
 	$pia_tab_setting = $pia_tab_tool = $pia_tab_satellites = $pia_tab_backup = '';
-	$pia_tab_gui = 'active';
 } elseif ($_REQUEST['tab'] == '5') {
-    $pia_tab_setting = $pia_tab_tool = $pia_tab_backup = $pia_tab_gui = '';
     $pia_tab_satellites = 'active';
+    $pia_tab_setting = $pia_tab_tool = $pia_tab_backup = $pia_tab_gui = '';
 } else {
 	$pia_tab_setting = 'active';
 	$pia_tab_tool = $pia_tab_backup = $pia_tab_gui = $pia_tab_satellites = '';}
@@ -162,9 +166,15 @@ if ($_SESSION['AUTO_DB_BACKUP']) {echo $pia_lang['MT_Stats_autobkp_on'].' / <spa
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_Tool_ignorelist'];?></div>
+                    <div class="db_info_table_cell"><?=$pia_lang['MT_Tool_ignorelist'];?> (MAC)</div>
                     <div class="db_info_table_cell">
                         <?=$MAC_IGNORE_LIST;?>
+                    </div>
+                </div>
+                <div class="db_info_table_row">
+                    <div class="db_info_table_cell"><?=$pia_lang['MT_Tool_ignorelist'];?> (IP)</div>
+                    <div class="db_info_table_cell">
+                        <?=$IP_IGNORE_LIST;?>
                     </div>
                 </div>
             </div>
@@ -548,6 +558,10 @@ if (strtolower($_SESSION['WebProtection']) != 'true') {
                             <div class="table_settings_col_box">
                               <input class="checkbox blue" id="chkMACaddress" type="checkbox" <?=$col_checkbox['MACAddress'];?>>
                               <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_MAC'];?>-Address</label>
+                            </div>
+                            <div class="table_settings_col_box">
+                              <input class="checkbox blue" id="chkMACVendor" type="checkbox" <?=$col_checkbox['MACVendor'];?>>
+                              <label class="control-label" style="margin-left: 5px">Vendor</label>
                             </div>
                             <div class="table_settings_col_box">
                               <input class="checkbox blue" id="chkWakeOnLAN" type="checkbox" <?=$col_checkbox['WakeOnLAN'];?>>
@@ -1081,6 +1095,7 @@ function setDeviceListCol() {
     + '&lastip='         + ($('#chklastIP')[0].checked * 1)
     + '&mactype='        + ($('#chkMACtype')[0].checked * 1)
     + '&macaddress='     + ($('#chkMACaddress')[0].checked * 1)
+    + '&macvendor='      + ($('#chkMACVendor')[0].checked * 1)
     + '&location='       + ($('#chkLocation')[0].checked * 1)
     + '&wakeonlan='      + ($('#chkWakeOnLAN')[0].checked * 1)
     , function(msg) {

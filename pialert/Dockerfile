@@ -69,6 +69,8 @@ RUN chmod -R +x /root/pialert/back/pialert-cli
 RUN chmod -R +x /root/pialert/back/speedtest-cli
 RUN chgrp -R www-data "/root/pialert/config"
 RUN chmod -R 775 "/root/pialert/config"
+RUN chgrp -R www-data "/root/pialert/db"
+RUN chmod -R 775 "/root/pialert/db"
 RUN chgrp -R www-data "/root/pialert/front/reports"
 RUN chmod -R 775 "/root/pialert/front/reports"
 RUN chgrp -R www-data "/root/pialert/back/speedtest/"
@@ -92,6 +94,9 @@ RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data"
 
 # Update from /var/lib/ieee-data
 RUN cd /usr/share/arp-scan && get-oui -v
+
+# Update DB
+RUN /root/pialert/back/pialert-cli update_db
 
 # Labels
 LABEL \

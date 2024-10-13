@@ -62,9 +62,9 @@ fi
 ln -s "/data/log/" "/root/pialert/log"
 
 touch "/root/pialert/log/access-pialert.log"
-ln -s "/root/pialert/log/access-pialert.log" "/var/log/lighttpd/access-pialert.log"
+ln -s "/root/pialert/log/access-pialert.log" "/var/log/lighttpd/access.log"
 touch "/root/pialert/log/error-pialert.log"
-ln -s "/root/pialert/log/error-pialert.log" "/var/log/lighttpd/error-pialert.log"
+ln -s "/root/pialert/log/error-pialert.log" "/var/log/lighttpd/error.log"
 touch "/root/pialert/log/pialert.vendors.log"
 ln -s "/root/pialert/log/pialert.vendors.log" "/root/pialert/front/php/server/pialert.vendors.log"
 ln -s "/root/pialert/log/pialert.IP.log" "/root/pialert/front/php/server/pialert.IP.log"
@@ -89,5 +89,8 @@ chgrp -R www-data "/data/log"
 chmod -R 775 "/data/log"
 chgrp -R www-data "/data/config"
 chmod -R 775 "/data/config"
+
+# Update DB
+/root/pialert/back/pialert-cli update_db
 
 exit 0

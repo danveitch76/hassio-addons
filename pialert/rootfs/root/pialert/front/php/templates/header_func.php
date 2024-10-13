@@ -157,7 +157,7 @@ function toggle_satellites_submenu() {
 	                // prepare SubHeadline on devices page
 	                $_SESSION[$row['sat_token']] = $row['sat_name'];
 	                // Create NavBar items
-	                echo '<li class="custom_filter">
+	                $dev_submenu .= '<li class="custom_filter">
 	                	<a href="devices.php?scansource='.$row['sat_token'].'" style="font-size: 14px; height: 30px; line-height:30px;padding:0;padding-left:25px;">
 	                		<i class="fa-solid fa-satellite" style="margin-right:5px;"></i>
 	                		<span>'.$row['sat_name'].'</span>
@@ -167,7 +167,17 @@ function toggle_satellites_submenu() {
 				              <small class="label pull-right bg-green" id="header_'.$row['sat_token'].'_count_on"></small>
 		            		</span>
 		            </a></li>';
+
+		            $pres_submenu .= '<li class="custom_filter">
+	                	<a href="presence.php?scansource='.$row['sat_token'].'" style="font-size: 14px; height: 30px; line-height:30px;padding:0;padding-left:25px;">
+	                		<i class="fa-solid fa-satellite" style="margin-right:5px;"></i>
+	                		<span>'.$row['sat_name'].'</span>
+	                		<span class="pull-right-container">
+				              <small class="label pull-right bg-gray" id="header_'.$row['sat_token'].'_presence"></small>
+		            		</span></a>
+	                	</li>';
 	            }
+	        return array($dev_submenu, $pres_submenu);
 	        }
 	    }
 	    $db->close();
@@ -200,6 +210,7 @@ if (get_config_parmeter('SATELLITES_ACTIVE') == 1) {$_SESSION['SATELLITES_ACTIVE
 $_SESSION['AUTO_UPDATE_CHECK_CRON'] = get_config_parmeter('AUTO_UPDATE_CHECK_CRON');
 $_SESSION['AUTO_DB_BACKUP_CRON'] = get_config_parmeter('AUTO_DB_BACKUP_CRON');
 $_SESSION['SPEEDTEST_TASK_CRON'] = get_config_parmeter('SPEEDTEST_TASK_CRON');
+$_SESSION['REPORT_NEW_CONTINUOUS_CRON'] = get_config_parmeter('REPORT_NEW_CONTINUOUS_CRON');
 
 // State for Toggle Buttons
 function convert_state($state, $revert) {
@@ -426,8 +437,8 @@ function get_filter_group_list() {
 function format_notifications($source_array) {
 	$format_array_true = array();
 	$format_array_false = array();
-	$text_reference = array('WEBGUI', 'TELEGRAM', 'MAIL', 'PUSHSAFER', 'PUSHOVER', 'NTFY');
-	$text_format = array('WebGUI', 'Telegram', 'Mail', 'Pushsafer', 'Pushover', 'NTFY');
+	$text_reference = array('WEBGUI', 'TELEGRAM', 'MAIL', 'PUSHSAFER', 'PUSHOVER', 'NTFY', 'MQTT');
+	$text_format = array('WebGUI', 'Telegram', 'Mail', 'Pushsafer', 'Pushover', 'NTFY', 'MQTT');
 	for ($x = 0; $x < sizeof($source_array); $x++) {
 		$temp = explode("=", $source_array[$x]);
 		$temp[0] = trim($temp[0]);
@@ -476,7 +487,7 @@ function read_DevListCol() {
 		$get = file_get_contents($file, true);
 		$output_array = json_decode($get, true);
 	} else {
-		$output_array = array('ConnectionType' => 0, 'Favorites' => 1, 'Group' => 1, 'Owner' => 1, 'Type' => 1, 'FirstSession' => 1, 'LastSession' => 1, 'LastIP' => 1, 'MACType' => 1, 'MACAddress' => 0, 'Location' => 0, 'WakeOnLAN' => 0);
+		$output_array = array('ConnectionType' => 0, 'Favorites' => 1, 'Group' => 1, 'Owner' => 1, 'Type' => 1, 'FirstSession' => 1, 'LastSession' => 1, 'LastIP' => 1, 'MACType' => 1, 'MACAddress' => 0, 'MACVendor' => 1, 'Location' => 0, 'WakeOnLAN' => 0);
 	}
 	return $output_array;
 }
@@ -492,6 +503,7 @@ function set_column_checkboxes($table_config) {
 	if ($table_config['LastIP'] == 1) {$col_checkbox['LastIP'] = "checked";}
 	if ($table_config['MACType'] == 1) {$col_checkbox['MACType'] = "checked";}
 	if ($table_config['MACAddress'] == 1) {$col_checkbox['MACAddress'] = "checked";}
+	if ($table_config['MACVendor'] == 1) {$col_checkbox['MACVendor'] = "checked";}
 	if ($table_config['Location'] == 1) {$col_checkbox['Location'] = "checked";}
 	if ($table_config['WakeOnLAN'] == 1) {$col_checkbox['WakeOnLAN'] = "checked";}
 	return $col_checkbox;
@@ -541,9 +553,9 @@ function show_all_satellites_list($sat_rowid, $sat_name, $sat_token, $sat_passwo
                     </div>
                     <div class="col-xs-6 col-md-2 text-center" style="padding: 5px;">
                         '.$pia_lang['MT_SET_SatEdit_FORM_Action'].': <br>
-                        <button type="button" class="btn btn-link" id="btnInstallSatellite" onclick="InstallSatellite(\'' . $sat_token . '\',\'' . $sat_password . '\')" ><i class="bi bi-info-circle text-aqua" style="position: relative; font-size: 20px; top: -5px;"></i></button>
-                        <button type="button" class="btn btn-link" id="btnSaveSatellite" onclick="SaveSatellite(\'' . $sat_name . '\',\'' . $sat_rowid . '\')" ><i class="bi bi-floppy text-yellow" style="position: relative; font-size: 20px; top: -5px;"></i></button>
-                        <button type="button" class="btn btn-link" id="btnDeleteSatellite" onclick="DeleteSatellite(\'' . $sat_name . '\',\'' . $sat_rowid . '\')" ><i class="bi bi-trash text-red" style="position: relative; font-size: 20px; top: -5px;"></i></button>
+                        <button type="button" class="btn btn-link" id="btnInstallSatellite" onclick="InstallSatellite(\'' . $sat_token . '\',\'' . $sat_password . '\')" ><i class="bi bi-info-circle text-aqua satlist_action_btn_content"></i></button>
+                        <button type="button" class="btn btn-link" id="btnSaveSatellite" onclick="SaveSatellite(\'' . $sat_name . '\',\'' . $sat_rowid . '\')" ><i class="bi bi-floppy text-yellow satlist_action_btn_content"></i></button>
+                        <button type="button" class="btn btn-link" id="btnDeleteSatellite" onclick="DeleteSatellite(\'' . $sat_name . '\',\'' . $sat_rowid . '\')" ><i class="bi bi-trash text-red satlist_action_btn_content"></i></button>
                     </div>
                 </div>';
 	echo '      <div class="db_info_table_row">

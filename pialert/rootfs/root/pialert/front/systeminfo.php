@@ -21,7 +21,7 @@ if ($_SESSION["login"] != 1) {
 require 'php/templates/header.php';
 
 
-$prevVal = shell_exec("sudo ../back/pialert-cli show_usercron");
+$prevVal = shell_exec("../back/pialert-cli show_usercron");
 $prevArr = explode("\n", trim($prevVal));
 function filterValues($value) {
     return (substr($value, 0, 1) !== '#');
@@ -75,17 +75,17 @@ $net_interfaces_rx = explode("\n", trim($network_result));
 $network_result = shell_exec("cat /proc/net/dev | tail -n +3 | awk '{print $10}'");
 $net_interfaces_tx = explode("\n", trim($network_result));
 //hdd stat
-$hdd_result = shell_exec("sudo df | awk '{print $1}'");
+$hdd_result = shell_exec("df | awk '{print $1}'");
 $hdd_devices = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("sudo df | awk '{print $2}'");
+$hdd_result = shell_exec("df | awk '{print $2}'");
 $hdd_devices_total = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("sudo df | awk '{print $3}'");
+$hdd_result = shell_exec("df | awk '{print $3}'");
 $hdd_devices_used = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("sudo df | awk '{print $4}'");
+$hdd_result = shell_exec("df | awk '{print $4}'");
 $hdd_devices_free = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("sudo df | awk '{print $5}'");
+$hdd_result = shell_exec("df | awk '{print $5}'");
 $hdd_devices_percent = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("sudo df | awk '{print $6}'");
+$hdd_result = shell_exec("df | awk '{print $6}'");
 $hdd_devices_mount = explode("\n", trim($hdd_result));
 //usb devices
 $usb_result = shell_exec("lsusb");
@@ -146,12 +146,85 @@ echo '<div class="box box-solid">
         </div>
       </div>';
 
+echo '<script>
+	var ratio = window.devicePixelRatio || 1;
+	var w = window.innerWidth;
+	var h = window.innerHeight;
+	var rw = window.innerWidth * ratio;
+	var rh = window.innerHeight * ratio;
+
+	var resolutionDiv = document.getElementById("resolution");
+	resolutionDiv.innerHTML = "Width: " + w + "px / Height: " + h + "px<br> " + "Width: " + rw + "px / Height: " + rh + "px (native)";
+</script>';
+
 // General ----------------------------------------------------------
-echo '<div class="box box-solid">
-            <div class="box-header">
-              <h3 class="box-title sysinfo_headline"><i class="bi bi-info-circle"></i> General</h3>
-            </div>
-            <div class="box-body">
+if (($_SESSION['Scan_Satellite'] == True)) {
+		//$_SESSION['local'] = "local";
+
+		$uptime_search  = array('w ', 'd ', 'h ', 'm ');
+        $uptime_replace = array(' weeks, ', ' days, ', ' hours, ', ' minutes ');
+
+		global $satellite_badges_list;
+    	$database = '../db/pialert.db';
+	    $db = new SQLite3($database);
+	    $sql_select = 'SELECT * FROM Satellites ORDER BY sat_name ASC';
+	    $result = $db->query($sql_select);
+	    if ($result) {
+	        if ($result->numColumns() > 0) {
+	        	$tab_id = 0;
+	            while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+	            	$tab_id++;
+	                $tabs .=  '<li class=""><a href="#tab_'.$tab_id.'" data-toggle="tab" aria-expanded="false">'.$row['sat_name'].'</a></li>';
+
+	                $hostdata = json_decode($row['sat_host_data'], true);
+	                $scan_time = explode(" ", $row['sat_lastupdate']);
+	                $tab_content .= '<div class="tab-pane" id="tab_'.$tab_id.'">
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Uptime</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . str_replace($uptime_search, $uptime_replace, $hostdata['uptime']) . ' ('.substr($scan_time[1], 0, -3). ')</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Operating System</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $hostdata['os_version'] . '</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Kernel Architecture:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $hostdata['cpu_arch'] . '</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">CPU Name:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $hostdata['cpu_name'] . '</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">CPU Cores:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $hostdata['cpu_cores'] . ' @ ' . $hostdata['cpu_freq'] . '</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Memory:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . round($hostdata['ram_total']/1048576, 2) . ' MB / ' . $hostdata['ram_used_percent'] . '% is used</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Running Processes:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $hostdata['proc_count'] . '</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Satellite Host:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">Name: ' . $hostdata['hostname'] . ' / IP: ' . $hostdata['satellite_ip'] . ' / MAC: <a href="./deviceDetails.php?mac=' . $hostdata['satellite_mac'] . '">' . $hostdata['satellite_mac'] . '</a></div>
+											</div>
+							            </div>';
+	            }
+	        }
+	    }
+	    $db->close();
+}
+echo '<div class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+              <li class="pull-left header text-aqua" id="sys_info_gen_head"><i class="bi bi-info-circle"></i> General</li>
+              <li class="active"><a href="#tab_0" data-toggle="tab" aria-expanded="true">Pi.Alert</a></li>
+              '.$tabs.'
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane active" id="tab_0">
 				<div class="row">
 				  <div class="col-sm-3 sysinfo_gerneral_a">Uptime</div>
 				  <div class="col-sm-9 sysinfo_gerneral_b">' . $stat['uptime'] . '</div>
@@ -184,19 +257,11 @@ echo '<div class="box box-solid">
 				  <div class="col-sm-3 sysinfo_gerneral_a">Logged in Users:</div>
 				  <div class="col-sm-9 sysinfo_gerneral_b">' . $stat['user_count'] . '</div>
 				</div>
+              </div>
+              '.$tab_content.'
             </div>
-      </div>';
+          </div>';
 
-echo '<script>
-	var ratio = window.devicePixelRatio || 1;
-	var w = window.innerWidth;
-	var h = window.innerHeight;
-	var rw = window.innerWidth * ratio;
-	var rh = window.innerHeight * ratio;
-
-	var resolutionDiv = document.getElementById("resolution");
-	resolutionDiv.innerHTML = "Width: " + w + "px / Height: " + h + "px<br> " + "Width: " + rw + "px / Height: " + rh + "px (native)";
-</script>';
 
 // DB Info ----------------------------------------------------------
 echo '<div class="box box-solid">
@@ -277,6 +342,11 @@ echo '<tr>
 		<td style="padding: 3px; padding-left: 10px;">Speedtest</td>
 		<td style="padding: 3px; padding-left: 10px;">'.$_SESSION['SPEEDTEST_TASK_CRON'].'</td>
 		<td style="padding: 3px; padding-left: 10px;">'.convert_bool_to_status($_SESSION['SPEEDTEST_TASK_ACTIVE']).'</td>
+	  </tr>';
+echo '<tr>
+		<td style="padding: 3px; padding-left: 10px;">Continuous notifications</td>
+		<td style="padding: 3px; padding-left: 10px;">'.$_SESSION['REPORT_NEW_CONTINUOUS_CRON'].'</td>
+		<td style="padding: 3px; padding-left: 10px;">'.convert_bool_to_status($_SESSION['REPORT_NEW_CONTINUOUS']).'</td>
 	  </tr>';
 echo '      </table>
             </div>

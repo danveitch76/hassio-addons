@@ -72,8 +72,8 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
 <!-- Main content ---------------------------------------------------------- -->
     <section class="content">
 
-    <div id="sticky-back-button" class="navbar navbar-default navbar-fixed-bottom" style="background-color: #000;">
-      <a class="btn btn-lg btn-default btn-block" href="./devices.php" role="button"><?=$pia_lang['Device_Table_nav_prev'];?></a>
+    <div id="sticky-back-button" class="navbar navbar-default navbar-fixed-bottom">
+      <a id="sticky-back-link" class="btn btn-lg btn-default btn-block" href="./devices.php" role="button"><?=$pia_lang['Device_Table_nav_prev'];?></a>
     </div>
 
 <!-- top small box  ------------------------------------------------------- -->
@@ -467,6 +467,12 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                       <div class="form-group">
                         <label class="col-sm-5 control-label"><?=$pia_lang['DevDetail_EveandAl_Archived'];?>:</label>
                         <div class="col-sm-7" style="padding-top:6px;"><input class="checkbox blue hidden" id="chkArchived" type="checkbox"></div>
+                      </div>
+
+                      <!-- Show on Presence page -->
+                      <div class="form-group">
+                        <label class="col-sm-5 control-label"><?=$pia_lang['DevDetail_MainInfo_ShowPresence'];?></label>
+                        <div class="col-sm-7" style="padding-top:6px;"><input class="checkbox blue hidden" id="chkShowPresence" type="checkbox"></div>
                       </div>
 
                       <!-- Randomized MAC -->
@@ -1272,6 +1278,7 @@ function getDeviceData (readAllData=false) {
       $('#txtSerialnumber').val    ('--');
 
       $('#chkFavorite').iCheck     ('uncheck');
+      $('#chkShowPresence').iCheck ('uncheck');
       $('#txtGroup').val           ('--');
       $('#txtLocation').val        ('--');
       $('#txtComments').val        ('--');
@@ -1365,6 +1372,7 @@ function getDeviceData (readAllData=false) {
         $('#txtSerialnumber').val                    (deviceData['dev_Serialnumber']);
 
         if (deviceData['dev_Favorite'] == 1)         {$('#chkFavorite').iCheck('check');}    else {$('#chkFavorite').iCheck('uncheck');}
+        if (deviceData['dev_PresencePage'] == 1)     {$('#chkShowPresence').iCheck('check');}    else {$('#chkShowPresence').iCheck('uncheck');}
         $('#txtGroup').val                           (deviceData['dev_Group']);
         $('#txtLocation').val                        (deviceData['dev_Location']);
         $('#txtComments').val                        (deviceData['dev_Comments']);
@@ -1400,9 +1408,11 @@ function getDeviceData (readAllData=false) {
 
         if (deviceData['dev_ScanSource'] !== 'local') {
             var navbarBackButton = $('#navbar-back-button');
+            var stickyBackButton = $('#sticky-back-link');
             var originalHref = navbarBackButton.attr('href');
             var newHref = originalHref + '?scansource=' + deviceData['dev_ScanSource'];
             navbarBackButton.attr('href', newHref);
+            stickyBackButton.attr('href', newHref);
         }
 
       }
@@ -1500,6 +1510,7 @@ function setDeviceData (refreshCallback='') {
     + '&model='           + encodeURIComponent($('#txtModel').val())
     + '&serialnumber='    + $('#txtSerialnumber').val()
     + '&favorite='        + ($('#chkFavorite')[0].checked * 1)
+    + '&showpresence='    + ($('#chkShowPresence')[0].checked * 1)
     + '&group='           + $('#txtGroup').val()
     + '&location='        + $('#txtLocation').val()
     + '&comments='        + $('#txtComments').val()
@@ -1517,7 +1528,7 @@ function setDeviceData (refreshCallback='') {
     , function(msg) {
 
     // deactivate button
-    deactivateSaveRestoreData ();
+    deactivateSaveRestoreData();
     showMessage (msg);
 
     // Callback fuction

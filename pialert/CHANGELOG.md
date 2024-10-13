@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.6
+### ✨ Features
+- Updated to v2024-09-28 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-09-28)
+
+### 🩹 BugFix
+- Fix missing MQTT notifications visibility on 'Settings and Maintenance' page.
+- Enabled DB update in install-pialert.sh
+
 ## 0.0.5
 ### ✨ Features
 - Updated GeoLite2-Country db to latest version (10/10/24)

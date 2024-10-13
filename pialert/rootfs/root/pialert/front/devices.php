@@ -109,6 +109,9 @@ if ($_REQUEST['mod'] == 'bulkedit') {
 		if ($_REQUEST['en_bulk_Archived'] == 'on') {
 			if ($_REQUEST['bulk_Archived'] == 'on') {$set_bulk_Archived = 1;} else { $set_bulk_Archived = 0;}
 			array_push($sql_queue, 'dev_Archived="' . $set_bulk_Archived . '"');}
+		if ($_REQUEST['en_bulk_PresencePage'] == 'on') {
+			if ($_REQUEST['bulk_PresencePage'] == 'on') {$set_bulk_PresencePage = 1;} else { $set_bulk_PresencePage = 0;}
+			array_push($sql_queue, 'dev_PresencePage="' . $set_bulk_PresencePage . '"');}
 
 		print_box_top_element($pia_lang['Device_bulkEditor_savebox_title']);
 		// Count changed fields
@@ -146,6 +149,7 @@ if ($_REQUEST['mod'] == 'bulkedit') {
 			if (isset($set_bulk_AlertDown)) {echo $pia_lang['DevDetail_EveandAl_AlertDown'] . ': ' . $set_bulk_AlertDown . '<br>';}
 			if (isset($set_bulk_NewDevice)) {echo $pia_lang['DevDetail_EveandAl_NewDevice'] . ': ' . $set_bulk_NewDevice . '<br>';}
 			if (isset($set_bulk_Archived)) {echo $pia_lang['DevDetail_EveandAl_Archived'] . ': ' . $set_bulk_Archived . '<br>';}
+			if (isset($set_bulk_PresencePage)) {echo $pia_lang['DevDetail_MainInfo_ShowPresence'] . ': ' . $set_bulk_PresencePage . '<br>';}
 			// Update Segment stop
 			// Logging
 			pialert_logging('a_021', $_SERVER['REMOTE_ADDR'], 'LogStr_0002', '', $modified_hosts);
@@ -158,17 +162,18 @@ if ($_REQUEST['mod'] == 'bulkedit') {
           <input type="hidden" id="savedata" name="savedata" value="yes">';
 
 	print_box_top_element($pia_lang['Device_bulkEditor_hostbox_title']);
-	$sql = 'SELECT dev_Name, dev_MAC, dev_PresentLastScan, dev_Archived, dev_NewDevice, dev_AlertEvents, dev_AlertDeviceDown FROM Devices WHERE dev_ScanSource="'.$SCANSOURCE.'" ORDER BY dev_Name COLLATE NOCASE ASC';
+	$sql = 'SELECT dev_Name, dev_MAC, dev_PresentLastScan, dev_Archived, dev_NewDevice, dev_AlertEvents, dev_AlertDeviceDown, dev_PresencePage FROM Devices WHERE dev_ScanSource="'.$SCANSOURCE.'" ORDER BY dev_Name COLLATE NOCASE ASC';
 	$results = $db->query($sql);
 	while ($row = $results->fetchArray()) {
 		if ($row[2] == 1) {$status_border = 'bulked_online_border';} else { $status_border = 'bulked_offline_border';}
 		if ($row[3] == 1) {$status_box = 'background-color: #aaa;';} elseif ($row[4] == 1) {$status_box = 'background-color: #b1720c;';} else { $status_box = 'background-color: transparent;';}
 		if ($row[5] == 1 && $row[6] == 1) {$status_text_color = 'bulked_checkbox_label_alldown';} elseif ($row[5] == 1) {$status_text_color = 'bulked_checkbox_label_all';} elseif ($row[6] == 1) {$status_text_color = 'bulked_checkbox_label_down';} else { $status_text_color = '';}
+		if ($row[7] == 0) {$underline = 'presence-underlined';} else { $underline = '';}
 		echo '<div class="bulked_dev_box ' . $status_border . '">
              <div class="bulked_dev_chk_cont" style="' . $status_box . '">
              		<input class="icheckbox_flat-blue hostselection bulked_dev_chkbox" id="' . $row[1] . '" name="' . $row[1] . '" type="checkbox">
              </div>
-             <label class="control-label ' . $status_text_color . '" for="' . $row[1] . '">' . $row[0] . '</label>
+             <label class="control-label ' . $status_text_color . ' ' . $underline . '" for="' . $row[1] . '">' . $row[0] . '</label>
           </div>';
 	}
 	// Check/Uncheck All Button
@@ -332,7 +337,12 @@ if ($_REQUEST['mod'] == 'bulkedit') {
                 <label for="bulk_Archived" style="width: 200px;">' . $pia_lang['DevDetail_EveandAl_Archived'] . ':</label>
                 <input class="icheckbox_flat-blue" id="bulk_Archived" name="bulk_Archived" type="checkbox" disabled></td>
           </tr>
-
+          <tr>
+            <td class="bulked_table_cell_a"><input class="icheckbox_flat-blue" id="en_bulk_PresencePage" name="en_bulk_PresencePage" type="checkbox"></td>
+            <td>
+                <label for="bulk_PresencePage" style="width: 200px;">' . $pia_lang['DevDetail_MainInfo_ShowPresence'] . ':</label>
+                <input class="icheckbox_flat-blue" id="bulk_PresencePage" name="bulk_PresencePage" type="checkbox" disabled></td>
+          </tr>
         </table>
         <button type="button" class="btn btn-danger" id="btnBulkDeletion" onclick="askBulkDeletion()" style="min-width: 180px;">' . $pia_lang['Device_bulkDel_button'] . '</button>
         <input class="btn btn-warning pull-right" type="submit" value="' . $pia_lang['Gen_Save'] . '" style="margin-bottom: 10px; min-width: 180px;">';
@@ -409,6 +419,12 @@ if ($_REQUEST['mod'] == 'bulkedit') {
               $("#bulk_Archived").prop("checked", false);
               $("#bulk_Archived").prop("disabled", !bulk_Archived);
               bulk_Archived = !bulk_Archived;
+            });
+            var bulk_PresencePage = true;
+            $("#en_bulk_PresencePage").on("click", function() {
+              $("#bulk_PresencePage").prop("checked", false);
+              $("#bulk_PresencePage").prop("disabled", !bulk_PresencePage);
+              bulk_PresencePage = !bulk_PresencePage;
             });
             function setTextValue (textElement, textValue) {
               $("#"+textElement).val (textValue);
@@ -623,6 +639,10 @@ If ($ENABLED_HISTOY_GRAPH !== False) {
 							                              <label class="control-label" style="margin-left: 5px">' . $pia_lang['Device_TableHead_MACaddress'] .'</label>
 							                            </div>
 							                            <div class="table_settings_col_box" style="width:180px;">
+							                              <input class="checkbox blue" id="chkFilterVendor" type="checkbox">
+							                              <label class="control-label" style="margin-left: 5px">' . $pia_lang['DevDetail_MainInfo_Vendor'] .'</label>
+							                            </div>
+							                            <div class="table_settings_col_box" style="width:180px;">
 							                              <input class="checkbox blue" id="chkFilterConnectionType" type="checkbox">
 							                              <label class="control-label" style="margin-left: 5px">' . $pia_lang['Device_TableHead_ConnectionType'] .'</label>
 							                            </div>
@@ -666,9 +686,10 @@ If ($ENABLED_HISTOY_GRAPH !== False) {
 									if ($table_config['LastIP'] == 0) {$devlistcol_hide .= '9, ';}
 									if ($table_config['MACType'] == 0) {$devlistcol_hide .= '10, ';}
 									if ($table_config['MACAddress'] == 0) {$devlistcol_hide .= '11, ';}
-									if ($table_config['WakeOnLAN'] == 0) {$devlistcol_hide .= '16, ';}
+									if ($table_config['MACVendor'] == 0) {$devlistcol_hide .= '12, ';}
+									if ($table_config['WakeOnLAN'] == 0) {$devlistcol_hide .= '17, ';}
 ?>
-                  <th><?=$pia_lang['Device_TableHead_Name'];?></th>
+                  <th><?=$pia_lang['Device_TableHead_Name'];?></th> 
                   <th><?=$pia_lang['Device_TableHead_ConnectionType'];?></th>
                   <th><?=$pia_lang['Device_TableHead_Owner'];?></th>
                   <th><?=$pia_lang['Device_TableHead_Type'];?></th>
@@ -680,6 +701,7 @@ If ($ENABLED_HISTOY_GRAPH !== False) {
                   <th style="white-space: nowrap;"><?=$pia_lang['Device_TableHead_LastIP'];?></th>
                   <th><?=$pia_lang['Device_TableHead_MAC'];?></th>
                   <th style="white-space: nowrap;"><?=$pia_lang['Device_TableHead_MACaddress'];?></th>
+                  <th><?=$pia_lang['DevDetail_MainInfo_Vendor'];?></th>
                   <th><?=$pia_lang['Device_TableHead_Status'];?></th>
                   <th><?=$pia_lang['Device_TableHead_LastIPOrder'];?></th>
                   <th>ScanSource</th>
@@ -773,13 +795,13 @@ function initializeDatatable () {
     // 'order'       : [[3,'desc'], [0,'asc']],
 
     'columnDefs'   : [
-      {visible:   false,         targets: [<?=$devlistcol_hide;?>13, 14, 15] },
-      {className: 'text-center', targets: [4, 9, 10, 11, 12, 16] },
+      {visible:   false,         targets: [<?=$devlistcol_hide;?>14, 15, 16] },
+      {className: 'text-center', targets: [4, 9, 10, 11, 13, 17] },
       {width:     '100px',       targets: [7, 8] },
       {width:     '30px',        targets: [10] },
-      {width:     '0px',         targets: [12] },
-      {width:     '20px',         targets: [16] },
-      {orderData: [13],          targets: [9] },
+      {width:     '0px',         targets: [13] },
+      {width:     '20px',         targets: [17] },
+      {orderData: [14],          targets: [9] },
       { "targets": [<?=$_REQUEST['filter_fields'];?>], "searchable": false },
 
       // Device Name
@@ -820,9 +842,9 @@ function initializeDatatable () {
             $(td).html (rowData[11]);
       } },
       // Status color
-      {targets: [12],
+      {targets: [13],
         'createdCell': function (td, cellData, rowData, row, col) {
-          switch (rowData[12]) {
+          switch (rowData[13]) {
             case 'Down':      color='red';                 statusname='Down';       break;
             case 'NewON':     color='grad-green-yellow';   statusname='&nbsp;&nbsp;New&nbsp;&nbsp;';        break;
             case 'NewOFF':    color='grad-gray-yellow';    statusname='&nbsp;&nbsp;New&nbsp;&nbsp;';        break;
@@ -842,7 +864,7 @@ function initializeDatatable () {
          	 var includeValues = ["Mini PC", "Server", "Laptop", "NAS", "PC"];
 
          	 if (includeValues.indexOf(row[3]) !== -1 && row[11] !== "Internet") {
-              return '<a href="#" onclick="askwakeonlan(\'' + row[11] + '\', \'' + row[9] + '\')"><i class="fa-solid fa-power-off text-red"></i></a>';
+              return '<a href="#" onclick="askwakeonlan(\'' + row[11] + '\',\'' + row[9] + '\', \'' + row[0] + '\')"><i class="fa-solid fa-power-off text-red"></i></a>';
            } else {
            	return '';
            }
@@ -872,11 +894,11 @@ function initializeDatatable () {
 
   $('#tableDevices').on( 'order.dt', function () {
     setParameter (parTableOrder, JSON.stringify (table.order()) );
-    setCookie ('devicesList',JSON.stringify (table.column(15, { 'search': 'applied' }).data().toArray()) );
+    setCookie ('devicesList',JSON.stringify (table.column(16, { 'search': 'applied' }).data().toArray()) );
   } );
 
   $('#tableDevices').on( 'search.dt', function () {
-    setCookie ('devicesList', JSON.stringify (table.column(15, { 'search': 'applied' }).data().toArray()) );
+    setCookie ('devicesList', JSON.stringify (table.column(16, { 'search': 'applied' }).data().toArray()) );
   } );
 
 };
@@ -929,10 +951,10 @@ function getDevicesList (status) {
 };
 
 // WakeonLAN
-function askwakeonlan(fmac,fip) {
+function askwakeonlan(fmac,fip,fname) {
   window.global_fmac = fmac;
   window.global_fip = fip;
-  showModalWarning('<?=$pia_lang['DevDetail_Tools_WOL_noti'];?>', '<?=$pia_lang['DevDetail_Tools_WOL_noti_text'];?>',
+  showModalWarning('<?=$pia_lang['DevDetail_Tools_WOL_noti'];?> (<span class="text-red">' + fname + '</span>)', '<?=$pia_lang['DevDetail_Tools_WOL_noti_text'];?>',
     '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Run'];?>', 'wakeonlan');
 }
 function wakeonlan() {
@@ -971,6 +993,7 @@ function SetDeviceFilter() {
     + '&ftype='         + ($('#chkFilterType')[0].checked * 1)
     + '&fip='           + ($('#chkFilterIP')[0].checked * 1)
     + '&fmac='          + ($('#chkFilterMac')[0].checked * 1)
+    + '&fvendor='       + ($('#chkFilterVendor')[0].checked * 1)
     + '&fconnectiont='  + ($('#chkFilterConnectionType')[0].checked * 1)
     , function(msg) {
     showMessage (msg);
