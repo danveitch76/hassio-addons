@@ -240,6 +240,7 @@ function SetDeviceFilter() {
 	if ($_REQUEST['ftype'] == 0) {array_push($colfilterarray, "3");}
 	if ($_REQUEST['fip'] == 0) {array_push($colfilterarray, "9");}
 	if ($_REQUEST['fmac'] == 0) {array_push($colfilterarray, "11");}
+	if ($_REQUEST['fvendor'] == 0) {array_push($colfilterarray, "12");}
 	if ($_REQUEST['fconnectiont'] == 0) {array_push($colfilterarray, "1");}
 
 	$newcolfilter = implode(",", $colfilterarray);
@@ -316,6 +317,11 @@ function getDeviceData() {
 	$row = $result->fetchArray(SQLITE3_ASSOC);
 	$deviceData = $row;
 	$mac = $deviceData['dev_MAC'];
+	$deviceData['dev_Name'] = strval($deviceData['dev_Name']);
+	$deviceData['dev_Owner'] = strval($deviceData['dev_Owner']);
+	$deviceData['dev_Model'] = strval($deviceData['dev_Model']);
+	$deviceData['dev_Vendor'] = strval($deviceData['dev_Vendor']);
+	$deviceData['dev_Serialnumber'] = strval($deviceData['dev_Serialnumber']);
 	$deviceData['dev_Network_Node_MAC'] = $row['dev_Infrastructure'];
 	$deviceData['dev_Network_Node_port'] = $row['dev_Infrastructure_port'];
 	$deviceData['dev_FirstConnection'] = formatDate($row['dev_FirstConnection']); // Date formated
@@ -374,6 +380,7 @@ function setDeviceData() {
                  dev_Model                = "' . quotes($_REQUEST['model']) . '",
                  dev_Serialnumber         = "' . quotes($_REQUEST['serialnumber']) . '",
                  dev_Favorite             = "' . quotes($_REQUEST['favorite']) . '",
+                 dev_PresencePage         = "' . quotes($_REQUEST['showpresence']) . '",
                  dev_Group                = "' . quotes($_REQUEST['group']) . '",
                  dev_Location             = "' . quotes($_REQUEST['location']) . '",
                  dev_Comments             = "' . quotes($_REQUEST['comments']) . '",
@@ -562,10 +569,11 @@ function getDevicesTotals() {
         (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('favorites',$scansource) . ') as favorites,
         (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('new',$scansource) . ') as new,
         (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('down',$scansource) . ') as down,
-        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('archived',$scansource) . ') as archived
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('archived',$scansource) . ') as archived,
+        (SELECT COUNT(*) FROM Devices ' . getDeviceCondition('presence',$scansource) . ') as presence
    ');
 	$row = $result->fetchArray(SQLITE3_NUM);
-	echo json_encode(array($row[0], $row[1], $row[2], $row[3], $row[4], $row[5]));
+	echo json_encode(array($row[0], $row[1], $row[2], $row[3], $row[4], $row[5], $row[6]));
 }
 
 //  Query the List of devices in a determined Status
@@ -597,6 +605,7 @@ function getDevicesList() {
 			$row['dev_LastIP'],
 			(in_array($row['dev_MAC'][1], array("2", "6", "A", "E", "a", "e")) ? 1 : 0),
 			$row['dev_MAC'], // MAC (hidden)
+			$row['dev_Vendor'],
 			$row['dev_Status'],
 			formatIPlong($row['dev_LastIP']), // IP orderable
 			$row['dev_ScanSource'],
@@ -616,7 +625,7 @@ function getDevicesListCalendar() {
 	global $db;
 
 	$condition = getDeviceCondition($_REQUEST['status'],$_REQUEST['scansource']);
-	$result = $db->query('SELECT * FROM Devices ' . $condition);
+	$result = $db->query('SELECT * FROM Devices ' . $condition . ' AND dev_PresencePage=1');
 
 	// arrays of rows
 	$tableData = array();
@@ -820,6 +829,8 @@ function getDeviceCondition($deviceStatus, $scansource) {
 	case 'down':return 'WHERE '.$scansource_query.'dev_Archived=0 AND dev_AlertDeviceDown=1 AND dev_PresentLastScan=0';
 		break;
 	case 'archived':return 'WHERE '.$scansource_query.'dev_Archived=1';
+		break;
+	case 'presence':return 'WHERE '.$scansource_query.'dev_Archived=0 AND dev_PresencePage=1';
 		break;
 	default:return 'WHERE '.$scansource_query.'AND 1=0';
 		break;

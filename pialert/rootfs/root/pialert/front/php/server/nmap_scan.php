@@ -134,7 +134,7 @@ if ($_REQUEST['mode'] != "view") {
 			} elseif ($PIA_SCAN_MODE == 'normal') {
 				exec('timeout 60 nmap ' . $PIA_HOST_IP, $nmap_scan_results);
 			} elseif ($PIA_SCAN_MODE == 'detail') {
-				exec('timeout 60 sudo nmap -sU -sT -p U:53,67-69,111,137,512,514,525,1701,1719,T:1-65535 --max-retries 0 ' . $PIA_HOST_IP, $nmap_scan_results);
+				exec('timeout 60 nmap -sU -sT -p U:53,67-69,111,137,512,514,525,1701,1719,T:1-65535 --max-retries 0 ' . $PIA_HOST_IP, $nmap_scan_results);
 			}
 			// Logging
 			pialert_logging('a_002', $_SERVER['REMOTE_ADDR'], 'LogStr_0210', '', $PIA_SCAN_MODE . ' Scan: ' . $PIA_HOST_IP);

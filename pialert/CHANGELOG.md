@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.7
+### 🩹 BugFix
+- Fixed update to v2024-09-28 from v2024-09-17 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-09-28)
+
 ## 0.0.6
 ### ✨ Features
 - Updated to v2024-09-28 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-09-28)
