@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.5
+### ✨ Features
+- Updated GeoLite2-Country db to latest version (10/10/24)
+- Added visibility of MQTT notifications on 'Settings and Maintenance' page.
+
+### 🩹 BugFix
+- Fix missing publish from pialert.py
+
 ## 0.0.4
 ### 🩹 BugFix
 - Fix missing uuid from pialert.py

@@ -2,7 +2,7 @@
 name: Pi.Alert
 description: Network Intrusion Monitor, from Pi.Alert.
 slug: pialert_addon
-version: 0.0.4
+version: 0.0.5
 webui: http://[HOST]:[PORT:8078]
 host_network: true
 startup: services
@@ -27,4 +27,4 @@ schema:
   accept_rgpd: bool
 url: https://github.com/danveitch76/hassio-addons/tree/master/pialert
 image: ghcr.io/danveitch76/{arch}-addon-pialert
-homeassistant: 2024.2.0
+homeassistant: 2024.10.0
