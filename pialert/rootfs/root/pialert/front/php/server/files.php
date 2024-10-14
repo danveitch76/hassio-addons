@@ -277,7 +277,7 @@ REPORT_PUSHSAFER_WEBMON    = " . convert_bool($configArray['REPORT_PUSHSAFER_WEB
 PUSHSAFER_TOKEN            = '" . $configArray['PUSHSAFER_TOKEN'] . "'
 PUSHSAFER_DEVICE           = '" . $configArray['PUSHSAFER_DEVICE'] . "'
 PUSHSAFER_PRIO             = " . $configArray['PUSHSAFER_PRIO'] . "
-PUSHSAFER_SOUND            = " . $configArray['PUSHSAFER_SOUND'] . "
+PUSHSAFER_SOUND            = '" . $configArray['PUSHSAFER_SOUND'] . "'
 
 # Pushover
 # ----------------------
@@ -311,6 +311,16 @@ SHOUTRRR_BINARY            = '" . $configArray['SHOUTRRR_BINARY'] . "'
 REPORT_TELEGRAM            = " . convert_bool($configArray['REPORT_TELEGRAM']) . "
 REPORT_TELEGRAM_WEBMON     = " . convert_bool($configArray['REPORT_TELEGRAM_WEBMON']) . "
 TELEGRAM_BOT_TOKEN_URL     = '" . $configArray['TELEGRAM_BOT_TOKEN_URL'] . "'
+
+# MQTT
+#---------------------------
+REPORT_MQTT			= " . convert_bool($configArray['REPORT_MQTT']) . "
+REPORT_MQTT_WEBMON	= " . convert_bool($configArray['REPORT_MQTT_WEBMON']) . "
+MQTT_BROKER			= '" . $configArray['MQTT_BROKER'] . "'
+MQTT_PORT			= '" . $configArray['MQTT_PORT'] . "'
+MQTT_TOPIC			= '" . $configArray['MQTT_TOPIC'] . "'
+# MQTT_USER			= '" . $configArray['MQTT_USER'] . "'
+# MQTT_PASSWORD		= '" . $configArray['MQTT_PASSWORD'] . "'
 
 # DynDNS and IP
 # ----------------------

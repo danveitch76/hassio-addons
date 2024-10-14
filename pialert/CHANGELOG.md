@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.8
+### 🩹 BugFix
+- Fix saving of pialert.conf to correct text and add MQTT.
+
 ## 0.0.7
 ### 🩹 BugFix
 - Fixed update to v2024-09-28 from v2024-09-17 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-09-28)
