@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.9
+### ✨ Features
+- Changed API output for Last Scan to include date ('YYYY-MM-DD HH:MM:SS').
+
 ## 0.0.8
 ### 🩹 BugFix
 - Fix saving of pialert.conf to correct text and add MQTT.
