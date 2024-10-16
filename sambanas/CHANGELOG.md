@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.0.2-nas4c-1
+### ✨ Features
+- Migrate to [Home Assistant Community Add-on: Base Images](https://github.com/hassio-addons/addon-base) 16.3.3
+
+### 💥 BREAKING CHANGE
+- Minimal Homeassitant core supported version is now **2023.10.0**
+
 ## 10.0.2-nas4c
 
 ###  ✨ Features
