@@ -2,7 +2,7 @@
 name: Speedtest
 description: Update the speedtest sensors using the Official Speedtest CLI.
 slug: speedtest
-version: 1.6.2
+version: 1.6.3
 slug: "speedtest_addon"
 arch:
   - armhf
@@ -30,4 +30,4 @@ schema:
   print_closest_servers: bool?
 url: https://github.com/danveitch76/hassio-addons/tree/master/speedtest
 image: ghcr.io/danveitch76/{arch}-addon-speedtest
-homeassistant: 2023.08.0
+homeassistant: 2023.10.0
