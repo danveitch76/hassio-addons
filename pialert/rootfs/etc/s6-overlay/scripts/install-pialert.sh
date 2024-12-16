@@ -93,4 +93,147 @@ chmod -R 775 "/data/config"
 # Update DB
 /root/pialert/back/pialert-cli update_db
 
+#  Update conf file
+print_msg "- Config backup..."
+# to force write permission, will be reverted later
+sudo chmod 777 "/root/pialert/config/pialert.conf"
+cp "/root/pialert/config/pialert.conf" "/root/pialert/config/pialert.conf.back"  2>&1 >> "$LOG"
+
+print_msg "- Updating config file..."
+
+# 2023-10-19
+if ! grep -Fq "# Automatic Speedtest" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+# Automatic Speedtest
+# ----------------------
+SPEEDTEST_TASK_ACTIVE = False
+SPEEDTEST_TASK_HOUR   = []
+EOF
+fi
+
+# 2024-01-28
+if ! grep -Fq "PUSHOVER_PRIO" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+PUSHOVER_PRIO = 0
+PUSHSAFER_PRIO = 0
+NETWORK_DNS_SERVER = 'localhost'
+EOF
+fi
+
+# 2024-02-08
+if ! grep -Fq "AUTO_UPDATE_CHECK" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+AUTO_UPDATE_CHECK      = True
+EOF
+fi
+
+# 2024-02-21
+if ! grep -Fq "NTFY_CLICKABLE" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+NTFY_CLICKABLE      = True
+EOF
+fi
+
+# 2024-03-12
+if ! grep -Fq "PUSHOVER_SOUND" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+PUSHOVER_SOUND      = 'siren'
+PUSHSAFER_SOUND     = 22
+EOF
+fi
+
+# 2024-04-07
+if ! grep -Fq "AUTO_DB_BACKUP_CRON" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+AUTO_UPDATE_CHECK_CRON = '0 3,9,15,21 * * *'
+AUTO_DB_BACKUP         = False
+AUTO_DB_BACKUP_CRON    = '0 1 * * 1'
+SPEEDTEST_TASK_CRON   = '0 7,22 * * *'
+EOF
+fi
+
+# 2024-04-20
+if ! grep -Fq "AUTO_DB_BACKUP_KEEP" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+AUTO_DB_BACKUP_KEEP    = 5
+EOF
+fi
+
+# 2024-06-23
+if ! grep -Fq "SATELLITES_ACTIVE" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+SATELLITES_ACTIVE = False
+
+# Satellite Configuration
+# -----------------------
+SATELLITE_PROXY_MODE = False
+SATELLITE_PROXY_URL = ''
+EOF
+fi
+
+# 2024-07-12
+if ! grep -Fq "REPORT_NEW_CONTINUOUS" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+REPORT_NEW_CONTINUOUS  = False
+REPORT_NEW_CONTINUOUS_CRON = '0 * * * *'
+EOF
+fi
+
+# 2024-08-20
+if ! grep -Fq "PIHOLE_VERSION" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+PIHOLE_VERSION    = 5
+PIHOLE6_URL       = ''
+PIHOLE6_PASSWORD  = ''
+IP_IGNORE_LIST  = []
+EOF
+fi
+
+# 2024-08-28
+if ! grep -Fq "NEW_DEVICE_PRESET_EVENTS" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+NEW_DEVICE_PRESET_EVENTS   = True
+NEW_DEVICE_PRESET_DOWN     = False
+EOF
+fi
+
+# 2024-09-24
+if ! grep -Fq "DHCP_INCL_SELF_TO_LEASES" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+DHCP_INCL_SELF_TO_LEASES   = False
+EOF
+fi
+
+# 2024-10-14
+if ! grep -Fq "SYSTEM_TIMEZONE" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+SYSTEM_TIMEZONE            = 'Europe/Berlin'
+OFFLINE_MODE               = False
+EOF
+fi
+
+# 2024-10-29
+if ! grep -Fq "REPORT_TO_ARCHIVE" "/root/pialert/config/pialert.conf" ; then
+  cat << EOF >> "/root/pialert/config/pialert.conf"
+
+REPORT_TO_ARCHIVE          = 0
+# Number of hours after which a report is moved to the archive. The value 0 disables the feature
+
+PIHOLE6_API_MAXCLIENTS     = 100
+EOF
+fi
+
 exit 0
