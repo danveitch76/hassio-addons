@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.10
+### ✨ Features
+- Updated to v2024-12-12 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2024-12-12)
+
 ## 0.0.9
 ### ✨ Features
 - Changed API output for Last Scan to include date ('YYYY-MM-DD HH:MM:SS').

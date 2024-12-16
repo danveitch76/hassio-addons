@@ -5,7 +5,7 @@
 //
 //  services.php - Front module. Server side. Manage Devices
 //------------------------------------------------------------------------------
-//  leiweibau  2023        https://github.com/leiweibau     GNU GPLv3
+//  leiweibau  2024        https://github.com/leiweibau     GNU GPLv3
 //------------------------------------------------------------------------------
 
 session_start();
@@ -16,6 +16,7 @@ if ($_SESSION["login"] != 1) {
 }
 
 // External files
+require 'timezone.php';
 require 'db.php';
 require 'util.php';
 require 'journal.php';
@@ -71,12 +72,12 @@ function DeleteAllWebServices() {
 	$result = $db->query($sql);
 
 	if ($result == TRUE) {
-		echo $pia_lang['BackDevices_DBTools_DelServ'];
+		echo $pia_lang['BE_Dev_DBTools_DelServ'];
 		// Logging
 		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0039', '', '');
 		echo ("<meta http-equiv='refresh' content='2; URL=./services.php'>");
 	} else {
-		echo $pia_lang['BackDevices_DBTools_DelServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		echo $pia_lang['BE_Dev_DBTools_DelServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
 		// Logging
 		pialert_logging('a_010', $_SERVER['REMOTE_ADDR'], 'LogStr_0040', '', '');
 	}
@@ -126,13 +127,13 @@ function EnableWebServiceMon() {
 
 	if ($_SESSION['Scan_WebServices'] == True) {
 		exec('../../../back/pialert-cli disable_service_mon', $output);
-		echo $pia_lang['BackDevices_webservicemon_disabled'];
+		echo $pia_lang['BE_Dev_webservicemon_disabled'];
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0302', '', '');
 		echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=1'>");
 	} else {
 		exec('../../../back/pialert-cli enable_service_mon', $output);
-		echo $pia_lang['BackDevices_webservicemon_enabled'];
+		echo $pia_lang['BE_Dev_webservicemon_enabled'];
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0301', '', '');
 		echo ("<meta http-equiv='refresh' content='2; URL=./maintenance.php?tab=1'>");
@@ -301,11 +302,11 @@ function setServiceData() {
 	if ($result == TRUE) {
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0002', '', $_REQUEST['url']);
-		echo $pia_lang['BackWebServices_UpdServ'];
+		echo $pia_lang['BE_Webs_UpdServ'];
 	} else {
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0004', '', $_REQUEST['url']);
-		echo $pia_lang['BackWebServices_UpdServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		echo $pia_lang['BE_Webs_UpdServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
 		//echo $_REQUEST['tags'];
 	}
 }
@@ -331,12 +332,12 @@ function deleteService() {
 	if ($result == TRUE) {
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0003', '', $url);
-		echo $pia_lang['BackWebServices_DelServ'];
+		echo $pia_lang['BE_Webs_DelServ'];
 		echo ("<meta http-equiv='refresh' content='2; URL=./services.php'>");
 	} else {
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0005', '', $url);
-		echo $pia_lang['BackWebServices_DelServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		echo $pia_lang['BE_Webs_DelServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
 	}
 }
 
@@ -371,12 +372,12 @@ function insertNewService() {
 	if ($result == TRUE) {
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0001', '', $url);
-		echo $pia_lang['BackWebServices_InsServ'];
+		echo $pia_lang['BE_Webs_InsServ'];
 		echo ("<meta http-equiv='refresh' content='2; URL=./services.php'>");
 	} else {
 		// Logging
 		pialert_logging('a_030', $_SERVER['REMOTE_ADDR'], 'LogStr_0001', '', $url);
-		echo $pia_lang['BackWebServices_InsServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
+		echo $pia_lang['BE_Webs_InsServError'] . "\n\n$sql \n\n" . $db->lastErrorMsg();
 	}
 
 }
