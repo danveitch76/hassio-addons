@@ -21,7 +21,7 @@ WORKDIR /data
 COPY rootfs /
 
 # Install requirements for add-on:
-RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests iproute2 sudo nbtscan avahi-utils -y
+RUN apt-get update && apt-get install cron whiptail apt-utils lighttpd php php-cgi php-fpm php-curl php-sqlite3 php-xml sqlite3 mmdb-bin arp-scan dnsutils net-tools libwww-perl libtext-csv-perl nmap zip wakeonlan aria2 python3 python3-pip python3-cryptography python3-requests iproute2 sudo nbtscan avahi-utils python3-tz python3-tzlocal -y
 
 # Setup lighttpd:
 RUN lighttpd-enable-mod fastcgi-php accesslog

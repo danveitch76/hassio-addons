@@ -6,7 +6,7 @@
 #------------------------------------------------------------------------------
 #  Puche      2021        pi.alert.application@gmail.com   GNU GPLv3
 #  jokob-sk   2022        jokob.sk@gmail.com               GNU GPLv3
-#  leiweibau  2024        https://github.com/leiweibau     GNU GPLv3
+#  leiweibau  2024+       https://github.com/leiweibau     GNU GPLv3
 #-------------------------------------------------------------------------- -->
 
 <?php
@@ -19,6 +19,7 @@ if ($_SESSION["login"] != 1) {
 }
 
 require 'php/templates/header.php';
+require 'php/templates/maintenance_func.php';
 require 'php/server/journal.php';
 
 ?>
@@ -55,8 +56,8 @@ if ($IP_IGNORE_LIST_LINE == "" || $IP_IGNORE_LIST_LINE == "[]") {$IP_IGNORE_LIST
 // Get Notification Settings --------------------------------------------------
 $CONFIG_FILE_SOURCE = "../config/pialert.conf";
 $CONFIG_FILE_KEY_LINE = file($CONFIG_FILE_SOURCE);
-$CONFIG_FILE_FILTER_VALUE_ARP = array_values(preg_grep("/(REPORT_MAIL|REPORT_NTFY|REPORT_WEBGUI|REPORT_PUSHSAFER|REPORT_PUSHOVER|REPORT_TELEGRAM|REPORT_MQTT)(?!_)/i", $CONFIG_FILE_KEY_LINE));
-$CONFIG_FILE_FILTER_VALUE_WEB = array_values(preg_grep("/(REPORT_MAIL_WEBMON|REPORT_NTFY_WEBMON|REPORT_WEBGUI_WEBMON|REPORT_PUSHSAFER_WEBMON|REPORT_PUSHOVER_WEBMON |REPORT_TELEGRAM_WEBMON |REPORT_MQTT_WEBMON)/i", $CONFIG_FILE_KEY_LINE));
+$CONFIG_FILE_FILTER_VALUE_ARP = array_values(preg_grep("/(REPORT_MAIL|REPORT_NTFY|REPORT_WEBGUI|REPORT_PUSHSAFER|REPORT_PUSHOVER|REPORT_TELEGRAM)(?!_)/i", $CONFIG_FILE_KEY_LINE));
+$CONFIG_FILE_FILTER_VALUE_WEB = array_values(preg_grep("/(REPORT_MAIL_WEBMON|REPORT_NTFY_WEBMON|REPORT_WEBGUI_WEBMON|REPORT_PUSHSAFER_WEBMON|REPORT_PUSHOVER_WEBMON |REPORT_TELEGRAM_WEBMON)/i", $CONFIG_FILE_KEY_LINE));
 
 // Size and last mod of DB ----------------------------------------------------
 $DB_SOURCE = str_replace('front', 'db', getcwd()) . '/pialert.db';
@@ -79,7 +80,7 @@ if (sizeof($LATEST_FILES) == 0) {
 // Buffer active --------------------------------------------------------------
 	$file = '../db/pialert_journal_buffer';
 	if (file_exists($file)) {
-		$buffer_indicator = '(<span style="color:red;">*</span>)';
+        $buffer_indicator = '<span style="cursor:pointer; text-decoration: underline dotted red; text-underline-position:under;" data-toggle="tooltip" data-placement="top" title="'.$pia_lang['MT_Stats_ToolTip_Jrn'].'">(<span style="color:red;">*</span>)</span>';
 	} else {$buffer_indicator = '';}
 
 // Set Tab --------------------------------------------------------------------
@@ -322,7 +323,7 @@ if ($_SESSION['SATELLITES_ACTIVE'] == True) {
                             </div>
                         </div>
                     </td>
-                    <td class="db_info_table_cell db_tools_table_cell_b"><?=$pia_lang['MT_Tool_arpscansw_text'];?></td>
+                    <td class="db_info_table_cell db_tools_table_cell_b text-danger"><?=$pia_lang['MT_Tool_arpscansw_text'];?></td>
                 </tr>
                 <tr class="table_settings_row">
 <?php
@@ -330,8 +331,24 @@ if (strtolower($_SESSION['WebProtection']) != 'true') {
 	echo '          <td class="db_info_table_cell db_tools_table_cell_a"><button type="button" class="btn btn-default dbtools-button" id="btnPiAlertLoginEnable" onclick="askPiAlertLoginEnable()">' . $pia_lang['MT_Tool_loginenable'] . '</button></td>
                     <td class="db_info_table_cell db_tools_table_cell_b">' . $pia_lang['MT_Tool_loginenable_text'] . '</td>';} else {
 	echo '      <td class="db_info_table_cell db_tools_table_cell_a"><button type="button" class="btn btn-danger dbtools-button" id="btnPiAlertLoginDisable" onclick="askPiAlertLoginDisable()">' . $pia_lang['MT_Tool_logindisable'] . '</button></td>
-                    <td class="db_info_table_cell db_tools_table_cell_b">' . $pia_lang['MT_Tool_logindisable_text'] . '</td>';}
+                    <td class="db_info_table_cell db_tools_table_cell_b text-danger">' . $pia_lang['MT_Tool_logindisable_text'] . '</td>';}
 ?>
+                </tr>
+                <tr><td colspan="2"><h4 class="bottom-border-aqua">Advanced</h4></td></tr>
+                <tr class="table_settings_row">
+                    <td class="db_info_table_cell" colspan="2" style="padding-bottom: 20px;">
+                        <div style="display: flex; justify-content: center; flex-wrap: wrap;">
+<!-- SelfCheck JSON ----------------------------------------------------- -->
+                            <div class="settings_button_wrapper">
+                                <div class="settings_button_box">
+                                    <a href="./php/debugging/test_json_calls.php">
+                                        <button type="button" class="btn btn-default dbtools-button">Test Main JSON Calls</button>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </td>
                 </tr>
             </table>
         </div>
@@ -726,10 +743,10 @@ if ($_SESSION['SATELLITES_ACTIVE'] == True) {
 
     <div class="box box-solid box-danger collapsed-box" style="margin-top: -15px;">
     <div class="box-header with-border" data-widget="collapse" id="configeditor_innerbox">
-           <h3 class="box-title"><?=$pia_lang['MT_ConfEditor_Hint'];?></h3>
-          <div class="box-tools pull-right">
+        <h3 class="box-title"><?=$pia_lang['MT_ConfEditor_Hint'];?></h3>
+        <div class="box-tools pull-right">
             <button type="button" class="btn btn-box-tool"><i class="fa fa-plus"></i></button>
-          </div>
+        </div>
     </div>
     <div class="box-body">
            <table class="table configeditor_help">
@@ -761,6 +778,8 @@ if ($_SESSION['SATELLITES_ACTIVE'] == True) {
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span></button>
                     <h4 class="modal-title">Config Editor</h4>
+                     <input type="text" id="searchInput" placeholder="<?=$pia_lang['Device_Searchbox'];?>..." class="form-control" style="margin-top: 10px; max-width: 200px; display: inline-block;">
+                    <button type="button" id="nextButton" class="btn btn-primary" style="margin-left: 10px;">Next</button>
                 </div>
                 <div class="modal-body" style="text-align: left;">
                     <textarea class="form-control" name="txtConfigFileEditor" id="ConfigFileEditor" spellcheck="false" wrap="off" style="resize: none; font-family: monospace; height: 70vh;"><?=file_get_contents('../config/pialert.conf');?></textarea>
@@ -816,6 +835,41 @@ $(document).ready(function () {
         $(window).scrollTop(scrollPosition);
         $('#modal-config-editor').css('overflow-y', 'hidden');
     });
+    $(function () {
+      $('[data-toggle="tooltip"]').tooltip()
+    })
+
+    let searchIndex = 0;
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+        searchIndex = 0;
+        highlightNextMatch(false);
+    });
+
+    document.getElementById('nextButton').addEventListener('click', function () {
+        highlightNextMatch(false);
+    });
+
+    function highlightNextMatch() {
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        const textarea = document.getElementById('ConfigFileEditor');
+        const text = textarea.value.toLowerCase();
+
+        if (searchText) {
+            const nextIndex = text.indexOf(searchText, searchIndex);
+            if (nextIndex !== -1) {
+                const beforeMatch = textarea.value.substring(0, nextIndex);
+                const lineHeight = textarea.scrollHeight / textarea.value.split('\n').length;
+                const lineNumber = beforeMatch.split('\n').length - 1;
+                textarea.scrollTop = lineHeight * lineNumber;
+                searchIndex = nextIndex + searchText.length;
+            } else {
+                searchIndex = 0;
+                alert('<?=$pia_lang['MT_ConfEditor_SearchEnd'];?>');
+            }
+        }
+    }
+
 });
 </script>
 

@@ -7,7 +7,7 @@ if ($_SESSION["login"] != 1) {
 	header('Location: ../../index.php');
 	exit;
 }
-
+require 'timezone.php';
 require 'db.php';
 require 'journal.php';
 require 'language_switch.php';
@@ -110,7 +110,7 @@ function create_scanoutput_box($date, $type, $target, $box_type) {
 			   <div class="col-xs-6">'.$type_lang.'</div>
 			</div>
 			<div class="row" style="padding-bottom:5px;">
-			   <div class="col-xs-4"><b>'.$pia_lang['WebServices_tablehead_TargetIP'].':</b></div>
+			   <div class="col-xs-4"><b>'.$pia_lang['WEBS_tablehead_TargetIP'].':</b></div>
 			   <div class="col-xs-6">' . $target . '</div>
 			</div>
 			<div class="row" style="">

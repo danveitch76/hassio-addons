@@ -422,6 +422,7 @@ body.modal-open {
 .navbar-servertime {
     display: inline-block; height: 50px; padding-top: 15px;
 }
+#navbar-help-button {font-size: 18px; position: relative; left: 0px; width: 42px; display: inline-block; padding-top: 15px; text-align: center;}
 /* ----------------- System Info -------------------------------------------- */
 .user-panel {padding-left: 0px;}
 .sysinfo_headline {color: #00c0ef;}
@@ -556,5 +557,17 @@ body.modal-open {
   text-decoration-color: #dd7768;
 }
 .journal_custom_colors_input {
-padding:6px 12px;padding-bottom: 6px;font-size:14px; width:150px;position: relative; top: 1px; margin-right: 5px;
+  padding:6px 12px;padding-bottom: 6px;font-size:14px; width:150px; top: 1px; margin-right: 5px;
+}
+
+.report_custom_colors_input {
+  padding:6px 12px;padding-bottom: 6px;font-size:14px; width:150px; top: 1px; margin-right: 5px;
+}
+
+.report_archive_btn {
+  text-align: center; padding-top: 5px; padding-bottom: 5px;
+}
+
+.report_delete_btn {
+  text-align: center; padding-top: 5px; padding-bottom: 5px; height: 45px;
 }

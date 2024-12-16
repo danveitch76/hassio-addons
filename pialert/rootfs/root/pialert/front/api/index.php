@@ -72,8 +72,8 @@ function getSystemStatus() {
 	global $db;
 	$results = $db->query('SELECT * FROM Online_History WHERE Data_Source="main_scan_local" ORDER BY Scan_Date DESC LIMIT 1');
 	while ($row = $results->fetchArray()) {
-		// Directly assign the whole Scan_Date to the array
-		$temp_api_online_devices['Last_Scan'] = $row['Scan_Date'];
+		$time_raw = explode(' ', $row['Scan_Date']);
+		$temp_api_online_devices['Last_Scan'] = $time_raw[1];
 	}
 	unset($results);
 	$result = $db->query(
