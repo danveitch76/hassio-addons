@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.12
+### 🩹 BugFix
+- Fix get-oui run in update_vendors.sh
+
+
 ## 0.0.11
 ### 🩹 BugFix
 - Fix missing MQTT notifications visibility on 'Settings and Maintenance' page.

@@ -93,7 +93,7 @@ RUN ln -s "/usr/share/ieee-data/" "/var/lib/ieee-data"
 # RUN aria2c --dir=/usr/share/ieee-data --max-connection-per-server=3 --allow-overwrite=true --quiet=true "https://standards-oui.ieee.org/iab/iab.txt"
 
 # Update from /var/lib/ieee-data
-RUN cd /usr/share/arp-scan && get-oui -v
+RUN cd /usr/share/arp-scan && /usr/sbin/get-oui -v
 
 # Update DB
 RUN /root/pialert/back/pialert-cli update_db
