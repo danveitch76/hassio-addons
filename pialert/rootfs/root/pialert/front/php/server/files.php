@@ -321,13 +321,13 @@ TELEGRAM_BOT_TOKEN_URL     = '" . $configArray['TELEGRAM_BOT_TOKEN_URL'] . "'
 
 # MQTT
 #---------------------------
-REPORT_MQTT			= " . convert_bool($configArray['REPORT_MQTT']) . "
-REPORT_MQTT_WEBMON	= " . convert_bool($configArray['REPORT_MQTT_WEBMON']) . "
-MQTT_BROKER			= '" . $configArray['MQTT_BROKER'] . "'
-MQTT_PORT			= '" . $configArray['MQTT_PORT'] . "'
-MQTT_TOPIC			= '" . $configArray['MQTT_TOPIC'] . "'
-# MQTT_USER			= '" . $configArray['MQTT_USER'] . "'
-# MQTT_PASSWORD		= '" . $configArray['MQTT_PASSWORD'] . "'
+REPORT_MQTT                = " . convert_bool($configArray['REPORT_MQTT']) . "
+REPORT_MQTT_WEBMON         = " . convert_bool($configArray['REPORT_MQTT_WEBMON']) . "
+MQTT_BROKER                = '" . $configArray['MQTT_BROKER'] . "'
+MQTT_PORT                  = '" . $configArray['MQTT_PORT'] . "'
+MQTT_TOPIC                 = '" . $configArray['MQTT_TOPIC'] . "'
+# MQTT_USER                 = '" . $configArray['MQTT_USER'] . "'
+# MQTT_PASSWORD             = '" . $configArray['MQTT_PASSWORD'] . "'
 
 # DynDNS and IP
 # ----------------------
