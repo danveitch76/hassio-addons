@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.14
+### 💥 BREAKING CHANGE
+- Added VLANS for my network.
+
 ## 0.0.13
 ### 🩹 BugFix
 - Fix missing MQTT notifications visibility on 'Settings and Maintenance' text.
