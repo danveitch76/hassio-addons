@@ -2,9 +2,15 @@
 name: Pi.Alert
 description: Network Intrusion Monitor, from Pi.Alert.
 slug: pialert_addon
-version: 0.0.13
+version: 0.0.14
 webui: http://[HOST]:[PORT:8078]
-host_network: true
+host_network: false
+network:
+  vlan10: 192.168.10.0/24
+  vlan55: 192.168.55.0/24
+  vlan100: 192.168.100.0/24
+  vlan253: 192.168.253.0/24
+  vlan254: 192.168.254.0/24
 startup: services
 arch:
 #  - armhf
