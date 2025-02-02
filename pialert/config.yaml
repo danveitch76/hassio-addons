@@ -2,9 +2,8 @@
 name: Pi.Alert
 description: Network Intrusion Monitor, from Pi.Alert.
 slug: pialert_addon
-version: 0.0.13
+version: 0.0.14
 webui: http://[HOST]:[PORT:8078]
-host_network: true
 startup: services
 arch:
 #  - armhf
