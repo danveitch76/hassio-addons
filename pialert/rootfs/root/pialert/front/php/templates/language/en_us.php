@@ -1,6 +1,5 @@
 <?php
 unset($pia_lang);
-
 // About
 //////////////////////////////////////////////////////////////////
 $pia_lang['About_Title'] = 'Open Source Network Guard';
@@ -24,6 +23,8 @@ $pia_lang['Gen_activate'] = 'enable';
 $pia_lang['Gen_deactivate'] = 'disable';
 $pia_lang['Gen_error'] = 'Error';
 $pia_lang['Gen_column'] = 'Column';
+$pia_lang['Gen_hide'] = 'hide';
+$pia_lang['Gen_show'] = 'show';
 // Login Page
 //////////////////////////////////////////////////////////////////
 $pia_lang['Login_Box'] = 'Enter your password';
@@ -93,6 +94,8 @@ $pia_lang['Device_bulkEditor_mode'] = 'Bulk Editor';
 $pia_lang['Device_bulkEditor_mode_quit'] = 'Quit Editor';
 $pia_lang['Device_bulkEditor_selectall'] = 'Select all Host&apos;s';
 $pia_lang['Device_bulkEditor_selectnone'] = 'Deselect all Host&apos;s';
+$pia_lang['Device_bulkEditor_selectvisall'] = 'Select visible';
+$pia_lang['Device_bulkEditor_selectvisnone'] = 'Deselect visible';
 $pia_lang['Device_bulkEditor_savebox_title'] = 'Fields were saved';
 $pia_lang['Device_bulkEditor_savebox_noselection'] = 'No fields were selected for modification';
 $pia_lang['Device_bulkEditor_savebox_mod_devices'] = 'Modified devices';
@@ -192,6 +195,7 @@ $pia_lang['DevDetail_Periodselect_All'] = 'All Info';
 $pia_lang['DevDetail_Shortcut_CurrentStatus'] = 'Current Status';
 $pia_lang['DevDetail_Shortcut_Sessions'] = 'Sessions';
 $pia_lang['DevDetail_Shortcut_Presence'] = 'Presence';
+$pia_lang['DevDetail_Shortcut_curPresence'] = 'Current Presence';
 $pia_lang['DevDetail_Shortcut_DownAlerts'] = 'Down Alerts';
 $pia_lang['DevDetail_Tab_Details'] = 'Details';
 $pia_lang['DevDetail_Tab_Nmap'] = 'Tools';
@@ -227,6 +231,7 @@ $pia_lang['DevDetail_EveandAl_ScanCycle'] = 'Scan Cycle';
 $pia_lang['DevDetail_EveandAl_AlertAllEvents'] = 'Alert All Events';
 $pia_lang['DevDetail_EveandAl_AlertDown'] = 'Alert Down';
 $pia_lang['DevDetail_EveandAl_Skip'] = 'Skip repeated notifications during';
+$pia_lang['DevDetail_EveandAl_ScanValid'] = 'Scan Validation';
 $pia_lang['DevDetail_EveandAl_NewDevice'] = 'New Device';
 $pia_lang['DevDetail_EveandAl_Archived'] = 'Archived';
 $pia_lang['DevDetail_EveandAl_RandomMAC'] = 'Random MAC';
@@ -254,11 +259,10 @@ $pia_lang['DevDetail_Tools_WOL_noti_text'] = 'The Wake-on-LAN command is sent to
 $pia_lang['DevDetail_Tools_nmap_head_latest'] = 'Result of the latest Nmap Scan';
 $pia_lang['DevDetail_Tools_nmap_head_cur'] = 'Result of the current Nmap Scan';
 $pia_lang['DevDetail_Tools_nmap_head_prev'] = 'Result of the previous Nmap Scan';
-$pia_lang['BackDevDetail_Tools_WOL_okay'] = 'The command was executed';
-$pia_lang['BackDevDetail_Tools_WOL_error'] = 'The command was not executed';
 $pia_lang['DevDetail_Speedtest_note_a'] = 'The automatic speed test starts at ';
 $pia_lang['DevDetail_Speedtest_note_b'] = ' and ';
 $pia_lang['DevDetail_Speedtest_note_c'] = ' o&apos;clock';
+$pia_lang['DevDetail_add_ignore_noti_text'] = ' will be added to the ignore list. The detected device itself will remain in the database and will be marked as OFFLINE in the future. If the device is deleted, the entry in the ignore list will remain to prevent re-adding it.';
 // WebServices Details Page
 //////////////////////////////////////////////////////////////////
 $pia_lang['WEBS_Title'] = 'Web Services';
@@ -298,6 +302,8 @@ $pia_lang['WEBS_Stats_Location'] = 'Location';
 $pia_lang['WEBS_Stats_IP'] = 'Current IP';
 $pia_lang['WEBS_Stats_IPLocation'] = 'Country Mapping';
 $pia_lang['WEBS_Stats_comment_a'] = '(Calculated from all scans of this service.)';
+$pia_lang['WEBS_label_AlertUp'] = 'Up';
+$pia_lang['WEBS_EVE_up'] = 'Up';
 // WebServices Details Page - Backend
 //////////////////////////////////////////////////////////////////
 $pia_lang['BE_Webs_UpdServ'] = 'The web service was updated';
@@ -362,6 +368,10 @@ $pia_lang['MT_lang_de_de'] = 'German (DE)';
 $pia_lang['MT_lang_es_es'] = 'Spanish (ES)';
 $pia_lang['MT_lang_fr_fr'] = 'French (FR)';
 $pia_lang['MT_lang_it_it'] = 'Italian (IT)';
+$pia_lang['MT_lang_pl_pl'] = 'Polish (PL)';
+$pia_lang['MT_lang_nl_nl'] = 'Dutch (NL)';
+$pia_lang['MT_lang_dk_da'] = 'Danish (DK)';
+$pia_lang['MT_lang_cz_cs'] = 'Czech (CZ)';
 $pia_lang['MT_lang_selector_apply'] = 'Apply';
 $pia_lang['MT_Tools_Tab_Settings'] = 'Settings';
 $pia_lang['MT_Tools_Tab_Settings_Intro'] = 'The options listed here cause server-side configuration changes. These changes affect all devices that access this page.';
@@ -375,6 +385,14 @@ $pia_lang['MT_Tools_Tab_Subheadline_d'] = 'Scans';
 $pia_lang['MT_Tools_Tab_Subheadline_e'] = 'FavIcon';
 $pia_lang['MT_Tools_Tab_Subheadline_e_Intro'] = 'You can enter your desired FavIcon URL in the field, or choose between local or remote (https://github.com/leiweibau/Pi.Alert) FavIcons. Depending on the configuration, local FavIcons may not work as a HomeScreen icon.';
 $pia_lang['MT_Tools_Tab_Subheadline_f'] = 'Filter Editor (Sidebar)';
+$pia_lang['MT_Tools_Tab_Subheadline_g'] = 'Imports';
+$pia_lang['MT_Tools_Tab_Subheadline_g_Intro'] = 'The activation of individual imports requires that they are preconfigured in the configuration file. Otherwise, errors or scan interruptions will occur.';
+$pia_lang['MT_Tools_Tab_Subheadline_h'] = 'Pi-hole Button (Menu Bar)';
+$pia_lang['MT_Tools_Tab_Subheadline_h_Intro'] = 'By specifying the URL for the Pi-hole web interface, you can create a Pi-hole button in the menu bar. If you delete the input field, the button will be removed. The button is marked with the icon <i class="mdi mdi-pi-hole"></i>.';
+$pia_lang['MT_Tools_Tab_Subheadline_i'] = 'Configure device list headers';
+$pia_lang['MT_Tools_Tab_Subheadline_j'] = 'Tasks';
+$pia_lang['MT_Tools_Tab_Subheadline_k'] = 'Manage dropdown entries';
+$pia_lang['MT_Tools_Tab_Subheadline_k_Intro'] = 'Although all dropdown entries can be selected, static entries (i.e., hard-coded options) cannot be deleted or changed in the dropdown menu. No error message will be displayed in such cases – however, the selected entry will still be removed or renamed in the device list or ICMP monitor for all devices.';
 $pia_lang['MT_Tool_darkmode'] = 'Dark Mode';
 $pia_lang['MT_Tool_darkmode_noti'] = 'Toggle Modes';
 $pia_lang['MT_Tool_darkmode_noti_text'] = 'After the theme switch, the page tries to reload itself to activate the change. If necessary, the cache must be cleared.';
@@ -392,6 +410,7 @@ $pia_lang['MT_Tool_mainscan_noti'] = 'Main Scan';
 $pia_lang['MT_Tool_mainscan_noti_text'] = 'Enables or disables the main scanning method for Pi.Alert (ARP scan). The collection of data from configured external sources remains active.';
 $pia_lang['MT_Tool_DevListCol_noti'] = 'Configure device overview';
 $pia_lang['MT_Tool_DevListCol_noti_text'] = 'Do you want to save the changes you have made? This change will affect all devices you use to access this page.';
+$pia_lang['MT_Tool_HeaderConf_noti'] = 'Configure headers';
 $pia_lang['MT_Tool_setapikey_false'] = 'No API-Key set';
 $pia_lang['MT_Tool_setapikey'] = 'Set API-Key';
 $pia_lang['MT_Tool_setapikey_text'] = 'With the API key it is possible to make queries to the database without using the web page. This can be the case if another service should access the data of this database. If an API key already exists, it will be replaced.';
@@ -439,9 +458,10 @@ $pia_lang['MT_Tool_restore_blocked'] = 'not available';
 $pia_lang['MT_Tool_restore_text'] = 'The latest backup can be restored via the button, but older backups can only be restored manually. After the restore, make an integrity check on the database for safety, in case the db was currently in write access when the backup was created.';
 $pia_lang['MT_Tool_restore_noti'] = 'DB Restore';
 $pia_lang['MT_Tool_restore_noti_text'] = 'Are you sure you want to execute the the DB Restore? Be sure that no scan is currently running.';
-$pia_lang['MT_Tool_latestdb_download'] = 'Download latest DB Backup';
-$pia_lang['MT_Tool_latestconf_download'] = 'Download current pialert.conf';
-$pia_lang['MT_Tool_CSVExport_download'] = 'Download CSV Export';
+$pia_lang['MT_Tool_latestdb_download'] = 'Latest DB backup';
+$pia_lang['MT_Tool_latestconf_download'] = 'Current pialert.conf';
+$pia_lang['MT_Tool_CSVExport_download'] = 'CSV DB export';
+$pia_lang['MT_Tool_uisettings_download'] = 'GUI settings';
 $pia_lang['MT_Tool_purgebackup'] = 'Purge Backups';
 $pia_lang['MT_Tool_purgebackup_text'] = 'All other backups will be deleted except for the last 3 backups.';
 $pia_lang['MT_Tool_purgebackup_noti'] = 'Purge Backups';
@@ -507,6 +527,22 @@ $pia_lang['MT_SET_SatEdit_head'] = 'Manage Satellites';
 $pia_lang['MT_SET_SatEdit_Modal_head'] = 'Installation Command with Preconfiguration';
 $pia_lang['MT_SET_SatEdit_Modal_info'] = 'Here, the installation command can be prepared so that the most important parameters are already entered during installation. The various scans remain all deactivated and must be explicitly enabled in the configuration file.';
 $pia_lang['MT_Stats_ToolTip_Jrn'] = 'There are still journal entries in the cache';
+$pia_lang['MT_Tool_reset_voided'] = 'Reset VOIDED Events';
+$pia_lang['MT_Tool_reset_voided_text'] = 'VOIDED events are not displayed in the attendance calendar. To reset all VOIDED events (Connected/Disconnected), execute this function.';
+$pia_lang['MT_Tggl_Import_head'] = 'Enable/Disable Source for Import';
+$pia_lang['MT_Tggl_Import_text'] = 'This enables or disables the desired source for importing data. Ongoing scans are not affected by the activation or deactivation. Data that has already been imported remains preserved after deactivation.';
+$pia_lang['MT_ColumnEdit_a'] = 'Dropdown menu:';
+$pia_lang['MT_ColumnEdit_b'] = 'Entry:';
+$pia_lang['MT_ColumnEdit_b_empty'] = ' no column selected ';
+$pia_lang['MT_ColumnEdit_c'] = 'Change entry to:';
+$pia_lang['MT_ColumnEdit_c_ph'] = 'New value';
+$pia_lang['MT_ColumnDel_Mod_head'] = 'Delete dropdown entry';
+$pia_lang['MT_ColumnDel_Mod_text'] = 'Hard-coded entries will be removed from each device, but the entry itself will remain in the dropdown menu. Custom entries will also be removed from the dropdown menu.';
+$pia_lang['MT_ColumnUpd_Mod_head'] = 'Edit dropdown entry';
+$pia_lang['MT_ColumnUpd_Mod_text'] = 'Hard-coded entries will be changed on each device, but the entry itself will remain in the dropdown menu. Custom entries will be replaced in the dropdown menu by the new entry.';
+$pia_lang['MT_Tools_Logviewer_ext_a'] = 'Extended logs';
+$pia_lang['MT_Tools_Logviewer_ext_b'] = 'Use this to switch between simple and extended logs. Extended logs should only be enabled in case of errors, as the additional output may reduce clarity.';
+$pia_lang['MT_del_ignore_noti_text'] = ' will be removed from the ignore list. As a result, devices matching the entry to be removed may be detected again.';
 // Maintenance Page (Backend)
 //////////////////////////////////////////////////////////////////
 $pia_lang['BE_Dev_Arpscan_disabled'] = 'All scan modules and imports disabled';
@@ -565,9 +601,12 @@ $pia_lang['BE_Dev_ConfEditor_CopOkay'] = 'The configuration backup is completed.
 $pia_lang['BE_Dev_ConfEditor_RestoreError'] = 'The last version of the configuration could not be restored.';
 $pia_lang['BE_Dev_ConfEditor_RestoreOkay'] = 'The last version of the configuration has been restored.';
 $pia_lang['BE_Dev_Report_Delete'] = ' Notification(s) has been deleted.';
-$pia_lang['BackFiles_FavIcon_invalidURL'] = 'An invalid URL has been entered.';
-$pia_lang['BackFiles_FavIcon_ErrorURL'] = 'A manually entered FavIcon must be a URL. Path references for a local file will not be saved.';
-$pia_lang['BackFiles_FavIcon_okay'] = 'The new FavIcon has been saved.';
+$pia_lang['BE_Files_FavIcon_error'] = 'An invalid URL has been entered. Path references for a local file will not be saved.';
+$pia_lang['BE_Files_FavIcon_okay'] = 'The new FavIcon has been saved.';
+$pia_lang['BE_Files_PiholeURL_error'] = 'An invalid URL has been entered.';
+$pia_lang['BE_Files_PiholeURL_okay'] = 'URL saved. Pi-hole button activated.';
+$pia_lang['BE_Files_PiholeURL_remove'] = 'Pi-hole button removed.';
+$pia_lang['BE_Files_HeaderConfig_noti_text'] = 'Header configurations are being saved';
 $pia_lang['BE_Dev_table_filter_ok_a'] = 'The filter ';
 $pia_lang['BE_Dev_table_filter_ok_b'] = ' with the value ';
 $pia_lang['BE_Dev_table_filter_ok_c'] = ' has been saved';
@@ -593,7 +632,30 @@ $pia_lang['BE_Param_error_update'] = 'Error updating parameter';
 $pia_lang['BE_Param_error_create'] = 'Error creating parameter';
 $pia_lang['BE_Param_Colors'] = 'Color(s) saved';
 $pia_lang['BE_Param_Colors_error'] = 'Color(s) were not changed or saved (database in use by scan)';
-
+$pia_lang['BE_Dev_DBTools_resetVoided'] = 'The VOIDED events have been converted into "valid" events';
+$pia_lang['BE_Dev_DBTools_resetVoidedError'] = 'Error updating the VOIDED events';
+$pia_lang['BackDevDetail_Tools_WOL_okay'] = 'The command was executed';
+$pia_lang['BackDevDetail_Tools_WOL_error'] = 'The command was not executed';
+$pia_lang['BE_Dev_ColumnErr_a'] = 'Error: The new column content must be empty to delete.';
+$pia_lang['BE_Dev_ColumnErr_b'] = 'Invalid column name: ';
+$pia_lang['BE_Dev_ColumnErr_c'] = 'Error preparing for';
+$pia_lang['BE_Dev_ColumnErr_d'] = 'Error updating the entry';
+$pia_lang['BE_Dev_ColumnErr_e'] = 'Error deleting the entry';
+$pia_lang['BE_Dev_ColumnOk_a'] = 'Entry/Entries cleared';
+$pia_lang['BE_Dev_ColumnOk_b'] = 'Entry/Entries updated';
+$pia_lang['BE_Dev_ColumnOk_c'] = '-Column content successfully deleted';
+$pia_lang['BE_Dev_ColumnOk_d'] = '-Column successfully updated';
+$pia_lang['BE_Dev_Ignore_a'] = 'Error: No IP value provided.';
+$pia_lang['BE_Dev_Ignore_b'] = 'Error: Empty IP value.';
+$pia_lang['BE_Dev_Ignore_c'] = 'Error: Configuration file not found or unreadable.';
+$pia_lang['BE_Dev_Ignore_d'] = 'Error: IP_IGNORE_LIST not found.';
+$pia_lang['BE_Dev_Ignore_e'] = 'Error: Configuration file is not writable.';
+$pia_lang['BE_Dev_Ignore_f'] = 'IP successfully removed.';
+$pia_lang['BE_Dev_Ignore_g'] = 'IP successfully added.';
+$pia_lang['BE_Dev_Ignore_h'] = 'Error: No MAC value provided.';
+$pia_lang['BE_Dev_Ignore_i'] = 'Error: MAC_IGNORE_LIST not found.';
+$pia_lang['BE_Dev_Ignore_j'] = 'MAC successfully removed.';
+$pia_lang['BE_Dev_Ignore_k'] = 'MAC successfully added.';
 // Network Page
 //////////////////////////////////////////////////////////////////
 $pia_lang['Network_Title'] = 'Network Overview';
@@ -632,6 +694,24 @@ $pia_lang['NET_UnMan_Devices_Connected'] = 'Connected to';
 $pia_lang['NET_UnMan_Devices_Connected_text'] = 'Select Device';
 $pia_lang['NET_UnMan_Devices_Port'] = 'On Port';
 $pia_lang['NET_UnMan_Devices_Port_text'] = 'On Port number on the selected device';
+$pia_lang['NET_Network_head'] = 'Network';
+$pia_lang['NET_Man_Add_NetName'] = 'Network Name';
+$pia_lang['NET_Man_Edit_NetName'] = 'New Network Name';
+$pia_lang['NET_Man_Add_NetName_text'] = 'Network or Group Name';
+// Network Page (BackEnd)
+//////////////////////////////////////////////////////////////////
+$pia_lang['BE_NET_Man_Add'] = 'A new active network component has been added to the network overview.';
+$pia_lang['BE_NET_Man_Add_Err'] = 'Error adding the new component to the network overview.';
+$pia_lang['BE_NET_Man_Upd'] = 'The active network component has been updated.';
+$pia_lang['BE_NET_Man_Upd_Err'] = 'The active network component was not updated due to an error.';
+$pia_lang['BE_NET_Man_Del'] = 'The active network component has been deleted.';
+$pia_lang['BE_NET_Man_Del_Err'] = 'Error deleting the active network component.';
+$pia_lang['BE_NET_Man_AddUn'] = 'A new passive network component has been added to the network overview.';
+$pia_lang['BE_NET_Man_AddUn_Err'] = 'Error adding the new passive component to the network overview.';
+$pia_lang['BE_NET_Man_UpdUn'] = 'The passive network component has been updated.';
+$pia_lang['BE_NET_Man_UpdUn_Err'] = 'The passive network component was not updated due to an error.';
+$pia_lang['BE_NET_Man_DelUn'] = 'The passive network component has been deleted.';
+$pia_lang['BE_NET_Man_DelUn_Err'] = 'Error deleting the passive network component.';
 // Reports Page
 //////////////////////////////////////////////////////////////////
 $pia_lang['REP_Title'] = 'Notifications';
@@ -680,7 +760,8 @@ $pia_lang['SysInfo_Reboot_noti_text'] = 'Not only Pi.Alert will be restarted, bu
 $pia_lang['SysInfo_Gen_execute_command'] = 'Executing the command';
 // Speedtest
 //////////////////////////////////////////////////////////////////
-$pia_lang['ookla_postinstall_note'] = 'Before you can use the Ookla Speedtest client, you need to execute the command "./speedtest" once in the directory "$HOME/pialert/back/speedtest/." The Speedtest button will be enabled after reloading the page, but it will only work after accepting the Ookla license.';
+$pia_lang['ookla_postinstall_note'] = 'Before you can use the Ookla Speedtest client, you need to execute the command "sudo ./speedtest" once in the directory "$HOME/pialert/back/speedtest/." The Speedtest button will be enabled after reloading the page, but it will only work after accepting the Ookla license.';
+$pia_lang['ookla_postinstall_note_lxc'] = 'Before you can use the Ookla Speedtest client, you need to execute the command "sudo ./speedtest" once in the directory "/opt/pialert/back/speedtest/." The Speedtest button will be enabled after reloading the page, but it will only work after accepting the Ookla license.';
 $pia_lang['ookla_devdetails_tab_title'] = 'Speedtest History';
 $pia_lang['ookla_devdetails_required'] = 'The history of Speedtest results is currently supported only with the official Speedtest by Ookla (<a href="https://www.speedtest.net/apps/cli" target="blank">speedtest.net</a>).';
 $pia_lang['ookla_devdetails_tab_headline'] = 'Speedtest History';
@@ -736,6 +817,7 @@ $pia_journ_lang['c_010'] = $pia_journ_lang['a_010'];
 $pia_journ_lang['c_060'] = $pia_journ_lang['a_060'];
 $pia_journ_lang['c_050'] = $pia_journ_lang['a_050'];
 // Log Strings
+$pia_journ_lang['LogStr_0000'] = 'Entry not created due to an error';
 $pia_journ_lang['LogStr_0001'] = 'Entry added';
 $pia_journ_lang['LogStr_0002'] = 'Entry edited';
 $pia_journ_lang['LogStr_0003'] = 'Entry deleted';
@@ -795,6 +877,7 @@ $pia_journ_lang['LogStr_0056'] = $pia_lang['BE_Dev_darkmode_enabled'];
 $pia_journ_lang['LogStr_0057'] = $pia_lang['BE_Dev_onlinehistorygraph_disabled'];
 $pia_journ_lang['LogStr_0058'] = $pia_lang['BE_Dev_onlinehistorygraph_enabled'];
 $pia_journ_lang['LogStr_0059'] = 'FavIcon changed';
+$pia_journ_lang['LogStr_0060'] = 'Pi-hole button configuration changed';
 $pia_journ_lang['LogStr_0061'] = 'Pi.Alert update available';
 $pia_journ_lang['LogStr_0062'] = 'No Pi.Alert update available';
 $pia_journ_lang['LogStr_0063'] = 'GeoLite2 DB update available';
@@ -804,7 +887,16 @@ $pia_journ_lang['LogStr_0066'] = 'Error: Invalid update information';
 $pia_journ_lang['LogStr_0067'] = 'No newer version found';
 $pia_journ_lang['LogStr_0068'] = 'Pi.Alert-Satellie update available';
 $pia_journ_lang['LogStr_0069'] = 'No Pi.Alert-Satellie update available';
+$pia_journ_lang['LogStr_0070'] = 'Error adding an active network component';
+$pia_journ_lang['LogStr_0071'] = 'Error updating an active network component';
+$pia_journ_lang['LogStr_0072'] = 'Error deleting an active network component';
+$pia_journ_lang['LogStr_0073'] = 'Error adding a non-scannable device';
+$pia_journ_lang['LogStr_0074'] = 'Error updating a non-scannable device';
+$pia_journ_lang['LogStr_0075'] = 'Error deleting a non-scannable device';
+$pia_journ_lang['LogStr_0076'] = 'Header configurations changed';
 $pia_journ_lang['LogStr_0101'] = 'Database cleaned and optimized';
+$pia_journ_lang['LogStr_0102'] = 'VOIDED events reset';
+$pia_journ_lang['LogStr_0103'] = 'VOIDED events reset (with errors)';
 $pia_journ_lang['LogStr_0210'] = 'Performed individual nmap scan';
 $pia_journ_lang['LogStr_0221'] = 'Nmap results exported as CSV';
 $pia_journ_lang['LogStr_0222'] = 'Nmap results not exported due to an error (Invalid IP)';

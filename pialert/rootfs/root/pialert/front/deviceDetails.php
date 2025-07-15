@@ -1,13 +1,3 @@
-<!-- ---------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  deviceDetails.php - Front module. Device management page
-#-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
-#  leiweibau 2024                                          GNU GPLv3
-#--------------------------------------------------------------------------- -->
-
 <?php
 session_start();
 
@@ -96,7 +86,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
               <div class="inner"><h3 id="deviceSessions"> -- </h3>
                 <p class="infobox_label"><?=$pia_lang['DevDetail_Shortcut_Sessions'];?></p>
               </div>
-              <div class="icon"><i class="fa fa-plug"></i></div>
+              <div class="icon"><i class="mdi mdi-lan-connect"></i></div>
             </div>
           </a>
         </div>
@@ -118,7 +108,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
               <div class="inner"><h3 id="deviceDownAlerts"> -- </h3>
                 <p class="infobox_label"><?=$pia_lang['DevDetail_Shortcut_DownAlerts'];?></p>
               </div>
-              <div class="icon"><i class="fa fa-warning"></i></div>
+              <div class="icon"><i class="mdi mdi-lan-disconnect"></i></div>
             </div>
           </a>
         </div>
@@ -157,16 +147,33 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                     <h4 class="bottom-border-aqua"><?=$pia_lang['DevDetail_MainInfo_Title'];?></h4>
                     <div class="box-body form-horizontal">
 
-                      <!-- MAC -->
                       <div class="form-group">
                         <label class="col-sm-4 control-label"><?=$pia_lang['DevDetail_MainInfo_mac'];?></label>
-                        <div class="col-sm-8"><input class="form-control" id="txtMAC" type="text" readonly value="--"></div>
+                        <div class="col-sm-8">
+                          <div class="input-group">
+                            <div class="input-group-btn">
+                              <button type="button" class="btn btn-danger dropdown-toggle" id="txthideMAC" data-toggle="dropdown" aria-expanded="false">
+                                <span class="fa fa-ban"></span></button>
+                              <ul class="dropdown-menu"></ul>
+                            </div>
+                            <input type="text" id="txtMAC" class="form-control" readonly value="--">
+                          </div>
+                        </div>
                       </div>
 
                       <!-- Name -->
                       <div class="form-group">
                         <label class="col-sm-4 control-label"><?=$pia_lang['DevDetail_MainInfo_Name'];?></label>
-                        <div class="col-sm-8"><input class="form-control" id="txtName" type="text" value="--"></div>
+                        <div class="col-sm-8">
+                          <div class="input-group">
+                            <input class="form-control" id="txtName" type="text" value="--">
+                            <div class="input-group-btn">
+                              <button type="button" class="btn btn-danger" onclick="emptytxtfield('txtName')">
+                                <span class="fa fa-trash"></span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       <!-- Owner -->
@@ -178,8 +185,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                             <div class="input-group-btn">
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                                 <span class="fa fa-caret-down"></span></button>
-                              <ul id="dropdownOwner" class="dropdown-menu dropdown-menu-right">
-                              </ul>
+                              <ul id="dropdownOwner" class="dropdown-menu dropdown-menu-right"></ul>
                             </div>
                           </div>
                         </div>
@@ -194,12 +200,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                             <div class="input-group-btn">
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" >
                                 <span class="fa fa-caret-down"></span></button>
-                              <ul id="dropdownDeviceType" class="dropdown-menu dropdown-menu-right">
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtDeviceType','Smartphone')"> Smartphone </a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtDeviceType','Laptop')">     Laptop     </a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtDeviceType','PC')">         PC         </a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtDeviceType','Others')">     Others     </a></li>
-                              </ul>
+                              <ul id="dropdownDeviceType" class="dropdown-menu dropdown-menu-right"></ul>
                             </div>
                           </div>
                         </div>
@@ -232,13 +233,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                             <div class="input-group-btn">
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                                 <span class="fa fa-caret-down"></span></button>
-                              <ul id="dropdownGroup" class="dropdown-menu dropdown-menu-right">
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtGroup','Always On')"> Always On </a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtGroup','Friends')">   Friends   </a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtGroup','Personal')">  Personal  </a></li>
-                                <li class="divider"></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtGroup','Others')">    Others    </a></li>
-                              </ul>
+                              <ul id="dropdownGroup" class="dropdown-menu dropdown-menu-right"></ul>
                             </div>
                           </div>
                         </div>
@@ -275,8 +270,8 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
 
                       <!-- Comments -->
                       <div class="form-group">
-                        <label class="col-sm-3 control-label"><?=$pia_lang['DevDetail_MainInfo_Comments'];?></label>
-                        <div class="col-sm-9"><textarea class="form-control" rows="3" id="txtComments"></textarea></div>
+                        <label class="col-sm-4 control-label"><?=$pia_lang['DevDetail_MainInfo_Comments'];?></label>
+                        <div class="col-sm-8"><textarea class="form-control" rows="3" id="txtComments"></textarea></div>
                       </div>
 
                       <!-- ScanSource -->
@@ -314,7 +309,16 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                       <!-- Last IP -->
                       <div class="form-group">
                         <label class="col-sm-5 control-label"><?=$pia_lang['DevDetail_SessionInfo_LastIP'];?></label>
-                        <div class="col-sm-7"><input class="form-control" id="txtLastIP" type="text" readonly value="--"></div>
+                        <div class="col-sm-7">
+                          <div class="input-group">
+                            <div class="input-group-btn">
+                              <button type="button" class="btn btn-danger dropdown-toggle" id="txthideIP" data-toggle="dropdown" aria-expanded="false">
+                                <span class="fa fa-ban"></span></button>
+                              <ul class="dropdown-menu"></ul>
+                            </div>
+                            <input type="text" id="txtLastIP" class="form-control" readonly value="--">
+                          </div>
+                        </div>
                       </div>
 
                       <!-- Static IP -->
@@ -359,14 +363,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                             <div class="input-group-btn">
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                                 <span class="fa fa-caret-down"></span></button>
-                              <ul id="dropdownLocation" class="dropdown-menu dropdown-menu-right">
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Ethernet')">        Ethernet</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Fibre')">           Fibre</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','WiFi')">            WiFi</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Bluetooth')">       Bluetooth</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Virtual Machine')"> Virtual Machine</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtConnectionType','Container')">       Container</a></li>
-                              </ul>
+                              <ul id="dropdownConnectionType" class="dropdown-menu dropdown-menu-right"></ul>
                             </div>
                           </div>
                         </div>
@@ -381,16 +378,7 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                             <div class="input-group-btn">
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                                 <span class="fa fa-caret-down"></span></button>
-                              <ul id="dropdownLocation" class="dropdown-menu dropdown-menu-right">
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','10 Mbps')">    10 Mbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','100 Mbps')">  100 Mbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','1.0 Gbps')">  1.0 Gbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','2.5 Gbps')">  2.5 Gbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','10 Gbps')">    10 Gbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','20 Gbps')">    20 Gbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','25 Gbps')">    25 Gbps</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtLinkSpeed','40 Gbps')">    40 Gbps</a></li>
-                              </ul>
+                              <ul id="dropdownLinkSpeed" class="dropdown-menu dropdown-menu-right"></ul>
                             </div>
                           </div>
                         </div>
@@ -455,6 +443,12 @@ $Speedtest_Graph_Up = $speedtest_graph_array[3];
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      <!-- Scan Validation -->
+                      <div class="form-group">
+                        <label class="col-sm-5 control-label"><?=$pia_lang['DevDetail_EveandAl_ScanValid'];?></label>
+                        <div class="col-sm-7"><input class="form-control" id="txtScanValidation" type="text" value="--"></div>
                       </div>
 
                       <!-- New Device -->
@@ -941,11 +935,13 @@ function initializeiCheck () {
 // -----------------------------------------------------------------------------
 function initializeCombos () {
   // Initialize combos with queries
-  initializeCombo ( $('#dropdownOwner')[0],                      'getOwners',       'txtOwner');
-  initializeCombo ( $('#dropdownDeviceType')[0],                 'getDeviceTypes',  'txtDeviceType');
-  initializeCombo ( $('#dropdownGroup')[0],                      'getGroups',       'txtGroup');
-  initializeCombo ( $('#dropdownLocation')[0],                   'getLocations',    'txtLocation');
-  initializeCombo ( $('#dropdownNetworkNodeMac')[0],             'getNetworkNodes', 'txtNetworkNodeMac');
+  initializeCombo ( $('#dropdownOwner')[0],                 'getOwners',         'txtOwner');
+  initializeCombo ( $('#dropdownDeviceType')[0],            'getDeviceTypes',    'txtDeviceType');
+  initializeCombo ( $('#dropdownGroup')[0],                 'getGroups',         'txtGroup');
+  initializeCombo ( $('#dropdownLocation')[0],              'getLocations',      'txtLocation');
+  initializeCombo ( $('#dropdownNetworkNodeMac')[0],        'getNetworkNodes',   'txtNetworkNodeMac');
+  initializeCombo ( $('#dropdownLinkSpeed')[0],             'getLinkSpeed',      'txtLinkSpeed');
+  initializeCombo ( $('#dropdownConnectionType')[0],        'getConnectionType', 'txtConnectionType');
 
   // Initialize static combos
   initializeComboSkipRepeated ();
@@ -1297,6 +1293,7 @@ function getDeviceData (readAllData=false) {
       $('#chkAlertEvents').iCheck  ('uncheck');
       $('#chkAlertDown').iCheck    ('uncheck');
       $('#txtSkipRepeated').val    ('--');
+      $('#txtScanValidation').val  ('--');
       $('#chkNewDevice').iCheck    ('uncheck');
       $('#chkArchived').iCheck     ('uncheck');
 
@@ -1327,11 +1324,11 @@ function getDeviceData (readAllData=false) {
       // Status
       $('#deviceStatus').html (deviceData['dev_Status'].replace('-', ''));
       switch (deviceData['dev_Status']) {
-        case 'On-line':   icon='fa fa-check';    color='text-green';   break;
-        case 'Off-line':  icon='fa fa-close';    color='text-gray';    break;
-        case 'Down':      icon='fa fa-warning';  color='text-red';     break;
-        case null:        icon='fa fa-warning';  color='text-red';     $('#deviceStatus').html ('???');  break;
-        default:          icon='';               color='';             break;
+        case 'On-line':   icon='fa fa-check';             color='text-green';   break;
+        case 'Off-line':  icon='fa fa-close';             color='text-gray';    break;
+        case 'Down':      icon='mdi mdi-lan-disconnect';  color='text-red';     break;
+        case null:        icon='fa fa-warning';           color='text-red';     $('#deviceStatus').html ('???');  break;
+        default:          icon='';                        color='';             break;
       };
       $('#deviceStatus')[0].className = color;
       $('#deviceStatusIcon')[0].className = icon +' '+ color;
@@ -1392,6 +1389,7 @@ function getDeviceData (readAllData=false) {
         if (deviceData['dev_AlertEvents'] == 1)      {$('#chkAlertEvents').iCheck('check');} else {$('#chkAlertEvents').iCheck('uncheck');}
         if (deviceData['dev_AlertDeviceDown'] == 1)  {$('#chkAlertDown').iCheck('check');}   else {$('#chkAlertDown').iCheck('uncheck');}
         $('#txtSkipRepeated').val                    (findSkipRepeated (deviceData['dev_SkipRepeated']));
+        $('#txtScanValidation').val                  (deviceData['dev_Scan_Validation']);
         if (deviceData['dev_NewDevice'] == 1)        {$('#chkNewDevice').iCheck('check');}   else {$('#chkNewDevice').iCheck('uncheck');}
         if (deviceData['dev_Archived'] == 1)         {$('#chkArchived').iCheck('check');}    else {$('#chkArchived').iCheck('uncheck');}
 
@@ -1405,6 +1403,8 @@ function getDeviceData (readAllData=false) {
 
         deactivateSaveRestoreData ();
         initToolsSection();
+        generateMACDropdownList();
+        generateIPDropdownList();
 
         if (deviceData['dev_ScanSource'] !== 'local') {
             var navbarBackButton = $('#navbar-back-button');
@@ -1523,6 +1523,7 @@ function setDeviceData (refreshCallback='') {
     + '&alertevents='     + ($('#chkAlertEvents')[0].checked * 1)
     + '&alertdown='       + ($('#chkAlertDown')[0].checked * 1)
     + '&skiprepeated='    + $('#txtSkipRepeated').val().split(' ')[0]
+    + '&scanvalid='       + $('#txtScanValidation').val()
     + '&newdevice='       + ($('#chkNewDevice')[0].checked * 1)
     + '&archived='        + ($('#chkArchived')[0].checked * 1)
     , function(msg) {
@@ -1697,6 +1698,11 @@ function setTextValue (textElement, textValue) {
   activateSaveRestoreData ();
 }
 
+function emptytxtfield(textElement) {
+  $('#'+textElement).val ('');
+  activateSaveRestoreData ();
+}
+
 // WakeOnLAN
 function askwakeonlan() {
   // Ask
@@ -1734,4 +1740,119 @@ setTimeout(function(){
    showmanualnmapscan(document.getElementById('txtLastIP').value);
 }, 1000);
 }
+
+function generateMACDropdownList() {
+  const macInput = document.getElementById('txtMAC');
+  const dropdownMenu = document.querySelector('#txthideMAC + .dropdown-menu');
+
+  if (!macInput || !dropdownMenu) return;
+
+  const macValue = macInput.value.trim();
+  const macParts = macValue.split(':');
+
+  if (macParts.length !== 6) {
+    console.warn('Ungültige MAC-Adresse:', macValue);
+    return;
+  }
+
+  // Liste erzeugen: "xx", "xx:xx", ..., "xx:xx:xx:xx:xx:xx"
+  const macSteps = [];
+  for (let i = 1; i <= macParts.length; i++) {
+    macSteps.push(macParts.slice(0, i).join(':'));
+  }
+
+  // Dropdown leeren
+  dropdownMenu.innerHTML = '';
+
+  // Neue <li>-Einträge einfügen
+  macSteps.forEach(step => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = step;
+
+    a.onclick = function(e) {
+      e.preventDefault();
+      askBlockDeviceMAC(step);
+    };
+
+    li.appendChild(a);
+    dropdownMenu.appendChild(li);
+  });
+}
+
+function generateIPDropdownList() {
+  const ipInput = document.getElementById('txtLastIP');
+  const dropdownMenu = document.querySelector('#txthideIP + .dropdown-menu');
+
+  if (!ipInput || !dropdownMenu) return;
+
+  const ipValue = ipInput.value.trim();
+  const ipParts = ipValue.split('.');
+
+  if (ipParts.length !== 4) {
+    console.warn('Ungültige IP-Adresse:', ipValue);
+    return;
+  }
+
+  // Liste erzeugen: "xxx", "xxx.xxx", ..., "xxx.xxx.xxx.xxx"
+  const ipSteps = [];
+  for (let i = 1; i <= ipParts.length; i++) {
+    ipSteps.push(ipParts.slice(0, i).join('.'));
+  }
+
+  // Dropdown leeren
+  dropdownMenu.innerHTML = '';
+
+  // Neue <li>-Einträge einfügen
+  ipSteps.forEach(step => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = step;
+
+    a.onclick = function(e) {
+      e.preventDefault();
+      askBlockDeviceIP(step);
+    };
+
+    li.appendChild(a);
+    dropdownMenu.appendChild(li);
+  });
+}
+
+function askBlockDeviceMAC(macStep) {
+  window.selectedMACStep = macStep;
+  showModalWarning(
+    '<?=$pia_lang['MT_Tool_ignorelist']?> MAC',
+    macStep + '<?=$pia_lang['DevDetail_add_ignore_noti_text']?>',
+    '<?=$pia_lang['Gen_Cancel'];?>',
+    '<?=$pia_lang['Gen_Okay'];?>',
+    'BlockDeviceMAC'
+    );
+}
+function BlockDeviceMAC() {
+  if (!window.selectedMACStep) return;
+  macStep = window.selectedMACStep;
+  $.get('php/server/files.php?action=BlockDeviceMAC&mac=' + encodeURIComponent(macStep), function(msg) {showMessage (msg);});
+  delete window.selectedMACStep;
+}
+
+function askBlockDeviceIP(ipStep) {
+  window.selectedipStep = ipStep;
+  showModalWarning(
+    '<?=$pia_lang['MT_Tool_ignorelist']?> IP',
+    ipStep + '<?=$pia_lang['DevDetail_add_ignore_noti_text']?>',
+    '<?=$pia_lang['Gen_Cancel'];?>',
+    '<?=$pia_lang['Gen_Okay'];?>',
+    'BlockDeviceIP')
+  ;
+}
+function BlockDeviceIP() {
+  if (!window.selectedipStep) return;
+  ipStep = window.selectedipStep;
+  $.get('php/server/files.php?action=BlockDeviceIP&ip=' + encodeURIComponent(ipStep), function(msg) {showMessage (msg);});
+  delete window.selectedipStep;
+}
+
 </script>

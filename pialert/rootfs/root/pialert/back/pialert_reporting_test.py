@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 #  Puche 2021                                              GNU GPLv3
 #  leiweibau 2023                                          GNU GPLv3
-#  danveitch76 2024                                          GNU GPLv3
+#  danveitch76 2025                                        GNU GPLv3
 #-------------------------------------------------------------------------------
 
 #===============================================================================
@@ -24,19 +24,7 @@ try:
   from urlparse import urlparse
 except ImportError:
   from urllib.parse import urlparse
-import sys
-import subprocess
-import os
-import re
-import datetime
-import socket
-import io
-import smtplib
-import requests
-import time
-import pwd
-import glob
-import uuid
+import sys, subprocess, os, re, datetime, socket, io, smtplib, requests, time, pwd, glob, uuid
 import paho.mqtt.publish as publish
 
 #===============================================================================
@@ -105,8 +93,8 @@ def get_username():
 
 # ------------------------------------------------------------------------------
 def set_reports_file_permissions():
-  os.system(f"chown -R {get_username()}:www-data {REPORTPATH_WEBGUI}")
-  os.system(f"chmod -R 775 {REPORTPATH_WEBGUI}")
+  os.system(f"sudo chown -R {get_username()}:www-data {REPORTPATH_WEBGUI}")
+  os.system(f"sudo chmod -R 775 {REPORTPATH_WEBGUI}")
 
 #===============================================================================
 # Sending Notifications
@@ -151,10 +139,10 @@ def sending_notifications_test(_Mode):
     else :
         print ('    Skip WebGUI...')        
     if REPORT_MQTT or REPORT_MQTT_WEBMON:
-        print ('    Sending report by MQTT...')
-        send_mqtt_test (notiMessage)
-    else :
-        print ('    Skip MQTT...')
+        print("    Sending report by MQTT...")
+        send_mqtt_test(notiMessage)
+    else:
+        print("    Skip MQTT...")
     return 0
 
 #-------------------------------------------------------------------------------
@@ -167,7 +155,8 @@ def send_ntfy_test(_notiMessage):
 
     if NTFY_CLICKABLE == True:
         headers["Click"] = REPORT_DASHBOARD_URL
-    if NTFY_USER != "" and NTFY_PASSWORD != "":
+    #if NTFY_USER != "" and NTFY_PASSWORD != "":
+    if NTFY_PASSWORD != "":
     # Generate hash for basic auth
         usernamepassword = f"{NTFY_USER}:{NTFY_PASSWORD}"
         basichash = b64encode(bytes(f'{NTFY_USER}:{NTFY_PASSWORD}',
@@ -279,7 +268,7 @@ def send_mqtt_test (_notiMessage):    # Settings for sending MQTT to Broker
     publish.single(topic, payload = message, hostname = broker, port = port, client_id = client_id, retain = True)
 
 #-------------------------------------------------------------------------------
-def remove_tag (pText, pTag):
+def remove_tag(pText, pTag):
     # return text without the tag
   return pText.replace(f'<{pTag}>', '').replace(f'</{pTag}>', '')
 

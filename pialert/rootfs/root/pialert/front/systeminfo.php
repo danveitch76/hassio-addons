@@ -1,12 +1,3 @@
-<!-- ---------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  systeminfo.php - Front module. SystemInfo page
-#-------------------------------------------------------------------------------
-#  leiweibau 2024                                          GNU GPLv3
-#--------------------------------------------------------------------------- -->
-
 <?php
 session_start();
 
@@ -20,8 +11,7 @@ if ($_SESSION["login"] != 1) {
 
 require 'php/templates/header.php';
 
-
-$prevVal = shell_exec("../back/pialert-cli show_usercron");
+$prevVal = shell_exec("sudo ../back/pialert-cli show_usercron");
 $prevArr = explode("\n", trim($prevVal));
 function filterValues($value) {
     return (substr($value, 0, 1) !== '#');
@@ -75,17 +65,17 @@ $net_interfaces_rx = explode("\n", trim($network_result));
 $network_result = shell_exec("cat /proc/net/dev | tail -n +3 | awk '{print $10}'");
 $net_interfaces_tx = explode("\n", trim($network_result));
 //hdd stat
-$hdd_result = shell_exec("df | awk '{print $1}'");
+$hdd_result = shell_exec("sudo df | awk '{print $1}'");
 $hdd_devices = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $2}'");
+$hdd_result = shell_exec("sudo df | awk '{print $2}'");
 $hdd_devices_total = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $3}'");
+$hdd_result = shell_exec("sudo df | awk '{print $3}'");
 $hdd_devices_used = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $4}'");
+$hdd_result = shell_exec("sudo df | awk '{print $4}'");
 $hdd_devices_free = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $5}'");
+$hdd_result = shell_exec("sudo df | awk '{print $5}'");
 $hdd_devices_percent = explode("\n", trim($hdd_result));
-$hdd_result = shell_exec("df | awk '{print $6}'");
+$hdd_result = shell_exec("sudo df | awk '{print $6}'");
 $hdd_devices_mount = explode("\n", trim($hdd_result));
 //usb devices
 $usb_result = shell_exec("lsusb");
@@ -177,11 +167,34 @@ if (($_SESSION['Scan_Satellite'] == True)) {
 	                $tabs .=  '<li class=""><a href="#tab_'.$tab_id.'" data-toggle="tab" aria-expanded="false">'.$row['sat_name'].'</a></li>';
 
 	                $hostdata = json_decode($row['sat_host_data'], true);
+
+	                $satLastUpdate = $row['sat_lastupdate'] ?? null;
+	                $spanClass = 'text-green';
+					if ($satLastUpdate) {
+					    $now = new DateTime();
+					    $lastUpdate = DateTime::createFromFormat('Y-m-d H:i:s', $satLastUpdate);
+					    
+					    if ($lastUpdate) {
+					        $diff = $now->getTimestamp() - $lastUpdate->getTimestamp();
+					        $diffMinutes = abs($diff) / 60;
+					        
+					        if ($diffMinutes > 10) {
+					            $spanClass = 'text-red';
+					        }
+					    }
+					}
+
+					if (is_bool($hostdata['satellite_proxymode'])) {
+						if ($hostdata['satellite_proxymode'] == True) {$proxymode = "True";} else {$proxymode = "False";}
+					} else {$proxymode = "Unknown";}
+
+					if (!isset($hostdata['satellite_url'])) {$hostdata['satellite_url'] = "Unknown";}
+
 	                $scan_time = explode(" ", $row['sat_lastupdate']);
 	                $tab_content .= '<div class="tab-pane" id="tab_'.$tab_id.'">
 											<div class="row">
 											  <div class="col-sm-3 sysinfo_gerneral_a">Uptime</div>
-											  <div class="col-sm-9 sysinfo_gerneral_b">' . str_replace($uptime_search, $uptime_replace, $hostdata['uptime']) . ' ('. $scan_time[0] . ' / '.substr($scan_time[1], 0, -3).')</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b"><span class="'.htmlspecialchars($spanClass).'">' . str_replace($uptime_search, $uptime_replace, $hostdata['uptime']) . ' ('. $scan_time[0] . ' / '.substr($scan_time[1], 0, -3).')</span></div>
 											</div>
 											<div class="row">
 											  <div class="col-sm-3 sysinfo_gerneral_a">Operating System</div>
@@ -214,6 +227,14 @@ if (($_SESSION['Scan_Satellite'] == True)) {
 											<div class="row">
 											  <div class="col-sm-3 sysinfo_gerneral_a">Timezone (System):</div>
 											  <div class="col-sm-9 sysinfo_gerneral_b">"' . $hostdata['os_timezone'] . '"</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">Proxy Mode:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $proxymode . '</div>
+											</div>
+											<div class="row">
+											  <div class="col-sm-3 sysinfo_gerneral_a">API Url:</div>
+											  <div class="col-sm-9 sysinfo_gerneral_b">' . $hostdata['satellite_url'] . '</div>
 											</div>
 							            </div>';
 	            }

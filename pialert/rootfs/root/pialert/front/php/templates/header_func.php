@@ -17,6 +17,33 @@ function get_local_system_tz() {
 	}
 	return $timezone;
 }
+// Headers for devices, icmp and presence page
+function calc_header_size($header_all, $header_selected) {
+	if ($header_all < 5 || $header_selected <= 0) {
+		return [];
+	}
+
+	if ($header_selected >= 5) {
+		return [
+			'lg' => 'col-lg-2',
+			'md' => 'col-sm-4',
+			'sm' => 'col-xs-6',
+		];
+	} elseif ($header_selected >= 3) {
+		return [
+			'lg' => 'col-lg-3',
+			'md' => 'col-sm-3',
+			'sm' => 'col-xs-6',
+		];
+	} else { // 1 oder 2
+		return [
+			'lg' => 'col-lg-6',
+			'md' => 'col-sm-6',
+			'sm' => 'col-xs-6',
+		];
+	}
+}
+
 // Maintenance Page - Pause Arp Scan Section
 function arpscanstatus() {
 	global $pia_lang;
@@ -157,7 +184,7 @@ function toggle_satellites_submenu() {
 	                $_SESSION[$row['sat_token']] = $row['sat_name'];
 	                // Create NavBar items
 	                $dev_submenu .= '<li class="custom_filter">
-	                	<a href="devices.php?scansource='.$row['sat_token'].'" style="font-size: 14px; height: 30px; line-height:30px;padding:0;padding-left:25px;">
+	                	<a href="devices.php?scansource='.$row['sat_token'].'" class="sidebar-subentries">
 	                		<i class="fa-solid fa-satellite" style="margin-right:5px;"></i>
 	                		<span>'.$row['sat_name'].'</span>
 	                		<span class="pull-right-container" style="margin-right:-5px">
@@ -168,7 +195,7 @@ function toggle_satellites_submenu() {
 		            </a></li>';
 
 		            $pres_submenu .= '<li class="custom_filter">
-	                	<a href="presence.php?scansource='.$row['sat_token'].'" style="font-size: 14px; height: 30px; line-height:30px;padding:0;padding-left:25px;">
+	                	<a href="presence.php?scansource='.$row['sat_token'].'" class="sidebar-subentries">
 	                		<i class="fa-solid fa-satellite" style="margin-right:5px;"></i>
 	                		<span>'.$row['sat_name'].'</span>
 	                		<span class="pull-right-container" style="margin-right:-5px">
@@ -198,14 +225,28 @@ function get_config_parmeter($config_param) {
 	if (isset($configArray[$config_param])) {return $configArray[$config_param];} else {return False;}
 }
 // Set Session Vars
-if (get_config_parmeter('ICMPSCAN_ACTIVE') == 1) {$_SESSION['ICMPScan'] = True;} else { $_SESSION['ICMPScan'] = False;}
-if (get_config_parmeter('SATELLITES_ACTIVE') == 1) {$_SESSION['Scan_Satellite'] = True; $satellite_badges_list = array();} else { $_SESSION['Scan_Satellite'] = False;}
-if (get_config_parmeter('SCAN_WEBSERVICES') == 1) {$_SESSION['Scan_WebServices'] = True;} else { $_SESSION['Scan_WebServices'] = False;}
-if (get_config_parmeter('ARPSCAN_ACTIVE') == 1) {$_SESSION['Scan_MainScan'] = True;} else { $_SESSION['Scan_MainScan'] = False;}
-if (get_config_parmeter('AUTO_UPDATE_CHECK') == 1) {$_SESSION['Auto_Update_Check'] = True;} else { $_SESSION['Auto_Update_Check'] = False;}
-if (get_config_parmeter('AUTO_DB_BACKUP') == 1) {$_SESSION['AUTO_DB_BACKUP'] = True;} else { $_SESSION['AUTO_DB_BACKUP'] = False;}
-if (get_config_parmeter('SPEEDTEST_TASK_ACTIVE') == 1) {$_SESSION['SPEEDTEST_TASK_ACTIVE'] = True;} else { $_SESSION['SPEEDTEST_TASK_ACTIVE'] = False;}
-if (get_config_parmeter('SATELLITES_ACTIVE') == 1) {$_SESSION['SATELLITES_ACTIVE'] = True;} else { $_SESSION['SATELLITES_ACTIVE'] = False;}
+$config_mappings = [
+    'ICMPSCAN_ACTIVE'        => 'ICMPScan',
+    'SATELLITES_ACTIVE'      => 'Scan_Satellite',
+    'SCAN_WEBSERVICES'       => 'Scan_WebServices',
+    'ARPSCAN_ACTIVE'         => 'Scan_MainScan',
+    'AUTO_UPDATE_CHECK'      => 'Auto_Update_Check',
+    'AUTO_DB_BACKUP'         => 'AUTO_DB_BACKUP',
+    'SPEEDTEST_TASK_ACTIVE'  => 'SPEEDTEST_TASK_ACTIVE',
+    'SATELLITES_ACTIVE_copy' => 'SATELLITES_ACTIVE', // Spezialfall
+    'PRINT_LOG'              => 'PRINT_LOG'
+];
+
+foreach ($config_mappings as $config_key => $session_key) {
+    $config_value = get_config_parmeter(str_replace('_copy', '', $config_key)) == 1;
+    $_SESSION[$session_key] = $config_value;
+
+    // Spezialfall Satellites: Wenn aktiv, muss zusätzlich $satellite_badges_list erzeugt werden
+    if ($config_key == 'SATELLITES_ACTIVE' && $config_value) {
+        $satellite_badges_list = array();
+    }
+}
+
 $_SESSION['AUTO_UPDATE_CHECK_CRON'] = get_config_parmeter('AUTO_UPDATE_CHECK_CRON');
 $_SESSION['AUTO_DB_BACKUP_CRON'] = get_config_parmeter('AUTO_DB_BACKUP_CRON');
 $_SESSION['SPEEDTEST_TASK_CRON'] = get_config_parmeter('SPEEDTEST_TASK_CRON');
@@ -214,19 +255,17 @@ $_SESSION['REPORT_NEW_CONTINUOUS_CRON'] = get_config_parmeter('REPORT_NEW_CONTIN
 // State for Toggle Buttons
 function convert_state($state, $revert) {
 	global $pia_lang;
-	if ($revert == 1) {
-		if ($state == 1) {return $pia_lang['Gen_off'];} else {return $pia_lang['Gen_on'];}
-	} elseif ($revert == 0) {
-		if ($state != 1) {return $pia_lang['Gen_off'];} else {return $pia_lang['Gen_on'];}
-	}
+	$is_on = ($revert ? $state != 1 : $state == 1);
+	return $is_on ? $pia_lang['Gen_on'] : $pia_lang['Gen_off'];
 }
 function convert_state_action($state, $revert) {
 	global $pia_lang;
-	if ($revert == 1) {
-		if ($state == 1) {return $pia_lang['Gen_deactivate'];} else {return $pia_lang['Gen_activate'];}
-	} elseif ($revert == 0) {
-		if ($state != 1) {return $pia_lang['Gen_deactivate'];} else {return $pia_lang['Gen_activate'];}
-	}
+	$is_activate = ($revert ? $state != 1 : $state == 1);
+	return $is_activate ? $pia_lang['Gen_activate'] : $pia_lang['Gen_deactivate'];
+}
+function colorize_state($state, $revert) {
+	$is_green = ($revert ? $state == 1 : $state != 1);
+	return $is_green ? 'text-green' : 'text-red';
 }
 // Top Navbar - Back button for details pages
 function insert_back_button() {
@@ -319,7 +358,7 @@ function show_groupless_filters() {
 	foreach ($filter_table as $row) {
     	if ($row['filterstring'] == $_REQUEST['predefined_filter']) {$filterlist_icon = "fa-solid fa-circle";} else {$filterlist_icon = "fa-regular fa-circle";}
     	if ($row['reserve_c'] == "" || !isset($row['reserve_c'])) {
-        	echo '<li class="custom_filter"><a href="devices.php?predefined_filter='.urlencode($row['filterstring']).'&filter_fields='.$row['reserve_b'].'" style="font-size: 14px; height: 30px; line-height:30px;padding:0;padding-left:25px;"><i class="'.$filterlist_icon.'" style="margin-right:5px;"></i>'. $row['filtername'] .'</a></li>';
+        	echo '<li class="custom_filter"><a href="devices.php?predefined_filter='.urlencode($row['filterstring']).'&filter_fields='.$row['reserve_b'].'" class="sidebar-subentries"><i class="'.$filterlist_icon.'" style="margin-right:5px;"></i>'. $row['filtername'] .'</a></li>';
     	}
     }
 }
@@ -332,7 +371,7 @@ function show_group_filters() {
 		$temp_filter_group = $filter_groups[$i];
 		if ($i == $active_group && isset($active_group)) {$group_state['menu'] = 'menu-open'; $group_state['list'] = 'block';} else {{$group_state['menu'] = ''; $group_state['list'] = 'none';}}
 		echo '<li class="treeview '.$group_state['menu'].' custom_filter" style="height: auto;">
-				<a href="#" style="font-size: 14px; height: 30px; line-height:30px;padding:0;padding-left:25px;">
+				<a href="#" class="sidebar-subentries">
 	    			<i class="fa-solid fa-filter"></i>
 	    			<span style="font-style: italic;">&nbsp;'.$temp_filter_group.'</span>
 	    			<span class="pull-right-container">
@@ -362,6 +401,17 @@ function get_filter_group_list() {
     natsort($filter_groups);
     $filter_groups = array_values($filter_groups);
     return $filter_groups;
+}
+// Maintenance Page, Devices, ICMP and Presence - Get Header Config
+function read_HeaderConfig() {
+	$file = '../config/setting_listheaders';
+	if (file_exists($file)) {
+		$get = file_get_contents($file, true);
+	} else {
+		$get = '{"devices":{"all":1,"con":1,"fav":1,"dnw":1,"arc":1,"new":1},"icmp":{"all":1,"con":1,"fav":1,"dnw":1,"arc":1},"presence":{"all":1,"con":1,"fav":1,"dnw":1,"arc":1,"new":1}}';
+	}
+	$output_array = json_decode($get, true);
+	return $output_array;
 }
 // Devicelist, ICMP Monitor - Enable Arp Histroy Graph
 if (file_exists('../config/setting_noonlinehistorygraph')) {$ENABLED_HISTOY_GRAPH = False;} else { $ENABLED_HISTOY_GRAPH = True;}
@@ -407,7 +457,12 @@ if (file_exists('../config/setting_favicon')) {
 } else {
 	$FRONTEND_FAVICON = 'img/favicons/flat_blue_white.png';
 }
+// UI - Pihole Button
+if (file_exists('../config/setting_piholebutton')) {
+	$FRONTEND_PHBUTTON = file('../config/setting_piholebutton', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)[0];
+} else {
+	$FRONTEND_PHBUTTON = '';
+}
 // set ScanSource Defaults (Satellite Scans)
 if ($_REQUEST['scansource']) {$SCANSOURCE=$_REQUEST['scansource'];} else {$SCANSOURCE='local';}
-
 ?>

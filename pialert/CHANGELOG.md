@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.14
+### ✨ Features
+- Updated to v2025-07-12 (https://github.com/leiweibau/Pi.Alert/releases/tag/v2025-07-12)
+- Updated GeoLite2-Country db to latest version (07/07/25)
+
 ## 0.0.13
 ### 🩹 BugFix
 - Fix missing MQTT notifications visibility on 'Settings and Maintenance' text.

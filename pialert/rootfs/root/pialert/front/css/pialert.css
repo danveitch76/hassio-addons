@@ -1,13 +1,3 @@
-/* -----------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector 
-#
-#  pialert.css - Front module. CSS styles
-#-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
-#  leiweibau 2023                                          GNU GPLv3
------------------------------------------------------------------------------ */
-
 /* -----------------  Global Variables -------------------------------------- */
 :root {
     --color-aqua: #00c0ef;
@@ -57,7 +47,6 @@
 @media (max-width: 991px) {
 .navbar-custom-menu > .navbar-nav > li > .dropdown-menu { right: 0px;}
 }
-
 .sidebar-open .content-wrapper,
 .sidebar-open .main-footer {
 /*     -webkit-transform: translate(150px, 0);
@@ -423,6 +412,7 @@ body.modal-open {
     display: inline-block; height: 50px; padding-top: 15px;
 }
 #navbar-help-button {font-size: 18px; position: relative; left: 0px; width: 42px; display: inline-block; padding-top: 15px; text-align: center;}
+#navbar-pihole-button {font-size: 24px; position: relative; left: 0px; width: 42px; display: inline-block; padding-top: 13px; text-align: center;}
 /* ----------------- System Info -------------------------------------------- */
 .user-panel {padding-left: 0px;}
 .sysinfo_headline {color: #00c0ef;}
@@ -437,17 +427,19 @@ body.modal-open {
 .sysinfo_usbdev_b {padding-left: 30px;  padding-top: 2px; padding-bottom: 2px;}
 /* ----------------- Maintenance -------------------------------------------- */
 .dbtools-button { display: inline-block; width: 160px; height: 73px; white-space: normal; word-wrap: break-word; font-size: 16px; padding: 4px;}
+.dbtools-button-sm { display: inline-block; width: 140px; height: 73px; white-space: normal; word-wrap: break-word; font-size: 16px; padding: 4px;}
 .db_info_table_cell:nth-child(1) { background: white }
 .db_info_table_cell:nth-child(2) { background: white }
-.db_tools_table_cell_a:nth-child(1) { background: white }
-.db_tools_table_cell_a:nth-child(2) { background: white }
-.db_tools_table_cell_b:nth-child(1) { background: white }
-.db_tools_table_cell_b:nth-child(2) { background: white }
 .db_info_table { display: table; border-spacing: 0em; font-weight: 400; font-size: 15px; width: 100%; margin: auto;}
 .db_info_table_row { display: table-row; padding: 3px; }
 .db_info_table_cell { display: table-cell; padding: 3px; padding-left: 10px;}
 .db_tools_table_cell_a { display: table-cell; text-align: center; padding: 10px; min-width: 180px; width: 20%; vertical-align: top;}
+.db_tools_table_cell_a:nth-child(1) { background: white }
+.db_tools_table_cell_a:nth-child(2) { background: white }
+.db_tools_table_cell_b:nth-child(1) { background: white }
+.db_tools_table_cell_b:nth-child(2) { background: white }
 .db_tools_table_cell_b { display: table-cell; text-align: justify; font-size: 16px; vertical-align: middle; padding: 10px;}
+.db_info_table_cell_a { min-width: 175px; width: 35%;}
 .main_logviwer_text_layout {text-align: left;}
 .main_logviwer_log {border: none; overflow-y: scroll; white-space: nowrap;}
 .main_logviwer_buttonbox {text-align: center; padding-top: 5px; padding-bottom: 5px;}
@@ -456,6 +448,9 @@ body.modal-open {
 #configeditor {text-align: center; padding-top: 5px; padding-bottom: 5px; height: 45px;}
 .configeditor_help {text-align: left; margin-top: 10px;}
 .statusbox_ro_inputs {width:100%; overflow-x: scroll; border: none; background: transparent; margin: 0px; padding: 0px;}
+.sat_config_list_a {display: inline-block; width: 170px; padding-right: 10px; border: solid 1px #ccc; margin-bottom: 5px;}
+.sat_config_list_meth {padding-left: 10px;font-weight: 600;}
+.sat_config_list_stat {float:right;}
 /* ----------------- Services ----------------------------------------------- */
 .servicelist_entry {display: flex; width: 100%; margin-bottom: 5px; margin-top: 5px;}
 .servicebox_httpstat_hover {display: flex; width: 70px; height: 70px;}
@@ -498,8 +493,12 @@ body.modal-open {
 .bulked_table_cell_a {padding-left: 10px; height: 70px;}
 .bulked_online_border {border: 1px solid #00A000; box-shadow: inset 0px 0px 5px 0px #00A000;}
 .bulked_offline_border {border: 1px solid #888;}
-#bulked_checkall {display: block; margin-top: 20px; margin-bottom: 10px; min-width: 180px;}
+.bulked_checkallbtn {min-width: 170px; margin: 0px 10px}
 .bulk_editor_quit {position: absolute; display: inline-block; top: 5px; right: 15px;}
+.bulked_table_cell_b {display: table-cell; text-align: center; padding: 10px; width: 80px; vertical-align: middle; line-height: 60px;}
+.bulked_new_dev {background-color: #b1720c;}
+.bulked_arc_dev {background-color: #aaa;}
+.bulked_default_dev {background-color: transparent;}
 /* ----------------- Services ----------------------------------------------- */
 .icmplist_add_ip {display: inline-block; margin-top: -5px; margin-left: 15px;}
 .services_icon {position: relative; top: -58px; left: 0px; font-size: 58px; opacity: 0.2;}
@@ -570,4 +569,15 @@ body.modal-open {
 
 .report_delete_btn {
   text-align: center; padding-top: 5px; padding-bottom: 5px; height: 45px;
+}
+
+.mgleft-5{
+    margin-left: 5px
+}
+.sidebar-subentries {
+    font-size: 14px !important;
+    height: 30px !important; 
+    line-height: 30px !important;
+    padding: 0px !important;
+    padding-left: 25px !important;
 }

@@ -1,12 +1,3 @@
-<!-- ---------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  reports.php - Front module. WebGUI Notification page
-#-------------------------------------------------------------------------------
-#  leiweibau 2024+                                          GNU GPLv3
-#--------------------------------------------------------------------------- -->
-
 <?php
 session_start();
 error_reporting(0);
@@ -113,7 +104,7 @@ function get_notification_class($filename) {
 		$temp_class[2] = substr($headtitle[0], 6, 2) . '.' . substr($headtitle[0], 4, 2) . '.' . substr($headtitle[0], 2, 2) . '/' . substr($headtitle[1], 0, 2) . ':' . substr($headtitle[1], 2, 2);
 		return $temp_class;
 	}
-	if ($temp_class[0] == "Services Events" || $temp_class[0] == "Services Down") {
+	if ($temp_class[0] == "Services Events" || $temp_class[0] == "Services Down" || $temp_class[0] == "Services Up") {
 		$temp_class[1] = 'webmon';
 		$temp_class[2] = substr($headtitle[0], 6, 2) . '.' . substr($headtitle[0], 4, 2) . '.' . substr($headtitle[0], 2, 2) . '/' . substr($headtitle[1], 0, 2) . ':' . substr($headtitle[1], 2, 2);
 		return $temp_class;
@@ -184,7 +175,7 @@ function process_standard_notifications($class_name, $event_time, $filename, $di
 	          <div class="box-header">
 	            <h3 class="box-title" style="color: ' . $color . '"><i class="fa ' . $notification_icon . '"></i>&nbsp;&nbsp;' . $event_time . ' - ' . $class_name . '</h3>
 	        </div>
-	        <div class="box-body"><pre style="background-color: transparent; border: none;">' . $webgui_report . '</pre></div>
+	        <div class="box-body" style="height:250px;"><pre style="background-color: transparent; border: none; overflow: auto; height:240px">' . $webgui_report . '</pre></div>
             <div class="box-footer text-center">
                 '. report_footer_buttons($directory, $filename) .'
             </div>
@@ -232,7 +223,7 @@ function process_icmp_notifications($class_name, $event_time, $filename, $direct
 	          <div class="box-header">
 	            <h3 class="box-title" style="color: ' . $color . '"><i class="fa fa-laptop"></i>&nbsp;&nbsp;' . $event_time . ' - ' . $class_name . '</h3>
 	          </div>
-	        <div class="box-body"><pre style="background-color: transparent; border: none;">' . $webgui_report . '</pre></div>
+	        <div class="box-body" style="height:250px;"><pre style="background-color: transparent; border: none; overflow: auto; height:240px">' . $webgui_report . '</pre></div>
             <div class="box-footer text-center">
                 '. report_footer_buttons($directory, $filename) .'
             </div>
@@ -246,7 +237,7 @@ function process_test_notifications($class_name, $event_time, $filename, $direct
             <div class="box-header">
               <h3 class="box-title" style="color: ' . $color . '"><i class="fa fa-regular fa-envelope"></i>&nbsp;&nbsp;' . $event_time . ' - System Message</h3>
             </div>
-            <div class="box-body"><pre style="background-color: transparent; border: none;">' . $webgui_report . '</pre></div>
+            <div class="box-body" style="height:250px;"><pre style="background-color: transparent; border: none; overflow: auto; height:240px">' . $webgui_report . '</pre></div>
             <div class="box-footer text-center">
                 '. report_footer_buttons($directory, $filename) .'
             </div>
@@ -423,8 +414,16 @@ generate_report_button($_REQUEST['report_source']);
 for ($x = 0; $x < sizeof($special_notification); $x++) {
 	echo $special_notification[$x];
 }
-for ($x = 0; $x < sizeof($standard_notification); $x++) {
-	echo $standard_notification[$x];
+
+// for ($x = 0; $x < sizeof($standard_notification); $x++) {
+// 	echo $standard_notification[$x];
+// }
+
+for ($x = 0; $x < sizeof($standard_notification); $x=$x+2) {
+	echo '<div class="row">
+        	<div class="col-lg-6 col-xs-12">'.$standard_notification[$x].'</div>
+        	<div class="col-lg-6 col-xs-12">'.$standard_notification[$x+1].'</div>
+      	  </div>';
 }
 ?>
 

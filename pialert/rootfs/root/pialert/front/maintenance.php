@@ -1,14 +1,3 @@
-<!-- --------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  maintenance.php - Front module. Server side. Manage Devices
-#------------------------------------------------------------------------------
-#  Puche      2021        pi.alert.application@gmail.com   GNU GPLv3
-#  jokob-sk   2022        jokob.sk@gmail.com               GNU GPLv3
-#  leiweibau  2024+       https://github.com/leiweibau     GNU GPLv3
-#-------------------------------------------------------------------------- -->
-
 <?php
 session_start();
 error_reporting(0);
@@ -43,16 +32,49 @@ $APIKEY = get_config_parmeter('PIALERT_APIKEY');
 if ($APIKEY == "") {$APIKEY = $pia_lang['MT_Tool_setapikey_false'];}
 
 // Get Ignore List ------------------------------------------------------------
-$MAC_IGNORE_LIST_LINE = get_config_parmeter('MAC_IGNORE_LIST');
-if ($MAC_IGNORE_LIST_LINE == "" || $MAC_IGNORE_LIST_LINE == "[]") {$MAC_IGNORE_LIST = $pia_lang['MT_Tool_ignorelist_false'];} else {
-	$MAC_IGNORE_LIST = str_replace("[", "", str_replace("]", "", str_replace("'", "", trim($MAC_IGNORE_LIST_LINE))));
-	$MAC_IGNORE_LIST = str_replace(",", ", ", trim($MAC_IGNORE_LIST));
+function parse_ignore_list($line, $placeholder_text) {
+    if ($line === "" || $line === "[]") {
+        return $placeholder_text;
+    }
+    $line = str_replace(["[", "]", "'"], "", $line);
+    return str_replace(",", ", ", $line);
 }
-$IP_IGNORE_LIST_LINE = get_config_parmeter('IP_IGNORE_LIST');
-if ($IP_IGNORE_LIST_LINE == "" || $IP_IGNORE_LIST_LINE == "[]") {$IP_IGNORE_LIST = $pia_lang['MT_Tool_ignorelist_false'];} else {
-    $IP_IGNORE_LIST = str_replace("[", "", str_replace("]", "", str_replace("'", "", trim($IP_IGNORE_LIST_LINE))));
-    $IP_IGNORE_LIST = str_replace(",", ", ", trim($IP_IGNORE_LIST));
+// Create Links to remove entries from list (MAC) ------------------------------
+function add_action_macignore($func_macignorelist, $placeholder_text) {
+    if ($func_macignorelist === "" || $func_macignorelist === "[]") {
+        return $placeholder_text;
+    }
+    $func_macignorelist = str_replace(["[", "]", "'"], "", $func_macignorelist);
+
+    $rawlist = explode(",", $func_macignorelist);
+    $actionlist = array();
+    foreach ($rawlist as $key => $value) {
+        $value = trim($value);
+        array_push($actionlist, '<a href="#" onclick="askDeleteBlockDeviceMAC(\''.$value.'\')">'.$value.'</a>');
+    }
+    $ignorlist = implode(', ', $actionlist);
+    return $ignorlist;
 }
+// Create Links to remove entries from list (IP) -------------------------------
+function add_action_ipignore($func_ipignorelist, $placeholder_text) {
+    if ($func_ipignorelist === "" || $func_ipignorelist === "[]") {
+        return $placeholder_text;
+    }
+    $func_ipignorelist = str_replace(["[", "]", "'"], "", $func_ipignorelist);
+    $rawlist = explode(",", $func_ipignorelist);
+    $actionlist = array();
+    foreach ($rawlist as $key => $value) {
+        $value = trim($value);
+        array_push($actionlist, '<a href="#" onclick="askDeleteBlockDeviceIP(\''.$value.'\')">'.$value.'</a>');
+    }
+    $ignorlist = implode(',', $actionlist);
+    return $ignorlist;
+}
+
+$MAC_IGNORE_LIST = add_action_macignore(get_config_parmeter('MAC_IGNORE_LIST'), $pia_lang['MT_Tool_ignorelist_false']);
+$IP_IGNORE_LIST = add_action_ipignore(get_config_parmeter('IP_IGNORE_LIST'), $pia_lang['MT_Tool_ignorelist_false']);
+$NAME_IGNORE_LIST = parse_ignore_list(get_config_parmeter('HOSTNAME_IGNORE_LIST'), $pia_lang['MT_Tool_ignorelist_false']);
+
 // Get Notification Settings --------------------------------------------------
 $CONFIG_FILE_SOURCE = "../config/pialert.conf";
 $CONFIG_FILE_KEY_LINE = file($CONFIG_FILE_SOURCE);
@@ -76,7 +98,10 @@ if (sizeof($LATEST_FILES) == 0) {
 	$LATEST_BACKUP = $LATEST_FILES[0];
 	$LATEST_BACKUP_DATE = date("Y-m-d H:i:s", filemtime($LATEST_BACKUP));
 }
-
+// Get Config Parameter
+foreach (['FRITZBOX_ACTIVE', 'MIKROTIK_ACTIVE', 'UNIFI_ACTIVE', 'OPENWRT_ACTIVE', 'PIHOLE_ACTIVE', 'DHCP_ACTIVE', 'ASUSWRT_ACTIVE', 'PRINT_LOG'] as $key) {
+    $_SESSION[$key] = (get_config_parmeter($key) == 1) ? 1 : 0;
+}
 // Buffer active --------------------------------------------------------------
 	$file = '../db/pialert_journal_buffer';
 	if (file_exists($file)) {
@@ -115,25 +140,25 @@ if ($_REQUEST['tab'] == '1') {
         <div class="box-body" style="padding-bottom: 5px;">
             <div class="db_info_table">
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_database_lastmod'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_database_lastmod'];?></div>
                     <div class="db_info_table_cell">
                         <?=$DB_MOD_DATA.' '.$buffer_indicator;?> /  <?=$DB_SIZE_DATA;?>
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_database_backup'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_database_backup'];?></div>
                     <div class="db_info_table_cell"><span id="autobackupdbcount"></span>
                         <?=$ARCHIVE_COUNT . ' ' . $pia_lang['MT_database_backup_found'] . ' / ' . $pia_lang['MT_database_backup_total'];?>: <span id="autobackupdbsize"></span> 
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_config_backup'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_config_backup'];?></div>
                     <div class="db_info_table_cell"><span id="autobackupconfcount"></span>
                         <?=$CONFIG_FILE_COUNT . ' ' . $pia_lang['MT_database_backup_found'];?>
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_arp_status'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_arp_status'];?></div>
                     <div class="db_info_table_cell">
 <?php 
 echo $_SESSION['arpscan_result'];
@@ -141,7 +166,7 @@ read_arpscan_timer();
 ?>                  </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_Stats_autobkp'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_Stats_autobkp'];?></div>
                     <div class="db_info_table_cell">
 <?php
 if ($_SESSION['AUTO_DB_BACKUP']) {echo $pia_lang['MT_Stats_autobkp_on'].' / <span id="autobackupstatus"></span>';} else {echo $pia_lang['MT_Stats_autobkp_off'].' <span hidden id="autobackupstatus"></span>';}
@@ -149,35 +174,47 @@ if ($_SESSION['AUTO_DB_BACKUP']) {echo $pia_lang['MT_Stats_autobkp_on'].' / <spa
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell">Api-Key</div>
+                    <div class="db_info_table_cell db_info_table_cell_a">Api-Key</div>
                     <div class="db_info_table_cell" style="overflow-wrap: anywhere;">
                         <input readonly value="<?=$APIKEY;?>" class="statusbox_ro_inputs">
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_notification_config'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_notification_config'];?></div>
                     <div class="db_info_table_cell">
                         <?=format_notifications($CONFIG_FILE_FILTER_VALUE_ARP);?>
                     </div>
                 </div>
                 <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_notification_config_webmon'];?></div>
+                    <div class="db_info_table_cell db_info_table_cell_a"><?=$pia_lang['MT_notification_config_webmon'];?></div>
                     <div class="db_info_table_cell">
                         <?=format_notifications($CONFIG_FILE_FILTER_VALUE_WEB);?>
                     </div>
                 </div>
-                <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_Tool_ignorelist'];?> (MAC)</div>
-                    <div class="db_info_table_cell">
-                        <?=$MAC_IGNORE_LIST;?>
+
+                <div class="db_info_table_row" id="ignorelist-toggle" style="cursor: pointer;">
+                    <div class="db_info_table_cell db_info_table_cell_a">
+                        <strong><?=$pia_lang['MT_Tool_ignorelist'];?></strong>
+                    </div>
+                    <div class="db_info_table_cell text-left">
+                        <i id="toggle-icon" class="bi bi-plus-circle text-aqua"></i>
                     </div>
                 </div>
-                <div class="db_info_table_row">
-                    <div class="db_info_table_cell"><?=$pia_lang['MT_Tool_ignorelist'];?> (IP)</div>
-                    <div class="db_info_table_cell">
-                        <?=$IP_IGNORE_LIST;?>
-                    </div>
+
+                <!-- Versteckte Inhalte -->
+                <div class="db_info_table_row ignorelist-detail" style="display: none;">
+                    <div class="db_info_table_cell db_info_table_cell_a" style="padding-left:30px;"><?=$pia_lang['Device_TableHead_MAC']?></div>
+                    <div class="db_info_table_cell"><?=$MAC_IGNORE_LIST;?></div>
                 </div>
+                <div class="db_info_table_row ignorelist-detail" style="display: none;">
+                    <div class="db_info_table_cell db_info_table_cell_a" style="padding-left:30px;"><?=$pia_lang['ICMPMonitor_label_IP']?></div>
+                    <div class="db_info_table_cell"><?=$IP_IGNORE_LIST;?></div>
+                </div>
+                <div class="db_info_table_row ignorelist-detail" style="display: none;">
+                    <div class="db_info_table_cell db_info_table_cell_a" style="padding-left:30px;"><?=$pia_lang['Device_TableHead_Name']?></div>
+                    <div class="db_info_table_cell"><?=$NAME_IGNORE_LIST;?></div>
+                </div>
+
             </div>
         </div>
           <!-- /.box-body -->
@@ -196,11 +233,9 @@ if ($_SESSION['AUTO_DB_BACKUP']) {echo $pia_lang['MT_Stats_autobkp_on'].' / <spa
             <button type="button" id="wefwfwefewdf" class="btn btn-primary main_logviwer_button_m" data-toggle="modal" data-target="#modal-logviewer-iplog"><?=$pia_lang['MT_Tools_Logviewer_IPLog'];?></button>
             <button type="button" id="tzhrsreawefw" class="btn btn-primary main_logviwer_button_m" data-toggle="modal" data-target="#modal-logviewer-vendor"><?=$pia_lang['MT_Tools_Logviewer_Vendor'];?></button>
             <button type="button" id="arzuozhrsfga" class="btn btn-primary main_logviwer_button_m" data-toggle="modal" data-target="#modal-logviewer-cleanup"><?=$pia_lang['MT_Tools_Logviewer_Cleanup'];?></button>
-<?php
-if ($_SESSION['Scan_WebServices'] == True) {
-	echo '<button type="button" id="erftttwrdwqqq" class="btn btn-primary main_logviwer_button_m" data-toggle="modal" data-target="#modal-logviewer-webservices">' . $pia_lang['MT_Tools_Logviewer_WebServices'] . '</button>';
-}
-?>
+            <button type="button" id="erftttwrdwqq" class="btn btn-primary main_logviwer_button_m" data-toggle="modal" data-target="#modal-logviewer-webservices"><?=$pia_lang['MT_Tools_Logviewer_WebServices']?></button>
+            <?php $state = convert_state($_SESSION['PRINT_LOG'], 0);?>
+            <button type="button" id="btnextLogging" class="btn btn-danger main_logviwer_button_m" onclick="askToggleExtLogging(<?=$_SESSION['PRINT_LOG'];?>)"><?=$pia_lang['MT_Tools_Logviewer_ext_a']?> (<?=$state;?>)</button>
       	</div>
     </div>
 
@@ -245,492 +280,15 @@ if ($_SESSION['SATELLITES_ACTIVE'] == True) {
 
     </ul>
     <div class="tab-content">
-        <div class="tab-pane <?=$pia_tab_setting;?>" id="tab_Settings">
-            <table class="table_settings">
-                <tr><td colspan="2"><h4 class="bottom-border-aqua"><?=$pia_lang['MT_Tools_Tab_Subheadline_d'];?></h4></td></tr>
-                <tr class="table_settings_row">
-                    <td class="db_info_table_cell" colspan="2" style="padding-bottom: 20px;">
-                        <div style="display: flex; justify-content: center; flex-wrap: wrap;">
-<!-- Toggle Main Scan ----------------------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                	<?php $state = convert_state_action($_SESSION['Scan_MainScan'], 1);?>
-                                    <button type="button" class="btn btn-default dbtools-button" id="btnEnableMainScanMon" onclick="askEnableMainScan()"><?=$pia_lang['MT_Tool_mainscan'] . '<br>' . $state;?></button>
-                                </div>
-                            </div>
-<!-- Toggle Web Service Monitoring ---------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                	<?php $state = convert_state_action($_SESSION['Scan_WebServices'], 1);?>
-                                    <button type="button" class="btn btn-default dbtools-button" id="btnEnableWebServiceMon" onclick="askEnableWebServiceMon()"><?=$pia_lang['MT_Tool_webservicemon'] . '<br>' . $state;?></button>
-                                </div>
-                            </div>
-<!-- Toggle ICMP Monitoring ----------------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                	<?php $state = convert_state_action($_SESSION['ICMPScan'], 1);?>
-                                    <button type="button" class="btn btn-default dbtools-button" id="btnEnableICMPMon" onclick="askEnableICMPMon()"><?=$pia_lang['MT_Tool_icmpmon'] . '<br>' . $state;?></button>
-                                </div>
-                            </div>
-<!-- Toggle Satellites ----------------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                    <?php $state = convert_state_action($_SESSION['Scan_Satellite'], 1);?>
-                                    <button type="button" class="btn btn-default dbtools-button" id="btnEnableSatellites" onclick="askEnableSatelliteScan()"><?=$pia_lang['MT_Tool_satellites'] . '<br>' . $state;?></button>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-				</tr>
-                <tr><td colspan="2"><h4 class="bottom-border-aqua"><?=$pia_lang['MT_Tools_Tab_Subheadline_c'];?></h4></td></tr>
-<!-- API Key -------------------------------------------------------------- -->
-                <tr class="table_settings_row">
-                    <td class="db_info_table_cell db_tools_table_cell_a"><button type="button" class="btn btn-default dbtools-button" id="btnSetAPIKey" onclick="askSetAPIKey()"><?=$pia_lang['MT_Tool_setapikey'];?></button></td>
-                    <td class="db_info_table_cell db_tools_table_cell_b"><?=$pia_lang['MT_Tool_setapikey_text'];?></td>
-                </tr>
-<!-- Test Notification ---------------------------------------------------- -->
-                <tr class="table_settings_row">
-                    <td class="db_info_table_cell db_tools_table_cell_a"><button type="button" class="btn btn-default dbtools-button" id="btnTestNotific" onclick="askTestNotificationSystem()"><?=$pia_lang['MT_Tool_test_notification'];?></button></td>
-                    <td class="db_info_table_cell db_tools_table_cell_b"><?=$pia_lang['MT_Tool_test_notification_text'];?></td>
-                </tr>
-<!-- Pause Scan ----------------------------------------------------------- -->
-                <tr class="table_settings_row">
-                    <td class="db_info_table_cell db_tools_table_cell_a">
-                        <div style="display: inline-block; text-align: center;">
-                              <div class="form-group" style="width:160px; margin-bottom:5px;">
-                                <!-- <div class="col-sm-7"> -->
-                                  <div class="input-group">
-                                    <input class="form-control" id="txtPiaArpTimer" type="text" value="<?=$pia_lang['MT_arpscantimer_empty'];?>" readonly >
-                                    <div class="input-group-btn">
-                                      <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" id="dropdownButtonPiaArpTimer">
-                                        <span class="fa fa-caret-down"></span></button>
-                                      <ul id="dropdownPiaArpTimer" class="dropdown-menu dropdown-menu-right">
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','15');">15min</a></li>
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','30');">30min</a></li>
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','60');">1h</a></li>
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','120');">2h</a></li>
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','720');">12h</a></li>
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','1440');">24h</a></li>
-                                        <li><a href="javascript:void(0)" onclick="setTextValue('txtPiaArpTimer','999999');">Very long</a></li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                              </div>
-                            </div>
-                            <div style="display: block;">
-                            <button type="button" class="btn btn-warning" style="margin-top:0px; width:160px; height:36px" id="btnSavePiaArpTimer" onclick="setPiAlertArpTimer()" ><div id="Timeralertspinner" class="loader disablespinner"></div>
-                                <div id="TimeralertText" class=""><?=$pia_lang['MT_Tool_arpscansw'];?></div></button>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="db_info_table_cell db_tools_table_cell_b text-danger"><?=$pia_lang['MT_Tool_arpscansw_text'];?></td>
-                </tr>
-                <tr class="table_settings_row">
+
 <?php
-if (strtolower($_SESSION['WebProtection']) != 'true') {
-	echo '          <td class="db_info_table_cell db_tools_table_cell_a"><button type="button" class="btn btn-default dbtools-button" id="btnPiAlertLoginEnable" onclick="askPiAlertLoginEnable()">' . $pia_lang['MT_Tool_loginenable'] . '</button></td>
-                    <td class="db_info_table_cell db_tools_table_cell_b">' . $pia_lang['MT_Tool_loginenable_text'] . '</td>';} else {
-	echo '      <td class="db_info_table_cell db_tools_table_cell_a"><button type="button" class="btn btn-danger dbtools-button" id="btnPiAlertLoginDisable" onclick="askPiAlertLoginDisable()">' . $pia_lang['MT_Tool_logindisable'] . '</button></td>
-                    <td class="db_info_table_cell db_tools_table_cell_b text-danger">' . $pia_lang['MT_Tool_logindisable_text'] . '</td>';}
+require 'php/templates/maintenance_settings.php';
+require 'php/templates/maintenance_gui.php';
+require 'php/templates/maintenance_main.php';
+require 'php/templates/maintenance_backup.php';
+require 'php/templates/maintenance_sat.php';
 ?>
-                </tr>
-                <tr><td colspan="2"><h4 class="bottom-border-aqua">Advanced</h4></td></tr>
-                <tr class="table_settings_row">
-                    <td class="db_info_table_cell" colspan="2" style="padding-bottom: 20px;">
-                        <div style="display: flex; justify-content: center; flex-wrap: wrap;">
-<!-- SelfCheck JSON ----------------------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                    <a href="./php/debugging/test_json_calls.php">
-                                        <button type="button" class="btn btn-default dbtools-button">Test Main JSON Calls</button>
-                                    </a>
-                                </div>
-                            </div>
 
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="tab-pane <?=$pia_tab_gui;?>" id="tab_GUI">
-			<table class="table_settings">
-                <tr><td colspan="2"><h4 class="bottom-border-aqua"><?=$pia_lang['MT_Tools_Tab_Subheadline_a'];?></h4></td></tr>
-                <tr class="table_settings">
-                    <td class="db_info_table_cell" colspan="2" style="text-align: justify;"><?=$pia_lang['MT_Tools_Tab_Settings_Intro'];?></td>
-                </tr>
-                <tr class="table_settings_row">
-                    <td class="db_info_table_cell" colspan="2" style="padding-bottom: 20px;">
-                        <div style="display: flex; justify-content: center; flex-wrap: wrap;">
-<!-- Language Selection --------------------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                    <div class="form-group" style="width:160px; margin-bottom:5px;">
-                                      <div class="input-group">
-                                        <input class="form-control" id="txtLangSelection" type="text" value="<?=$pia_lang['MT_lang_selector_empty'];?>" readonly >
-                                        <div class="input-group-btn">
-                                          <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" id="dropdownButtonLangSelection">
-                                            <span class="fa fa-caret-down"></span></button>
-                                          <ul id="dropdownLangSelection" class="dropdown-menu dropdown-menu-right">
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtLangSelection','en_us');"><?=$pia_lang['MT_lang_en_us'];?></a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtLangSelection','de_de');"><?=$pia_lang['MT_lang_de_de'];?></a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtLangSelection','fr_fr');"><?=$pia_lang['MT_lang_fr_fr'];?></a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtLangSelection','es_es');"><?=$pia_lang['MT_lang_es_es'];?></a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtLangSelection','it_it');"><?=$pia_lang['MT_lang_it_it'];?></a></li>
-                                          </ul>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <button type="button" class="btn btn-default" style="margin-top:0px; width:160px;" id="btnSaveLangSelection" onclick="setPiAlertLanguage()" ><?=$pia_lang['MT_lang_selector_apply'];?> </button>
-                                </div>
-                            </div>
-<!-- Theme Selection ------------------------------------------------------ -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                    <div class="form-group" style="width:160px; margin-bottom:5px;">
-                                      <div class="input-group">
-                                        <input class="form-control" id="txtSkinSelection" type="text" value="<?=$pia_lang['MT_themeselector_empty'];?>" readonly >
-                                        <div class="input-group-btn">
-                                          <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" id="dropdownButtonSkinSelection">
-                                            <span class="fa fa-caret-down"></span></button>
-                                          <ul id="dropdownSkinSelection" class="dropdown-menu dropdown-menu-right">
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','leiweibau_dark');">Theme leiweibau-dark</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','leiweibau_light');">Theme leiweibau-light</a></li>
-                                            <li class="divider"></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-black-light');">Skin Black-light</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-black');">Skin Black</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-blue-light');">Skin Blue-light</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-blue');">Skin Blue</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-green-light');">Skin Green-light</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-green');">Skin Green</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-purple-light');">Skin Purple-light</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-purple');">Skin Purple</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-red-light');">Skin Red-light</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-red');">Skin Red</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-yellow-light');">Skin Yellow-light</a></li>
-                                            <li><a href="javascript:void(0)" onclick="setTextValue('txtSkinSelection','skin-yellow');">Skin Yellow</a></li>
-                                          </ul>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <button type="button" class="btn btn-default" style="margin-top:0px; width:160px;" id="btnSaveSkinSelection" onclick="setPiAlertTheme()" ><?=$pia_lang['MT_themeselector_apply'];?> </button>
-                                </div>
-                            </div>
-<!-- Toggle DarkMode ------------------------------------------------------ -->
-                            <div class="settings_button_wrapper" id="Darkmode_button_container">
-                                <div class="settings_button_box">
-                                	<?php $state = convert_state_action($ENABLED_DARKMODE, 1);?>
-                                    <button type="button" class="btn btn-default dbtools-button" id="btnEnableDarkmode" onclick="askEnableDarkmode()"><?=$pia_lang['MT_Tool_darkmode'] . '<br>' . $state;?></button>
-                                </div>
-                            </div>
-<!-- Toggle History Graph ------------------------------------------------- -->
-                            <div class="settings_button_wrapper">
-                                <div class="settings_button_box">
-                                	<?php $state = convert_state_action($ENABLED_HISTOY_GRAPH, 1);?>
-                                    <button type="button" class="btn btn-default dbtools-button" id="btnEnableOnlineHistoryGraph" onclick="askEnableOnlineHistoryGraph()"><?=$pia_lang['MT_Tool_onlinehistorygraph'] . '<br>' . $state;?></button>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                <tr><td colspan="2"><h4 class="bottom-border-aqua"><?=$pia_lang['MT_Tools_Tab_Subheadline_e'];?></h4></td></tr>
-                <tr class="table_settings">
-                    <td class="db_info_table_cell" colspan="2" style="text-align: justify;"><?=$pia_lang['MT_Tools_Tab_Subheadline_e_Intro'];?></td>
-                </tr>
-                <tr><td class="db_info_table_cell" colspan="2" style="padding: 10px;">
-					<div class="row">
-        				<div class="col-md-10">
-	                      <div class="form-group">
-	                        <label class="col-xs-3 col-md-2" style="margin-top: 5px;">FavIcon</label>
-	                        <div class="col-xs-9 col-md-10">
-	                          <div class="input-group" style="margin-bottom: 20px;">
-	                            <input class="form-control" id="txtFavIconURL" type="text" value="<?=$FRONTEND_FAVICON?>">
-	                            <div class="input-group-btn">
-	                              <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" >
-	                                <span class="fa fa-caret-down"></span></button>
-	                              <ul id="dropdownFavIcons" class="dropdown-menu dropdown-menu-right">
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redglass_w_local')">    <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redflat_w_local')">     <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redglass_b_local')">    <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redflat_b_local')">     <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueglass_w_local')">   <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueflat_w_local')">    <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueglass_b_local')">   <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueflat_b_local')">    <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenglass_w_local')">  <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenflat_w_local')">   <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenglass_b_local')">  <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenflat_b_local')">   <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowglass_w_local')"> <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowflat_w_local')">  <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowglass_b_local')"> <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowflat_b_local')">  <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleglass_w_local')"> <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleflat_w_local')">  <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleglass_b_local')"> <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleflat_b_local')">  <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blackglass_w_local')">  <?=$pia_lang['FavIcon_color_black'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blackflat_w_local')">   <?=$pia_lang['FavIcon_color_black'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','whiteglass_b_local')">  <?=$pia_lang['FavIcon_color_white'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','whiteflat_b_local')">   <?=$pia_lang['FavIcon_color_white'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_local'];?>)</a></li>
-
-	                                <li class="divider"></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redglass_w_remote')">    <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redflat_w_remote')">     <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redglass_b_remote')">    <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','redflat_b_remote')">     <?=$pia_lang['FavIcon_color_red'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueglass_w_remote')">   <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueflat_w_remote')">    <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueglass_b_remote')">   <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blueflat_b_remote')">    <?=$pia_lang['FavIcon_color_blue'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenglass_w_remote')">  <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenflat_w_remote')">   <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenglass_b_remote')">  <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','greenflat_b_remote')">   <?=$pia_lang['FavIcon_color_green'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowglass_w_remote')"> <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowflat_w_remote')">  <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowglass_b_remote')"> <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','yellowflat_b_remote')">  <?=$pia_lang['FavIcon_color_yellow'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleglass_w_remote')"> <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleflat_w_remote')">  <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleglass_b_remote')"> <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','purpleflat_b_remote')">  <?=$pia_lang['FavIcon_color_purple'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blackglass_w_remote')">  <?=$pia_lang['FavIcon_color_black'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','blackflat_w_remote')">   <?=$pia_lang['FavIcon_color_black'];?>, <?=$pia_lang['FavIcon_logo_white']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','whiteglass_b_remote')">  <?=$pia_lang['FavIcon_color_white'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_glass'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                                <li><a href="javascript:void(0)" onclick="setTextValue('txtFavIconURL','whiteflat_b_remote')">   <?=$pia_lang['FavIcon_color_white'];?>, <?=$pia_lang['FavIcon_logo_black']?>, <?=$pia_lang['FavIcon_mode_flat'];?> (<?=$pia_lang['FavIcon_remote'];?>)</a></li>
-	                              </ul>
-	                            </div>
-	                          </div>
-	                        </div>
-	                      </div>
-        				</div>
-        				<div class="col-md-2 text-center">
-        					 <img src="<?=$FRONTEND_FAVICON?>" alt="FavIcon Preview" width="50" height="50" style="margin-bottom: 20px;">
-        				</div>
-     				</div>
-					<div class="row">
-        				<div class="col-md-12 text-center">
-        					<button type="button" class="btn btn-default" style="width:160px; margin-bottom: 20px;" id="btnSaveFavIconSelection" onclick="setFavIconURL()" ><?=$pia_lang['MT_themeselector_apply'];?> </button>
-        				</div>
-        			</div>
-
-                    </td>
-                </tr>
-                <tr><td colspan="2"><h4 class="bottom-border-aqua"><?=$pia_lang['MT_Tools_Tab_Subheadline_b'];?></h4></td></tr>
-                <tr>
-                    <td colspan="2" style="text-align: center;">
-                        <?php $col_checkbox = set_column_checkboxes(read_DevListCol());?>
-                        <div class="form-group">
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkConnectionType" type="checkbox" <?=$col_checkbox['ConnectionType'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_ConnectionType'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkOwner" type="checkbox" <?=$col_checkbox['Owner'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_Owner'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkType" type="checkbox" <?=$col_checkbox['Type'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_Type'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkFavorite" type="checkbox" <?=$col_checkbox['Favorites'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_Favorite'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkGroup" type="checkbox" <?=$col_checkbox['Group'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_Group'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkLocation" type="checkbox" <?=$col_checkbox['Location'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_Location'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkfirstSess" type="checkbox" <?=$col_checkbox['FirstSession'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_FirstSession'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chklastSess" type="checkbox" <?=$col_checkbox['LastSession'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_LastSession'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chklastIP" type="checkbox" <?=$col_checkbox['LastIP'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_LastIP'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkMACtype" type="checkbox" <?=$col_checkbox['MACType'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_MAC'];?></label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkMACaddress" type="checkbox" <?=$col_checkbox['MACAddress'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_MAC'];?>-Address</label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkMACVendor" type="checkbox" <?=$col_checkbox['MACVendor'];?>>
-                              <label class="control-label" style="margin-left: 5px">Vendor</label>
-                            </div>
-                            <div class="table_settings_col_box">
-                              <input class="checkbox blue" id="chkWakeOnLAN" type="checkbox" <?=$col_checkbox['WakeOnLAN'];?>>
-                              <label class="control-label" style="margin-left: 5px"><?=$pia_lang['Device_TableHead_WakeOnLAN'];?> (WakeOnLAN)</label>
-                            </div>
-                            <br>
-                            <button type="button" class="btn btn-default" style="margin-top:10px; width:160px;" id="btnSaveDeviceListCol" onclick="askDeviceListCol()" ><?=$pia_lang['Gen_Save'];?></button>
-                        </div>
-                    </td>
-                </tr>
-                <tr><td colspan="2"><h4 class="bottom-border-aqua"><?=$pia_lang['MT_Tools_Tab_Subheadline_f'];?></h4></td></tr>
-                <tr>
-                    <td colspan="2" style="text-align: center;">
-                        <?php show_filter_editor();?>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <div class="tab-pane <?=$pia_tab_tool;?>" id="tab_DBTools">
-            <div class="db_info_table">
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteMAC" onclick="askDeleteAllDevices()"><?=$pia_lang['MT_Tool_del_alldev'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_alldev_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteUnknown" onclick="askDeleteUnknown()"><?=$pia_lang['MT_Tool_del_unknowndev'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_unknowndev_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteAllEvents" onclick="askDeleteEvents()"><?=$pia_lang['MT_Tool_del_allevents'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_allevents_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteActHistory" onclick="askDeleteActHistory()"><?=$pia_lang['MT_Tool_del_ActHistory'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_ActHistory_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteSpeedtests" onclick="askDeleteSpeedtestResults()"><?=$pia_lang['MT_Tool_del_speedtest'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_speedtest_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteNmapScans" onclick="askDeleteNmapScansResults()"><?=$pia_lang['MT_Tool_del_nmapscans'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_nmapscans_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteInactiveHosts" onclick="askDeleteInactiveHosts()"><?=$pia_lang['MT_Tool_del_Inactive_Hosts'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_Inactive_Hosts_text'];?> <a href="#" data-toggle="modal" data-target="#modal-logviewer-inactivehosts"><i class="bi bi-info-circle text-aqua" style=""></i></a></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnDeleteWebServices" onclick="askDeleteAllWebServices()"><?=$pia_lang['MT_Tool_del_allserv'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_del_allserv_text'];?></div>
-                </div>
-            </div>
-        </div>
-        <div class="tab-pane <?=$pia_tab_backup;?>" id="tab_BackupRestore">
-            <div class="db_info_table">
-				<div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a" style="">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnPiaBackupConfigFile" onclick="BackupConfigFile('yes')"><?=$pia_lang['MT_Tool_ConfBackup'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_ConfBackup_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a" style="">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnBackupDBtoArchive" onclick="askBackupDBtoArchive()"><?=$pia_lang['MT_Tool_backup'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_backup_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a" style="">
-<?php
-if (!$block_restore_button_db) {
-	echo '<button type="button" class="btn btn-default dbtools-button" id="btnRestoreDBfromArchive" onclick="askRestoreDBfromArchive()">' . $pia_lang['MT_Tool_restore'] . '<br>' . $LATEST_BACKUP_DATE . '</button>';
-} else {
-	echo '<button type="button" class="btn btn-default dbtools-button disabled" id="btnRestoreDBfromArchive">' . $pia_lang['MT_Tool_restore'] . '<br>' . $LATEST_BACKUP_DATE . '</button>';
-}
-?>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_restore_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a" style="">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnPurgeDBBackups" onclick="askPurgeDBBackups()"><?=$pia_lang['MT_Tool_purgebackup'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_purgebackup_text'];?></div>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="db_tools_table_cell_a" style="">
-                        <button type="button" class="btn btn-default dbtools-button" id="btnBackupDBtoCSV" onclick="askBackupDBtoCSV()"><?=$pia_lang['MT_Tool_backupcsv'];?></button>
-                    </div>
-                    <div class="db_tools_table_cell_b"><?=$pia_lang['MT_Tool_backupcsv_text'];?></div>
-                </div>
-            </div>
- <?php
-echo '<div class="row">';
-if (!$block_restore_button_db) {
-	echo '<div class="col-md-4" style="text-align: center;">
-			<a class="btn btn-default" href="./download/database.php" role="button" style="margin-top: 20px; margin-bottom: 20px;">' . $pia_lang['MT_Tool_latestdb_download'] . '</a>
-			</div>';}
-if (file_exists('../db/pialertcsv.zip')) {
-	echo '<div class="col-md-4" style="text-align: center;">
-			<a class="btn btn-default" href="./download/databasecsv.php" role="button" style="margin-top: 20px; margin-bottom: 20px;">' . $pia_lang['MT_Tool_CSVExport_download'] . '</a>
-			</div>';}
-echo '<div class="col-md-4" style="text-align: center;">
-			<a class="btn btn-default" href="./download/config.php" role="button" style="margin-top: 20px; margin-bottom: 20px;">' . $pia_lang['MT_Tool_latestconf_download'] . '</a>
-			</div>';
-echo '</div>';
-?>
-        </div>
-<?php
-if ($_SESSION['SATELLITES_ACTIVE'] == True) {
-    echo '<div class="tab-pane '.$pia_tab_satellites.'" id="tab_satellites">
-            <div class="db_info_table">
-                <div class="db_info_table_row">
-                    <h4 class="bottom-border-aqua">'.$pia_lang['MT_SET_SatCreate_head'].'</h4>
-                </div>
-                <div class="db_info_table_row">
-                    <div class="col-xs-10 col-md-3" style="padding: 5px;">
-                        '.$pia_lang['MT_SET_SatCreate_FORM_Name'].': <br>
-                        <input class="form-control col-xs-12" type="text" id="txtNewSatelliteName" placeholder="'.$pia_lang['MT_SET_SatCreate_FORM_Name_PH'].'">
-                    </div>
-                    <div class="col-xs-2 col-md-1 text-right">
-                        <button type="button" class="btn btn-link" id="btnCreateNewSatellite" onclick="askCreateNewSatellite()"><i class="bi bi-floppy text-green" style="position: relative; font-size: 20px; top: 23px;"></i></button>
-                    </div>
-                    <div class="col-xs-12 col-md-6 text-center">
-                        <a href="./download/proxymodeconfig.php" target="blank" type="button" class="btn btn-warning" id="btnProxyModeConfig" style="position: relative; top: 27px; margin-bottom:30px;">'.$pia_lang['MT_SET_SatExport_BTM'].'</a>
-                    </div>
-                </div>
-                <div class="db_info_table_row">
-                    <h4 class="bottom-border-aqua">'.$pia_lang['MT_SET_SatEdit_head'].'</h4>
-                </div>';
-    get_all_satellites_list();
-    echo '  </div>
-          </div>';
-}
-?>
     </div>
 </div>
 
@@ -835,6 +393,17 @@ $(document).ready(function () {
         $(window).scrollTop(scrollPosition);
         $('#modal-config-editor').css('overflow-y', 'hidden');
     });
+
+    $('#ignorelist-toggle').click(function() {
+        $('.ignorelist-detail').slideToggle(200);
+        var icon = $('#toggle-icon');
+        if (icon.hasClass('bi-plus-circle')) {
+            icon.removeClass('bi-plus-circle').addClass('bi-dash-circle');
+        } else {
+            icon.removeClass('bi-dash-circle').addClass('bi-plus-circle');
+        }
+    });
+
     $(function () {
       $('[data-toggle="tooltip"]').tooltip()
     })
@@ -919,7 +488,23 @@ function askDeleteUnknown() {
 function deleteUnknownDevices() {
 	$.get('php/server/devices.php?action=deleteUnknownDevices', function(msg) {showMessage (msg);});
 }
-
+// Toggle Imports
+function askToggleImport(fdeviceType,ftoggleState) {
+  window.global_fdeviceType = fdeviceType;
+  window.global_ftoggleState = ftoggleState;
+  showModalWarning('<?=$pia_lang['MT_Tggl_Import_head'];?>', '<?=$pia_lang['MT_Tggl_Import_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Switch'];?>', 'ToggleImport');
+}
+function ToggleImport() {
+  var fdeviceType = window.global_fdeviceType;
+  var ftoggleState = window.global_ftoggleState;
+  $.get('php/server/files.php?action=ToggleImport'
+    + '&deviceType='    + fdeviceType
+    + '&toggleState='   + ftoggleState
+    , function(msg) {
+    showMessage (msg);
+  });
+}
 // delete all Events
 function askDeleteEvents() {
   showModalWarning('<?=$pia_lang['MT_Tool_del_allevents_noti'];?>', '<?=$pia_lang['MT_Tool_del_allevents_noti_text'];?>',
@@ -954,6 +539,15 @@ function askDeleteNmapScansResults() {
 }
 function DeleteNmapScansResults() {
 	$.get('php/server/devices.php?action=DeleteNmapScansResults', function(msg) {showMessage (msg);});
+}
+
+// reset VOIDED
+function askresetVoidedEvents() {
+  showModalWarning('<?=$pia_lang['MT_Tool_reset_voided'];?>', '<?=$pia_lang['MT_Tool_reset_voided_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Run'];?>', 'resetVoidedEvents');
+}
+function resetVoidedEvents() {
+    $.get('php/server/devices.php?action=resetVoidedEvents', function(msg) {showMessage (msg);});
 }
 
 // Backup DB to Archive
@@ -1077,21 +671,65 @@ function setTextValue (textElement, textValue) {
   $('#'+textElement).val (textValue);
 }
 
+
+function handleMTSelection (value) {
+  setTextValue('txtMTColumnContent','');
+
+  const actionMap = {
+    'Group': 'getGroups',
+    'Owner': 'getOwners',
+    'Type': 'getDeviceTypes',
+    'Location': 'getLocations',
+    'LinkSpeed': 'getLinkSpeed',
+    'ConnectType': 'getConnectionType'
+  };
+
+  const queryAction = actionMap[value];
+
+  // get data from server
+  $.get('php/server/devices.php?action='+queryAction, function(data) {
+    var listData = JSON.parse(data);
+    var order = 1;
+
+    $('#dropdownMTColumnContent')[0].innerHTML = ''
+    // for each item
+    listData.forEach(function (item, index) {
+      // insert line divisor
+      if (order != item['order']) {
+        $('#dropdownMTColumnContent')[0].innerHTML += '<li class="divider"></li>';
+        order = item['order'];
+      }
+
+      id = item['name'];
+      // use explicitly specified id (value) if avaliable
+      if(item['id'])
+      {
+        id = item['id'];
+      }
+
+      // add dropdown item
+      $('#dropdownMTColumnContent')[0].innerHTML +=
+        '<li><a href="javascript:void(0)" onclick="setTextValue(\'txtMTColumnContent\',\''+ id +'\')">'+ item['name'] + '</a></li>'
+    });
+  });
+}
+
 // Set Theme
 function setPiAlertTheme () {
 	$.get('php/server/files.php?action=setTheme&SkinSelection='+ $('#txtSkinSelection').val(), function(msg) {showMessage (msg);});
 }
-
 // Set Language
 function setPiAlertLanguage() {
 	$.get('php/server/files.php?action=setLanguage&LangSelection='+ $('#txtLangSelection').val(), function(msg) {showMessage (msg);});
 }
-
 // Set FavIcon
 function setFavIconURL() {
 	$.get('php/server/files.php?action=setFavIconURL&FavIconURL='+ $('#txtFavIconURL').val(), function(msg) {showMessage (msg);});
 }
-
+// Set FavIcon
+function setPiholeURL() {
+    $.get('php/server/files.php?action=setPiholeURL&PiholeURL='+ $('#txtPiholeURL').val(), function(msg) {showMessage (msg);});
+}
 // Set ArpScanTimer
 function setPiAlertArpTimer() {
   $.ajax({
@@ -1105,7 +743,6 @@ function setPiAlertArpTimer() {
         }
     })
 }
-
 // Backup Configfile
 function BackupConfigFile(reload)  {
 	if (reload == 'yes') {
@@ -1114,7 +751,6 @@ function BackupConfigFile(reload)  {
 		$.get('php/server/files.php?action=BackupConfigFile&reload=no', function(msg) {showMessage (msg);});
 	}
 }
-
 // Restore Configfile
 function askRestoreConfigFile() {
   showModalWarning('<?=$pia_lang['MT_ConfEditor_Restore_noti'];?>', '<?=$pia_lang['MT_ConfEditor_Restore_noti_text'];?>',
@@ -1123,7 +759,7 @@ function askRestoreConfigFile() {
 function RestoreConfigFile() {
 	$.get('php/server/files.php?action=RestoreConfigFile', function(msg) {showMessage (msg);});
 }
-
+// Save Configfile
 function SaveConfigFile() {
 	var postData = {
 		action: 'SaveConfigFile',
@@ -1131,7 +767,6 @@ function SaveConfigFile() {
 	};
 	$.post('php/server/files.php', postData, function(msg) {showMessage(msg);});
 }
-
 // Set Device List Column
 function askDeviceListCol() {
   showModalWarning('<?=$pia_lang['MT_Tool_DevListCol_noti'];?>', '<?=$pia_lang['MT_Tool_DevListCol_noti_text'];?>',
@@ -1152,6 +787,34 @@ function setDeviceListCol() {
     + '&macvendor='      + ($('#chkMACVendor')[0].checked * 1)
     + '&location='       + ($('#chkLocation')[0].checked * 1)
     + '&wakeonlan='      + ($('#chkWakeOnLAN')[0].checked * 1)
+    , function(msg) {
+    showMessage (msg);
+  });
+}
+// Set Device, ICMP and Presence List Headers
+function askListHeaderConfig() {
+  showModalWarning('<?=$pia_lang['MT_Tool_HeaderConf_noti'];?>', '<?=$pia_lang['MT_Tool_DevListCol_noti_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Save'];?>', 'setListHeaderConfig');
+}
+function setListHeaderConfig() {
+    $.get('php/server/files.php?action=setListHeaderConfig&'
+    + '&hc_devall='    + ($('#chk_dev_all')[0].checked * 1)
+    + '&hc_devcon='    + ($('#chk_dev_con')[0].checked * 1)
+    + '&hc_devfav='    + ($('#chk_dev_fav')[0].checked * 1)
+    + '&hc_devdnw='    + ($('#chk_dev_dnw')[0].checked * 1)
+    + '&hc_devarc='    + ($('#chk_dev_arc')[0].checked * 1)
+    + '&hc_devnew='    + ($('#chk_dev_new')[0].checked * 1)
+    + '&hc_icmpall='   + ($('#chk_icmp_all')[0].checked * 1)
+    + '&hc_icmpcon='   + ($('#chk_icmp_con')[0].checked * 1)
+    + '&hc_icmpfav='   + ($('#chk_icmp_fav')[0].checked * 1)
+    + '&hc_icmpdnw='   + ($('#chk_icmp_dnw')[0].checked * 1)
+    + '&hc_icmparc='   + ($('#chk_icmp_arc')[0].checked * 1)
+    + '&hc_presall='   + ($('#chk_pres_all')[0].checked * 1)
+    + '&hc_prescon='   + ($('#chk_pres_con')[0].checked * 1)
+    + '&hc_presfav='   + ($('#chk_pres_fav')[0].checked * 1)
+    + '&hc_presdnw='   + ($('#chk_pres_dnw')[0].checked * 1)
+    + '&hc_presarc='   + ($('#chk_pres_arc')[0].checked * 1)
+    + '&hc_presnew='   + ($('#chk_pres_new')[0].checked * 1)
     , function(msg) {
     showMessage (msg);
   });
@@ -1199,7 +862,6 @@ function initializeiCheck () {
      increaseArea:  '20%'
    });
 }
-
 // JS created by php while loop
 <?=create_filter_editor_js();?>
 
@@ -1316,6 +978,76 @@ function DeleteSatellite(func_sat_name, func_sat_id) {
     , function(msg) {
     showMessage (msg);
   });
+}
+// Update Column Data
+function askMTUpdateColumnContent() {
+  showModalWarning('<?=$pia_lang['MT_ColumnUpd_Mod_head'];?>', '<?=$pia_lang['MT_ColumnUpd_Mod_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Save'];?>', 'MTUpdateColumnContent');
+}
+function MTUpdateColumnContent() {
+    $.get('php/server/devices.php?action=MTUpdateColumnContent'
+    + '&column='     + $('#txtMTTableColumn').val()
+    + '&ccontent='   + $('#txtMTColumnContent').val()
+    + '&nccontent='  + $('#txtMTNewColumnContent').val()
+    , function(msg) {
+    showMessage (msg);
+  });
+}
+// delete Column Data
+function askMTDeletColumnContent() {
+  showModalWarning('<?=$pia_lang['MT_ColumnDel_Mod_head'];?>', '<?=$pia_lang['MT_ColumnDel_Mod_text'];?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Delete'];?>', 'MTDeletColumnContent');
+}
+function MTDeletColumnContent() {
+    $.get('php/server/devices.php?action=MTDeletColumnContent'
+    + '&column='     + $('#txtMTTableColumn').val()
+    + '&ccontent='   + $('#txtMTColumnContent').val()
+    + '&nccontent='  + $('#txtMTNewColumnContent').val()
+    , function(msg) {
+    showMessage (msg);
+  });
+}
+function MTResetColumnContent() {
+    setTextValue('txtMTTableColumn','');
+    setTextValue('txtMTColumnContent','');
+    setTextValue('txtMTNewColumnContent','');
+}
+// Toggle extended Logging
+function askToggleExtLogging(ftoggleState) {
+    window.global_ftoggleState = ftoggleState;
+    showModalWarning('<?=$pia_lang['MT_Tools_Logviewer_ext_a'];?>', '<?=$pia_lang['MT_Tools_Logviewer_ext_b'];?>',
+        '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Switch'];?>', 'ToggleExtLogging');
+}
+function ToggleExtLogging() {
+    var ftoggleState = window.global_ftoggleState;
+    $.get('php/server/files.php?action=ToggleExtLogging'
+        + '&toggleState='   + ftoggleState
+        , function(msg) {
+        showMessage (msg);
+    });
+}
+// Remove Mac Ignorelist
+function askDeleteBlockDeviceMAC(macStep) {
+  window.selectedMACStep = macStep;
+  showModalWarning('<?=$pia_lang['MT_Tool_ignorelist']?> MAC', macStep + '<?=$pia_lang['MT_del_ignore_noti_text']?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Okay'];?>', 'DeleteBlockDeviceMAC');
+}
+function DeleteBlockDeviceMAC() {
+  if (!window.selectedMACStep) return;
+  var macStep = window.selectedMACStep;
+  $.get('php/server/files.php?action=DeleteBlockDeviceMAC&mac=' + encodeURIComponent(macStep), function(msg) {showMessage (msg);});
+}
+// Remove IP Ignorelist
+function askDeleteBlockDeviceIP(ipStep) {
+  window.selectedIPStep = ipStep;
+  showModalWarning('<?=$pia_lang['MT_Tool_ignorelist']?> IP', ipStep + '<?=$pia_lang['MT_del_ignore_noti_text']?>',
+    '<?=$pia_lang['Gen_Cancel'];?>', '<?=$pia_lang['Gen_Okay'];?>', 'DeleteBlockDeviceIP');
+}
+function DeleteBlockDeviceIP() {
+  if (!window.selectedIPStep) return;
+  var ipStep = window.selectedIPStep;
+  $.get('php/server/files.php?action=DeleteBlockDeviceIP&ip=' + encodeURIComponent(ipStep), function(msg) {showMessage (msg);});
+  delete window.selectedIPStep;
 }
 
 setInterval(UpdateStatusBox, 15000);

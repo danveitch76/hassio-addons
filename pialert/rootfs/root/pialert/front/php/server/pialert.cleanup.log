@@ -1,0 +1,25 @@
+
+Pi.Alert v2025-02-06
+---------------------------------------------------------
+Executing user: pi
+Timestamp: 2025-02-27 02:00:00
+
+Cleanup tables, up to the lastest 180 days:
+    Events
+    Nmap Scan Results
+
+Cleanup tables, up to the lastest 60 days:
+    Online_History
+    Speedtest_History
+
+Cleanup tables, up to the lastest hard-coded days:
+    Services_Events (30)
+    ICMP_Mon_Events (14)
+
+Trim Journal to the lastest 1000 entries
+
+Shrink Database...
+
+DONE!!!
+
+

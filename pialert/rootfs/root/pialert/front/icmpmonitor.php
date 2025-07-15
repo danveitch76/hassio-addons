@@ -1,12 +1,4 @@
 <?php
-//------------------------------------------------------------------------------
-//  Pi.Alert
-//  Open Source Network Guard / WIFI & LAN intrusion detector
-//
-//  icmpmonitor.php - Front module. Ping polling
-//------------------------------------------------------------------------------
-//  leiweibau  2024        https://github.com/leiweibau     GNU GPLv3
-//------------------------------------------------------------------------------
 session_start();
 error_reporting(0);
 
@@ -434,65 +426,85 @@ if ($_REQUEST['mod'] == 'bulkedit') {
 
     <!-- Main content ---------------------------------------------------------- -->
     <section class="content">
-
       <div class="row">
-        <div class="col-lg-2 col-sm-4 col-xs-6">
-        	<a href="#" onclick="javascript: getDevicesList('all');">
+
+<?php
+function header_icmp_all($visibility, $header_all, $header_selected) {
+	global $pia_lang;
+	$layout = calc_header_size($header_all, $header_selected);
+	if (strtolower($visibility) == 0) {$hide = "hide_element";} else {$hide = "";}
+	echo '<div class="'.$layout['lg'].' '.$layout['md'].' '.$layout['sm'].' '.$hide.'">
+        	<a href="#" onclick="javascript: getDevicesList(\'all\');">
           <div class="small-box bg-aqua">
-            <div class="inner"><h3 id="devicesAll"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['Device_Shortcut_AllDevices'];?></p>
-            </div>
+            <div class="inner"><h3 id="devicesAll"> -- </h3><p class="infobox_label">'.$pia_lang['Device_Shortcut_AllDevices'].'</p></div>
             <div class="icon"><i class="fa fa-laptop text-aqua-40"></i></div>
           </div>
         </a>
-        </div>
-
-        <div class="col-lg-2 col-sm-4 col-xs-6">
-        	<a href="#" onclick="javascript: getDevicesList('connected');">
+        </div>';
+}
+function header_icmp_con($visibility, $header_all, $header_selected) {
+	global $pia_lang;
+	$layout = calc_header_size($header_all, $header_selected);
+	if (strtolower($visibility) == 0) {$hide = "hide_element";} else {$hide = "";}
+	echo '<div class="'.$layout['lg'].' '.$layout['md'].' '.$layout['sm'].' '.$hide.'">
+          <a href="#" onclick="javascript: getDevicesList(\'connected\');">
           <div class="small-box bg-green">
-            <div class="inner"><h3 id="devicesConnected"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['Device_Shortcut_Connected'];?></p>
-            </div>
-            <div class="icon"><i class="fa fa-plug text-green-40"></i></div>
+            <div class="inner"><h3 id="devicesConnected"> -- </h3><p class="infobox_label">'.$pia_lang['Device_Shortcut_Connected'].'</p></div>
+            <div class="icon"><i class="mdi mdi-lan-connect text-green-40"></i></div>
           </div>
-        	</a>
-        </div>
-
-        <div class="col-lg-2 col-sm-4 col-xs-6">
-        	<a href="#" onclick="javascript: getDevicesList('favorites');">
+          </a>
+        </div>';
+}
+function header_icmp_fav($visibility, $header_all, $header_selected) {
+	global $pia_lang;
+	$layout = calc_header_size($header_all, $header_selected);
+	if (strtolower($visibility) == 0) {$hide = "hide_element";} else {$hide = "";}
+	echo '<div class="'.$layout['lg'].' '.$layout['md'].' '.$layout['sm'].' '.$hide.'">
+          <a href="#" onclick="javascript: getDevicesList(\'favorites\');">
           <div class="small-box bg-yellow">
-            <div class="inner"><h3 id="devicesFavorites"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['Device_Shortcut_Favorites'];?></p>
-            </div>
+            <div class="inner"><h3 id="devicesFavorites"> -- </h3><p class="infobox_label">'.$pia_lang['Device_Shortcut_Favorites'].'</p></div>
             <div class="icon"><i class="fa fa-star text-yellow-40"></i></div>
           </div>
-        	</a>
-        </div>
-
-        <div class="col-lg-2 col-sm-4 col-xs-6">
-        	<a href="#" onclick="javascript: getDevicesList('down');">
+          </a>
+        </div>';
+}
+function header_icmp_dnw($visibility, $header_all, $header_selected) {
+	global $pia_lang;
+	$layout = calc_header_size($header_all, $header_selected);
+	if (strtolower($visibility) == 0) {$hide = "hide_element";} else {$hide = "";}
+	echo '<div class="'.$layout['lg'].' '.$layout['md'].' '.$layout['sm'].' '.$hide.'">
+          <a href="#" onclick="javascript: getDevicesList(\'down\');">
           <div class="small-box bg-red">
-            <div class="inner"><h3 id="devicesDown"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['Device_Shortcut_DownAlerts'];?></p>
-            </div>
-            <div class="icon"><i class="fa fa-warning text-red-40"></i></div>
+            <div class="inner"><h3 id="devicesDown"> -- </h3><p class="infobox_label">'.$pia_lang['Device_Shortcut_DownAlerts'].'</p></div>
+            <div class="icon"><i class="mdi mdi-lan-disconnect text-red-40"></i></div>
           </div>
-        	</a>
-        </div>
-
-        <div class="col-lg-2 col-sm-4 col-xs-6">
-        	<a href="#" onclick="javascript: getDevicesList('archived');">
+          </a>
+        </div>';
+}
+function header_icmp_arc($visibility, $header_all, $header_selected) {
+	global $pia_lang;
+	$layout = calc_header_size($header_all, $header_selected);
+	if (strtolower($visibility) == 0) {$hide = "hide_element";} else {$hide = "";}
+	echo '<div class="'.$layout['lg'].' '.$layout['md'].' '.$layout['sm'].' '.$hide.'">
+          <a href="#" onclick="javascript: getDevicesList(\'archived\');">
           <div class="small-box bg-gray top_small_box_gray_text">
-            <div class="inner"><h3 id="devicesArchived"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['Device_Shortcut_Archived'];?></p>
-            </div>
+            <div class="inner"><h3 id="devicesArchived"> -- </h3><p class="infobox_label">'.$pia_lang['Device_Shortcut_Archived'].'</p></div>
             <div class="icon"><i class="fa fa-eye-slash text-gray-40"></i></div>
           </div>
-        	</a>
-        </div>
-
+          </a>
+        </div>';
+}
+$header_page_config = read_HeaderConfig();
+$count_active_headers = count(array_filter($header_page_config['icmp'], function($value) {
+    return $value == 1;
+}));
+header_icmp_all($header_page_config['icmp']['all'], sizeof($header_page_config['icmp']), $count_active_headers);
+header_icmp_con($header_page_config['icmp']['con'], sizeof($header_page_config['icmp']), $count_active_headers);
+header_icmp_fav($header_page_config['icmp']['fav'], sizeof($header_page_config['icmp']), $count_active_headers);
+header_icmp_dnw($header_page_config['icmp']['dnw'], sizeof($header_page_config['icmp']), $count_active_headers);
+header_icmp_arc($header_page_config['icmp']['arc'], sizeof($header_page_config['icmp']), $count_active_headers);
+?>
       </div>
-
 
 <!-- Activity Chart ------------------------------------------------------- -->
 
@@ -517,22 +529,15 @@ If ($ENABLED_HISTOY_GRAPH !== False) {
 
       <script src="js/graph_online_history.js"></script>
       <script>
-        // var pia_js_online_history_time = [<?php pia_graph_devices_data($Graph_Device_Time);?>];
-        // var pia_js_online_history_ondev = [<?php pia_graph_devices_data($Graph_Device_Online);?>];
-        // var pia_js_online_history_dodev = [<?php pia_graph_devices_data($Graph_Device_Down);?>];
-        // graph_online_history_icmp(pia_js_online_history_time, pia_js_online_history_ondev, pia_js_online_history_dodev);
-
         var online_history_time = [<?php pia_graph_devices_data($Graph_Device_Time);?>];
         var online_history_ondev = [<?php pia_graph_devices_data($Graph_Device_Online);?>];
         var online_history_dodev = [<?php pia_graph_devices_data($Graph_Device_Down);?>];
         var online_history_ardev = [<?php pia_graph_devices_data($Graph_Device_Arch);?>];
         graph_online_history_icmp(online_history_time, online_history_ondev, online_history_dodev, online_history_ardev);
-
       </script>
 <?php
 }
 	?>
-
       <div class="row">
         <div class="col-xs-12">
           <div id="tableDevicesBox" class="box">
@@ -553,7 +558,8 @@ If ($ENABLED_HISTOY_GRAPH !== False) {
                   <th><?=$pia_lang['WEBS_EVE_TableHead_ResponsTime']?></th>
                   <th style="white-space: nowrap;"><?=$pia_lang['WEBS_tablehead_ScanTime']?></th>
                   <th><?=$pia_lang['Device_TableHead_Status']?></th>
-                  <th>Present</th>
+                  <th>row6</th>
+                  <th>row7</th>
                   <th>RowID</th>
                 </tr>
                 </thead>
@@ -635,7 +641,7 @@ function initializeDatatable () {
     'order'       : [[0,'asc']],
 
     'columnDefs'   : [
-      {visible:   false,         targets: [6,7] },
+      {visible:   false,         targets: [6,7,8] },
       {className: 'text-center', targets: [1,2,3,4,5] },
       {className: 'text-left',   targets: [0] },
       {width:     '150px',       targets: [4] },
@@ -644,8 +650,30 @@ function initializeDatatable () {
 
       {targets: [0],
         'createdCell': function (td, cellData, rowData, row, col) {
+	          switch (rowData[7]) {
+	            case 'Down':      color='red';                 break;
+	            case 'OnlineV':   color='#00A000';             break;
+	            case 'Online':    color='#00A000';             break;
+	            case 'Offline':   color='transparent';         break;
+	            default:          color='transparent';         break;
+	          };
             $(td).html ('<b><a href="icmpmonitorDetails.php?hostip='+ rowData[1] +'" class="">'+ cellData +'</a></b>');
             $(td).css('min-width', '160px');
+
+            let tableWidth = $("#tableDevices").outerWidth();
+            let viewportWidth = $(window).width() - 50;
+
+            if (tableWidth > viewportWidth) {
+                $(td).css({
+                    "border-left": `2px solid ${color}`,
+                    "padding-left": "8px"
+                });
+            } else {
+            	  $(td).css({
+            	  	  "border-left": "",
+            	  	  "padding-left": ""
+            	  });
+            }
       } },
       {targets: [2],
         'createdCell': function (td, cellData, rowData, row, col) {
@@ -665,15 +693,15 @@ function initializeDatatable () {
       } },
       {targets: [5],
         'createdCell': function (td, cellData, rowData, row, col) {
-          if (cellData == 1){
-            $(td).html ('<a href="icmpmonitorDetails.php?hostip='+ rowData[1] +'" class="badge bg-green">Online</a>');
-          } else if (cellData == 0 && rowData[6] == 1) {
-            $(td).html ('<a href="icmpmonitorDetails.php?hostip='+ rowData[1] +'" class="badge bg-red">Down</a>');
-          } else {
-            $(td).html ('<a href="icmpmonitorDetails.php?hostip='+ rowData[1] +'" class="badge bg-gray text-white">Offline</a>');
-          }
+          switch (rowData[7]) {
+            case 'Down':     color='red';                 statusname='Down';                          break;
+            case 'OnlineV':  color='green';               statusname='Online*';                       break;
+            case 'Online':   color='green';               statusname='Online';                        break;
+            case 'Offline':  color='gray text-white';     statusname='Offline';                       break;
+            default:         color='aqua';                statusname=''; 					                   break;
+          };
+          $(td).html ('<a href="icmpmonitorDetails.php?hostip='+ rowData[1] +'" class="badge bg-'+ color +'">'+ statusname +'</a>');
       } },
-
     ],
 
     // Processing
@@ -693,13 +721,6 @@ function initializeDatatable () {
 };
 
 // -----------------------------------------------------------------------------
-// function getDevicesList () {
-//   // Define new datasource URL and reload
-//   $('#tableDevices').DataTable().ajax.url(
-//     'php/server/icmpmonitor.php?action=getDevicesList').load();
-// };
-
-
 function getDevicesList(status) {
   // Save status selected
   deviceStatus = status;
@@ -749,8 +770,8 @@ function insertNewICMPHost(refreshCallback='') {
     + '&icmp_ip='         + $('#icmphost_ip').val()
     + '&icmp_hostname='   + $('#icmphost_name').val()
     + '&icmp_fav='        + ($('#insFavorite')[0].checked * 1)
-    + '&alertdown='       + ($('#insAlertEvents')[0].checked * 1)
-    + '&alertevents='     + ($('#insAlertDown')[0].checked * 1)
+    + '&alertdown='       + ($('#insAlertDown')[0].checked * 1)
+    + '&alertevents='     + ($('#insAlertEvents')[0].checked * 1)
     , function(msg) {
 
     // deactivate button

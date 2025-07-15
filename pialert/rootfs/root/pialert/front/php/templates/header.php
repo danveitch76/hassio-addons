@@ -1,13 +1,3 @@
-<!-- ---------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  header.php - Front module. Common header to all the web pages
-#-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
-#  leiweibau 2024                                          GNU GPLv3
-#--------------------------------------------------------------------------- -->
-
 <?php
 error_reporting(0);
 $conf_file = '../config/version.conf';
@@ -24,24 +14,26 @@ require 'php/templates/language/' . $pia_lang_selected . '.php';
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="x-dns-prefetch-control" content="off">
     <meta http-equiv="cache-control" content="max-age=60,private">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="manifest" href="img/manifest.json">
     <title>Pi.Alert - <?php echo gethostname(); ?></title>
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <!-- Bootstrap 3.4.1 -->
     <link rel="stylesheet" href="lib/AdminLTE/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons v1.10.3 -->
-    <link href="lib/AdminLTE/bower_components/bootstrap-icons/font/bootstrap-icons.css" media="all" rel="stylesheet" type="text/css" />
+    <link href="lib/AdminLTE/bower_components/bootstrap-icons/font/bootstrap-icons.css" media="all" rel="stylesheet" type="text/css">
     <!-- Font Awesome 6.40 -->
     <link rel="stylesheet" href="lib/AdminLTE/bower_components/font-awesome/css/font-awesome.min.css">
     <!-- Ionicons -->
     <link rel="stylesheet" href="lib/AdminLTE/bower_components/Ionicons/css/ionicons.min.css">
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="lib/AdminLTE/bower_components/material-design-icons/css/materialdesignicons.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="lib/AdminLTE/dist/css/AdminLTE.min.css">
     <!-- AdminLTE Skins. -->
     <?=$skin_selected_head;?>
     <!-- Pi.Alert CSS -->
-    <link rel="stylesheet" href="css/pialert.css?<?=$conf_data['VERSION_DATE'];?>">
+    <link rel="stylesheet" href="css/pialert.css?v=<?=$conf_data['VERSION_DATE'];?>">
     <!-- Offline Font -->
     <link rel="stylesheet" href="css/offline-font.css">
     <!-- Fav / Homescreen Icon -->
@@ -84,7 +76,7 @@ if ($ENABLED_THEMEMODE === True) {echo $theme_selected_head;}
 <?php
 insert_back_button();
 ?>
-      <a id="navbar-reload-button" href="" role="button" onclick="window.location.href=window.location.href"><i class="fa fa-repeat"></i></a>
+      <a id="navbar-reload-button" href="" role="button" onclick="window.location.reload(true)"><i class="fa fa-repeat"></i></a>
       <script>
           function toggle_systeminfobox() {
             $("#sidebar_systeminfobox").toggleClass("collapse");
@@ -98,6 +90,11 @@ insert_back_button();
       <!-- Navbar Right Menu -->
       <div class="navbar-custom-menu">
         <ul class="nav navbar-nav">
+          <?php
+          if ($FRONTEND_PHBUTTON != '') {
+            echo '<li><a id="navbar-pihole-button" class="a navbar-servertime" href="'.$FRONTEND_PHBUTTON.'" role="button" target="blank"><i class="mdi mdi-pi-hole"></i></a></li>';
+          }
+          ?>
           <li><a id="navbar-help-button" class="a navbar-servertime" href="https://github.com/leiweibau/Pi.Alert/tree/main/docs" role="button" target="blank"><i class="fa-regular fa-circle-question"></i></a></li>
           <li><div class="a navbar-servertime"><?php echo gethostname(); ?> <span id="PIA_Servertime_place"></span></div></li>
           <!-- Header right info -->
@@ -153,7 +150,7 @@ insert_back_button();
     <section class="sidebar">
       <!-- Sidebar user panel (optional) -->
       <div class="user-panel" id="sidebar_systeminfobox">
-        <div class="logo" style="width:58px; display: inline-block;"><a href="./"><img src="img/pialertLogoGray80.png" class="img-responsive" alt="Pi.Alert Logo"/></a></div>
+        <div class="logo" style="width:58px; display: inline-block;"><a href="./"><img src="img/pialertLogoGray80.png" class="img-responsive" alt="Pi.Alert Logo"></a></div>
         <div style="width:142px; display: inline-block; padding-left: 8px;">
           <a href="systeminfo.php">
             <div class="systemstatusbox" style="font-size: smaller; margin-top:10px;">
@@ -161,9 +158,9 @@ insert_back_button();
 arpscanstatus();
 echo '<span id="status"><i class="fa fa-w fa-circle text-' . $_SESSION['arpscan_sidebarstate_light'] . '"></i> ' . $_SESSION['arpscan_sidebarstate'] . '&nbsp;&nbsp;</span><br>';
 format_sysloadavg(sys_getloadavg());
-echo '<br/>';
+echo '<br>';
 format_MemUsage(getMemUsage());
-echo '<br/>';
+echo '<br>';
 list($celsius, $temperaturelimit) = getTemperature();
 format_temperature($celsius, $temperaturelimit);
 // Sattelite Submenus
@@ -175,7 +172,7 @@ $sat_sub_menu = toggle_satellites_submenu();
       </div>
       <!-- Sidebar Menu -->
       <ul class="sidebar-menu" data-widget="tree">
-        <li class="header text-uppercase" style="font-size: 10; padding: 1px;"><?=$pia_lang['NAV_Section_A'];?></li>
+        <li class="header text-uppercase" style="font-size: 10px; padding: 1px;"><?=$pia_lang['NAV_Section_A'];?></li>
         <li class=" <?php if (in_array(basename($_SERVER['SCRIPT_NAME']), array('devices.php', 'deviceDetails.php'))) {echo 'active';}?>">
           <a href="devices.php"><i class="fa fa-laptop"></i> <span><?=$pia_lang['NAV_Devices'];?></span>
             <span class="pull-right-container" style="margin-right:-5px">
@@ -190,13 +187,13 @@ get_devices_filter_list();
 echo $sat_sub_menu[0];
 ?>
         <li class=" <?php if (in_array(basename($_SERVER['SCRIPT_NAME']), array('network.php', 'networkSettings.php'))) {echo 'active';}?>">
-          <a href="network.php"><i class="fa fa-server"></i> <span><?=$pia_lang['NAV_Network'];?></span></a>
+          <a href="network.php"><i class="bi bi-hdd-network-fill" style="margin-right: 5px;"></i> <span><?=$pia_lang['NAV_Network'];?></span></a>
         </li>
 <?php 
 toggle_webservices_menu('Main');
 toggle_icmpscan_menu('Main');
 ?>
-        <li class="header text-uppercase" style="font-size: 10; padding: 1px;"><?=$pia_lang['NAV_Section_B'];?></li>
+        <li class="header text-uppercase" style="font-size: 10px; padding: 1px;"><?=$pia_lang['NAV_Section_B'];?></li>
         <li class=" <?php if (in_array(basename($_SERVER['SCRIPT_NAME']), array('devicesEvents.php'))) {echo 'active';}?>">
           <a href="devicesEvents.php"><i class="fa fa-laptop"></i> <span><?=$pia_lang['NAV_Events'];?></span></a>
         </li>
@@ -213,7 +210,7 @@ echo $sat_sub_menu[1];
         <li class=" <?php if (in_array(basename($_SERVER['SCRIPT_NAME']), array('journal.php'))) {echo 'active';}?>">
           <a href="journal.php"><i class="fa fa-list"></i> <span><?=$pia_lang['NAV_Journal'];?></span></a>
         </li>
-        <li class="header text-uppercase" style="font-size: 10; padding: 1px;"><?=$pia_lang['NAV_Section_C'];?></li>
+        <li class="header text-uppercase" style="font-size: 10px; padding: 1px;"><?=$pia_lang['NAV_Section_C'];?></li>
         <li class=" <?php if (in_array(basename($_SERVER['SCRIPT_NAME']), array('maintenance.php'))) {echo 'active';}?>">
           <a href="maintenance.php"><i class="fa fa-cog"></i> <span><?=$pia_lang['NAV_Maintenance'];?></span></a>
         </li>

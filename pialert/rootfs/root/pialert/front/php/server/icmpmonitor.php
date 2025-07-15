@@ -77,8 +77,9 @@ function getDevicesList() {
 	$condition = getDeviceCondition($_REQUEST['status']);
 	$sql = 'SELECT rowid, *, CASE
             WHEN icmp_AlertDown=1 AND icmp_PresentLastScan=0 THEN "Down"
-            WHEN icmp_PresentLastScan=1 THEN "On-line"
-            ELSE "Off-line"
+            WHEN icmp_Scan_Validation_State=0 AND icmp_PresentLastScan=1 THEN "Online"
+            WHEN icmp_Scan_Validation > 0 AND icmp_Scan_Validation_State > 0 AND icmp_Scan_Validation_State <= icmp_Scan_Validation AND icmp_PresentLastScan=1 THEN "OnlineV"
+            ELSE "Offline"
           END AS icmp_Status
           FROM ICMP_Mon ' . $condition;
 	$result = $db->query($sql);
@@ -94,6 +95,7 @@ function getDevicesList() {
 			$row['icmp_LastScan'],
 			$row['icmp_PresentLastScan'],
 			$row['icmp_AlertDown'],
+			$row['icmp_Status'],
 			$row['rowid'], // Rowid (hidden)
 		);
 	}
@@ -131,18 +133,23 @@ function setICMPHostData() {
 	if ($_REQUEST['icmp_group'] == '--') {unset($_REQUEST['icmp_group']);}
 	if ($_REQUEST['icmp_type'] == '--') {unset($_REQUEST['icmp_type']);}
 	if ($_REQUEST['icmp_location'] == '--') {unset($_REQUEST['icmp_location']);}
+	if (!is_numeric($_REQUEST['icmp_scanvalid'])) {$_REQUEST['icmp_scanvalid'] = 0;}
 
 	$sql = 'UPDATE ICMP_Mon SET
-				icmp_hostname    = "' . quotes($_REQUEST['icmp_hostname']) . '",
-                icmp_type        = "' . quotes($_REQUEST['icmp_type']) . '",
-                icmp_group       = "' . quotes($_REQUEST['icmp_group']) . '",
-                icmp_location    = "' . quotes($_REQUEST['icmp_location']) . '",
-                icmp_owner       = "' . quotes($_REQUEST['icmp_owner']) . '",
-                icmp_notes       = "' . quotes($_REQUEST['icmp_notes']) . '",
-                icmp_AlertEvents = "' . quotes($_REQUEST['alertevents']) . '",
-                icmp_AlertDown   = "' . quotes($_REQUEST['alertdown']) . '",
-                icmp_Favorite    = "' . quotes($_REQUEST['favorit']) . '",
-                icmp_Archived    = "' . quotes($_REQUEST['archived']) . '"
+				icmp_hostname        = "' . quotes($_REQUEST['icmp_hostname']) . '",
+                icmp_type            = "' . quotes($_REQUEST['icmp_type']) . '",
+                icmp_group           = "' . quotes($_REQUEST['icmp_group']) . '",
+                icmp_location        = "' . quotes($_REQUEST['icmp_location']) . '",
+                icmp_owner           = "' . quotes($_REQUEST['icmp_owner']) . '",
+                icmp_notes           = "' . quotes($_REQUEST['icmp_notes']) . '",
+                icmp_Scan_Validation = "' . quotes($_REQUEST['icmp_scanvalid']) . '",
+                icmp_vendor          = "' . quotes($_REQUEST['icmp_vendor']) . '",
+                icmp_model           = "' . quotes($_REQUEST['icmp_model']) . '",
+                icmp_serial          = "' . quotes($_REQUEST['icmp_serial']) . '",
+                icmp_AlertEvents     = "' . quotes($_REQUEST['alertevents']) . '",
+                icmp_AlertDown       = "' . quotes($_REQUEST['alertdown']) . '",
+                icmp_Favorite        = "' . quotes($_REQUEST['favorit']) . '",
+                icmp_Archived        = "' . quotes($_REQUEST['archived']) . '"
           WHERE icmp_ip="' . $_REQUEST['icmp_ip'] . '"';
 
 	$result = $db->query($sql);
@@ -241,24 +248,42 @@ function getEventsTotalsforICMP() {
 
 	// Request Parameters
 	$hostip = $_REQUEST['hostip'];
-	// SQL
+
+	$SQL = 'SELECT icmpeve_DateTime, icmpeve_EventType
+	        FROM ICMP_Mon_Connections
+	        WHERE icmpeve_ip = "' . $hostip . '"
+	        ORDER BY icmpeve_DateTime DESC
+	        LIMIT 1';
+
+    $result = $db->query($SQL);
+	if ($result && $result->num_rows > 0) {
+	    $row = $result->fetch_assoc();
+
+	    if ($row['icmpeve_EventType'] === 'Connected') {
+	        $currentTime = new DateTime();
+	        $recordTime = new DateTime($row['icmpeve_DateTime']);
+
+	        $interval = $currentTime->diff($recordTime);
+	        $hoursDifference = $interval->h + ($interval->days * 24);
+
+	        $eventspresence = $hoursDifference;
+	    } else {
+	        $eventspresence = 0;
+	    }
+	} else {
+	    $eventspresence = 0;
+	}
+
+	// Down
 	$SQL1 = 'SELECT Count(*)
-           FROM ICMP_Mon_Events
-           WHERE icmpeve_ip = "' . $hostip . '"';
-	// All
+           FROM ICMP_Mon_Connections
+           WHERE icmpeve_ip = "' . $hostip . '" AND icmpeve_EventType = "Down"';
 	$result = $db->query($SQL1);
 	$row = $result->fetchArray(SQLITE3_NUM);
-	$eventsAll = $row[0];
-	// Online
-	$result = $db->query($SQL1 . ' AND icmpeve_Present = "1" ');
-	$row = $result->fetchArray(SQLITE3_NUM);
-	$eventsonline = $row[0];
-	// Offline
-	$result = $db->query($SQL1 . ' AND icmpeve_Present = "0" ');
-	$row = $result->fetchArray(SQLITE3_NUM);
-	$eventsoffline = $row[0];
+	$eventsdown = $row[0];
 	// Return json
-	echo (json_encode(array($eventsAll, $eventsonline, $eventsoffline)));
+
+	echo (json_encode(array($eventspresence, $eventsdown)));
 }
 
 //  Bulk Deletion

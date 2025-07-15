@@ -28,7 +28,7 @@ RUN lighttpd-enable-mod fastcgi-php accesslog
 RUN service lighttpd restart
 
 # Install pip dependencies for pi.alert:
-RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi paho-mqtt --break-system-packages --no-warn-script-location 
+RUN pip3 -q install mac-vendor-lookup fritzconnection routeros_api pyunifi openwrt-luci-rpc asusrouter paho-mqtt requests>=2.31.0 --break-system-packages --no-warn-script-location 
 
 # Setup links used for pialert
 RUN ln -s "/usr/bin/python3" "/usr/bin/python"

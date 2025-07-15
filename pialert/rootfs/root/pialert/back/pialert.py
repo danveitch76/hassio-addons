@@ -9,7 +9,7 @@
 #  Puche 2021                                              GNU GPLv3
 #  leiweibau 2024                                          GNU GPLv3
 #  piapiacz, hspindel
-#  danveitch76 2024                                        GNU GPLv3
+#  danveitch76 2025                                        GNU GPLv3
 #-------------------------------------------------------------------------------
 
 #===============================================================================
@@ -27,7 +27,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from pathlib import Path
 from datetime import datetime, timedelta
-import sys, subprocess, os, re, datetime, sqlite3, socket, io, smtplib, csv, requests, time, pwd, glob, ipaddress, ssl, json, tzlocal, uuid
+import sys, subprocess, os, re, datetime, sqlite3, socket, io, smtplib, csv, requests, time, pwd, glob, ipaddress, ssl, json, tzlocal, asyncio, aiohttp, uuid
 import paho.mqtt.publish as publish
 
 #===============================================================================
@@ -139,12 +139,12 @@ def set_db_file_permissions():
     print_log(f"\nPrepare Scan...")
     print_log(f"    Force file permissions on Pi.Alert db...")
     # Set permissions
-    # os.system("/usr/bin/chown " + get_username() + ":www-data " + PIALERT_DB_FILE)
-    # os.system("/usr/bin/chmod 775 " + PIALERT_DB_FILE)
+    # os.system("sudo /usr/bin/chown " + get_username() + ":www-data " + PIALERT_DB_FILE)
+    # os.system("sudo /usr/bin/chmod 775 " + PIALERT_DB_FILE)
 
     # Set permissions Experimental
-    os.system("/usr/bin/chown " + get_username() + ":www-data " + PIALERT_DB_FILE + "*")
-    os.system("/usr/bin/chmod 775 " + PIALERT_DB_FILE + "*")
+    os.system("sudo /usr/bin/chown " + get_username() + ":www-data " + PIALERT_DB_FILE + "*")
+    os.system("sudo /usr/bin/chmod 775 " + PIALERT_DB_FILE + "*")
 
     # Get permissions
     fileinfo = Path(PIALERT_DB_FILE)
@@ -154,8 +154,8 @@ def set_db_file_permissions():
 
 # ------------------------------------------------------------------------------
 def set_reports_file_permissions():
-    os.system("chown -R " + get_username() + ":www-data " + REPORTPATH_WEBGUI)
-    os.system("chmod -R 775 " + REPORTPATH_WEBGUI)
+    os.system("sudo chown -R " + get_username() + ":www-data " + REPORTPATH_WEBGUI)
+    os.system("sudo chmod -R 775 " + REPORTPATH_WEBGUI)
 
 #===============================================================================
 # Countdown
@@ -357,8 +357,8 @@ def create_autobackup(start_time, crontab_string):
             time.sleep(4)
             os.remove(PIALERT_DB_PATH + '/temp/pialert.db')
             # Set Permissions for www-data (testing)
-            os.system("chown www-data:www-data " + BACKUP_FILE)
-            os.system("chmod 644 " + BACKUP_FILE)
+            os.system("sudo chown www-data:www-data " + BACKUP_FILE)
+            os.system("sudo chmod 644 " + BACKUP_FILE)
             # Cleanup
             bak_files = glob.glob(os.path.join(PIALERT_DB_PATH, "pialertdb_20*.zip"))
             bak_files.sort(key=os.path.getmtime, reverse=True)
@@ -370,8 +370,8 @@ def create_autobackup(start_time, crontab_string):
             BACKUP_CONF_FILE = PIALERT_PATH + "/config/pialert-" + BACKUP_FILE_DATE.replace("-", "").replace(" ", "_").replace(":", "") + ".bak"
             subprocess.check_output('cp ' + PIALERT_PATH + '/config/pialert.conf ' + BACKUP_CONF_FILE, shell=True)
             # Set Permissions for www-data (testing)
-            os.system("chown www-data:www-data " + BACKUP_CONF_FILE)
-            os.system("chmod 644 " + BACKUP_CONF_FILE)
+            os.system("sudo chown www-data:www-data " + BACKUP_CONF_FILE)
+            os.system("sudo chmod 644 " + BACKUP_CONF_FILE)
             # Cleanup
             bak_files = glob.glob(os.path.join(PIALERT_PATH + "/config", "pialert-20*.bak"))
             bak_files.sort(key=os.path.getmtime, reverse=True)
@@ -499,7 +499,7 @@ def run_speedtest_task(start_time, crontab_string):
     day_of_week = parse_cron_part(crontab_parts[4], start_time.weekday(), 0, 7)
 
     # Define the command and arguments
-    command = [PIALERT_BACK_PATH + "/speedtest/speedtest", "--accept-license", "--accept-gdpr", "-p", "no", "-f", "json"]
+    command = ["sudo", PIALERT_BACK_PATH + "/speedtest/speedtest", "--accept-license", "--accept-gdpr", "-p", "no", "-f", "json"]
     # Compare cron
     if (start_time.minute in minute) and (start_time.hour in hour) and (start_time.day in day_of_month) and \
        (start_time.month in month) and (start_time.weekday() in day_of_week):
@@ -610,36 +610,43 @@ def cleanup_database():
     openDB()
     print('\nCleanup tables, up to the lastest ' + str(DAYS_TO_KEEP_EVENTS) + ' days:')
     print('    Events')
-    sql.execute("DELETE FROM Events WHERE eve_DateTime <= date('now', '-" + str(DAYS_TO_KEEP_EVENTS) + " day')")
-    print('        ...Fixing missing or VOIDED events')
-    RepairedEventTime = startTime - timedelta(days=DAYS_TO_KEEP_EVENTS)
-    sql.execute("DELETE FROM Events WHERE eve_EventType LIKE 'VOIDED%'")
-    sql.execute("SELECT dev_MAC, dev_LastIP FROM Devices WHERE dev_PresentLastScan = 1")
-    repair_devices = sql.fetchall()
-    for device in repair_devices:
-        dev_mac, dev_lastip = device
-        
-        sql.execute("SELECT 1 FROM Events WHERE eve_MAC = ? AND eve_EventType='Connected'", (dev_mac,))
-        event_exists = sql.fetchone()
-        
-        if not event_exists:
-            sql.execute(
-                "INSERT INTO Events (eve_MAC, eve_EventType, eve_IP, eve_DateTime, eve_PendingAlertEmail) VALUES (?, ?, ?, ?, ?)",
-                (dev_mac, "Connected", dev_lastip, str(RepairedEventTime), 0)
-            )
+
+    sql.execute("SELECT COUNT(*) FROM Events WHERE eve_DateTime <= date('now', '-" + str(DAYS_TO_KEEP_EVENTS) + " day')")
+    count = sql.fetchone()[0]
+
+    if count > 0:
+        sql.execute("DELETE FROM Events WHERE eve_DateTime <= date('now', '-" + str(DAYS_TO_KEEP_EVENTS) + " day')")
+        sql_connection.commit()
+        RepairedEventTime = startTime - timedelta(days=DAYS_TO_KEEP_EVENTS)
+        #sql.execute("DELETE FROM Events WHERE eve_EventType LIKE 'VOIDED%'")
+        sql.execute("SELECT dev_MAC, dev_LastIP FROM Devices WHERE dev_PresentLastScan = 1")
+        repair_devices = sql.fetchall()
+        for device in repair_devices:
+            dev_mac, dev_lastip = device
+            
+            sql.execute("SELECT 1 FROM Events WHERE eve_MAC = ? AND eve_EventType='Connected'", (dev_mac,))
+            event_exists = sql.fetchone()
+            
+            if not event_exists:
+                sql.execute(
+                    "INSERT INTO Events (eve_MAC, eve_EventType, eve_IP, eve_DateTime, eve_PendingAlertEmail) VALUES (?, ?, ?, ?, ?)",
+                    (dev_mac, "Connected", dev_lastip, str(RepairedEventTime), 0)
+                )
+
     print('    Nmap Scan Results')
     sql.execute("DELETE FROM Tools_Nmap_ManScan WHERE scan_date <= date('now', '-" + str(DAYS_TO_KEEP_EVENTS) + " day')")
 
     print('\nCleanup tables, up to the lastest ' + str(DAYS_TO_KEEP_ONLINEHISTORY) + ' days:')
     print('    Online_History')
     sql.execute("DELETE FROM Online_History WHERE Scan_Date <= date('now', '-" + str(DAYS_TO_KEEP_ONLINEHISTORY) + " day')")
-    print('    Services_Events')
-    sql.execute("DELETE FROM Services_Events WHERE moneve_DateTime <= date('now', '-" + str(DAYS_TO_KEEP_ONLINEHISTORY) + " day')")
-    print('    ICMP_Mon_Events')
-    sql.execute("DELETE FROM ICMP_Mon_Events WHERE icmpeve_DateTime <= date('now', '-" + str(DAYS_TO_KEEP_ONLINEHISTORY) + " day')")
     print('    Speedtest_History')
     sql.execute("DELETE FROM Tools_Speedtest_History WHERE speed_date <= date('now', '-" + str(DAYS_TO_KEEP_ONLINEHISTORY) + " day')")
 
+    print('\nCleanup tables, up to the lastest hard-coded days:')
+    print('    Services_Events (30)')
+    sql.execute("DELETE FROM Services_Events WHERE moneve_DateTime <= date('now', '-" + str(30) + " day')")
+    print('    ICMP_Mon_Events (14)')
+    sql.execute("DELETE FROM ICMP_Mon_Events WHERE icmpeve_DateTime <= date('now', '-" + str(14) + " day')")
 
     print('\nTrim Journal to the lastest 1000 entries')
     sql.execute("DELETE FROM pialert_journal WHERE journal_id NOT IN (SELECT journal_id FROM pialert_journal ORDER BY journal_id DESC LIMIT 1000) AND (SELECT COUNT(*) FROM pialert_journal) > 1000")
@@ -818,37 +825,38 @@ def scan_network():
     #arpscan_retries = scanCycle_data['cic_arpscanCycles']
     # arp-scan command
     print('\nScanning...')
-    print('    arp-scan Method...')
     print_log ('arp-scan starts...')
     arpscan_devices = execute_arpscan()
     print_log ('arp-scan ends')
     # Pi-hole
-    print(f"    Pi-hole {PIHOLE_VERSION} Client List Method...")
     openDB()
     print_log ('Pi-hole copy starts...')
     copy_pihole_network()
     # DHCP Leases
-    print(f"    Pi-hole {PIHOLE_VERSION} DHCP Leases Method...")
     read_DHCP_leases()
     if PIHOLE6_SES_VALID==True:
         pihole_six_api_deauth()
     # Fritzbox
-    print('    Fritzbox Method...')
     openDB()
     print_log ('Fritzbox copy starts...')
     read_fritzbox_active_hosts()
     # Mikrotik
-    print('    Mikrotik Method...')
     openDB()
     print_log ('Mikrotik copy starts...')
     read_mikrotik_leases()
     # UniFi
-    print('    UniFi Method...')
     openDB()
     print_log ('UniFi copy starts...')
     read_unifi_clients()
+    # OpenWRT
+    openDB()
+    print_log ('OpenWRT copy starts...')
+    read_openwrt_clients()
+    # AsusWRT
+    openDB()
+    print_log ('AsusWRT copy starts...')
+    read_asuswrt_clients()
     # Import Satellites Scans
-    print('    Satellite Import...')
     get_satellite_scans()
     # Load current scan data 1/2
     print('\nProcessing scan results...')
@@ -858,7 +866,7 @@ def scan_network():
     print_log ('Dump all results to Log')
     dump_all_resulttables()
     # Process Ignore list
-    print('    Processing ignore list...')
+    print('    Processing ignore list 1/2...')
     remove_entries_from_table()
         # Print stats
     print_log ('Print Stats')
@@ -878,6 +886,10 @@ def scan_network():
     # Resolve devices names
     print_log ('   Resolve devices names...')
     update_devices_names()
+    # Process Ignore list
+    print('    Processing ignore list 2/2...')
+    #### Remove Devices from devicelist and event
+    remove_entries_from_devicelist()
     # Void false connection - disconnections
     print('    Voiding false (ghost) disconnections...')
     void_ghost_disconnections()
@@ -896,12 +908,6 @@ def scan_network():
     sql_connection.commit()
     closeDB()
 
-    # Issue #370
-    # new column for example "dev_alarm_delay" (True/False) and config parameter (2) scan counter
-    # For devices that are in the “Current_Scan” table and for which “alarm_delay” is set to True, 
-    # “Pending_Alert” is reset if the time interval is less than the desired one.
-    # maybe a new function like "apply_notifivation_delay()""
-
     # Web Service Monitoring
     if SCAN_WEBSERVICES:
         if str(startTime)[15] == "0":
@@ -913,8 +919,6 @@ def scan_network():
     if SCAN_ROGUE_DHCP:
         print('\nLooking for Rogue DHCP Servers...')
         rogue_dhcp_detection()
-
-
 
     return 0
 
@@ -959,21 +963,22 @@ def execute_arpscan():
 
     # check if arp-scan is active
     if not ARPSCAN_ACTIVE:
-        print('        ...Skipped')
         unique_devices = []
         return unique_devices
+
+    print('    arp-scan Method...')
 
     # output of possible multiple interfaces
     arpscan_output = ""
 
     # multiple interfaces
     if type(SCAN_SUBNETS) is list:
-        print("    arp-scan: Multiple interfaces")
+        print("        ...arp-scan: Multiple interfaces")
         for interface in SCAN_SUBNETS :
             arpscan_output += execute_arpscan_on_interface (interface)
     # one interface only
     else:
-        print("    arp-scan: One interface")
+        print("        ...arp-scan: One interface")
         arpscan_output += execute_arpscan_on_interface (SCAN_SUBNETS)
 
     # Search IP + MAC + Vendor as regular expresion
@@ -1002,7 +1007,7 @@ def execute_arpscan_on_interface(SCAN_SUBNETS):
     # Prepare command arguments
     subnets = SCAN_SUBNETS.strip().split()
     # Retry is 3 to avoid false offline devices
-    arpscan_args = ['/usr/sbin/arp-scan', '--ignoredups', '--bandwidth=256k', '--retry=6'] + subnets
+    arpscan_args = ['sudo', 'arp-scan', '--ignoredups', '--bandwidth=256k', '--retry=6'] + subnets
 
     # Execute command
     try:
@@ -1022,8 +1027,9 @@ def copy_pihole_network():
 
     # check if Pi-hole is active
     if not PIHOLE_ACTIVE :
-        print("        ...Skipped")
         return
+
+    print(f"    Pi-hole {PIHOLE_VERSION} Client List Method...")
 
     if PIHOLE_VERSION in (None, 5):
         copy_pihole_network_five()
@@ -1063,7 +1069,7 @@ def pihole_six_api_auth():
     global PIHOLE6_SES_SID
     global PIHOLE6_SES_CSRF
 
-    if not PIHOLE6_PASSWORD or not PIHOLE6_URL :
+    if not PIHOLE6_URL :
         print('        ...Skipped (Config Error)')
         return
 
@@ -1092,14 +1098,22 @@ def pihole_six_api_auth():
         return
 
     response_json = response.json()
-
-    if response_json['session']['valid'] == True :
-        PIHOLE6_SES_VALID = response_json['session']['valid']
-        PIHOLE6_SES_SID = response_json['session']['sid']
-        PIHOLE6_SES_CSRF = response_json['session']['csrf']
-    else:
-        print(f"        Auth required")
+    
+    try:
+        session_data = response_json.get('session', {})
+        if session_data.get('valid', False):  # Default False, if 'valid' is missing
+            PIHOLE6_SES_VALID = session_data['valid']
+            PIHOLE6_SES_SID = session_data['sid']
+            # to prevent key error if pihole has no password
+            if PIHOLE6_PASSWORD:
+                PIHOLE6_SES_CSRF = session_data['csrf']
+        else:
+            print("        Auth required")
+            return
+    except KeyError as e:
+        print(f"        Invalid response. Check Pi-hole URL")
         return
+
 
 #-------------------------------------------------------------------------------
 def pihole_six_api_deauth():
@@ -1238,27 +1252,36 @@ def read_fritzbox_active_hosts():
 
     # check if Pi-hole is active
     if not FRITZBOX_ACTIVE :
-        print('        ...Skipped')
         return
 
-    from fritzconnection.lib.fritzhosts import FritzHosts
+    print('    Fritzbox Method...')
 
-    # copy Fritzbox Network list
-    fh = FritzHosts(address=FRITZBOX_IP, user=FRITZBOX_USER, password=FRITZBOX_PASS)
-    hosts = fh.get_hosts_info()
-    for index, host in enumerate(hosts, start=1):
-        if host['status'] :
-            # status = 'active' if host['status'] else  '-'
-            ip = host['ip'] if host['ip'] else 'no IP'
-            mac = host['mac'].lower() if host['mac'] else '-'
-            hostname = host['name']
-            try:
-                vendor = MacLookup().lookup(host['mac'])
-            except:
-                vendor = "Prefix is not registered"
+    try:
+        from fritzconnection.lib.fritzhosts import FritzHosts
+    except:
+        print('        Missing python package')
+        return
 
-            sql.execute ("INSERT INTO Fritzbox_Network (FB_MAC, FB_IP, FB_Name, FB_Vendor) "+
-                         "VALUES (?, ?, ?, ?) ", (mac, ip, hostname, vendor) )
+    try:
+        # copy Fritzbox Network list
+        fh = FritzHosts(address=FRITZBOX_IP, user=FRITZBOX_USER, password=FRITZBOX_PASS)
+        hosts = fh.get_hosts_info()
+        for index, host in enumerate(hosts, start=1):
+            if host['status'] :
+                # status = 'active' if host['status'] else  '-'
+                ip = host['ip'] if host['ip'] else 'no IP'
+                mac = host['mac'].lower() if host['mac'] else '-'
+                hostname = host['name']
+                try:
+                    vendor = MacLookup().lookup(host['mac'])
+                except:
+                    vendor = "Prefix is not registered"
+
+                sql.execute ("INSERT INTO Fritzbox_Network (FB_MAC, FB_IP, FB_Name, FB_Vendor) "+
+                             "VALUES (?, ?, ?, ?) ", (mac, ip, hostname, vendor) )
+    except Exception as e:
+        print('        ...Skipped. Could not connect to FritzBox')
+        print_log(f"{e}")
 
 #-------------------------------------------------------------------------------
 def read_mikrotik_leases():
@@ -1275,29 +1298,37 @@ def read_mikrotik_leases():
     sql.execute ("DELETE FROM Mikrotik_Network")
 
     if not MIKROTIK_ACTIVE:
-        print('        ...Skipped')
         return
 
-    #installed using pip3 install routeros_api
-    import routeros_api
+    print('    Mikrotik Method...')
 
-    data = []
-    conn = routeros_api.RouterOsApiPool(MIKROTIK_IP, MIKROTIK_USER, MIKROTIK_PASS, plaintext_login=True)
-    api = conn.get_api()
-    ret = api.get_resource('/ip/dhcp-server/lease').get()
-    conn.disconnect()
-    for row in ret:
-        if 'active-mac-address' in row:
-            mac = row['active-mac-address'].lower()
-            ip = row['active-address']
-            hostname = row.get('host-name','')
-            try:
-                vendor = MacLookup().lookup(mac)
-            except:
-                vendor = "Prefix is not registered"
+    try:
+        import routeros_api
+    except:
+        print('        Missing python package')
+        return
 
-            sql.execute ("INSERT INTO Mikrotik_Network (MT_MAC, MT_IP, MT_Name, MT_Vendor) "+
-                         "VALUES (?, ?, ?, ?) ", (mac, ip, hostname, vendor) )
+    try:
+        data = []
+        conn = routeros_api.RouterOsApiPool(MIKROTIK_IP, MIKROTIK_USER, MIKROTIK_PASS, plaintext_login=True)
+        api = conn.get_api()
+        ret = api.get_resource('/ip/dhcp-server/lease').get()
+        conn.disconnect()
+        for row in ret:
+            if 'active-mac-address' in row:
+                mac = row['active-mac-address'].lower()
+                ip = row['active-address']
+                hostname = row.get('host-name','')
+                try:
+                    vendor = MacLookup().lookup(mac)
+                except:
+                    vendor = "Prefix is not registered"
+
+                sql.execute ("INSERT INTO Mikrotik_Network (MT_MAC, MT_IP, MT_Name, MT_Vendor) "+
+                             "VALUES (?, ?, ?, ?) ", (mac, ip, hostname, vendor) )
+    except Exception as e:
+        print('        ...Skipped. Could not connect to Mikrotik Router')
+        print_log(f"{e}")
 
 #-------------------------------------------------------------------------------
 def read_unifi_clients():
@@ -1314,10 +1345,15 @@ def read_unifi_clients():
     sql.execute ("DELETE FROM Unifi_Network")
 
     if not UNIFI_ACTIVE:
-        print('        ...Skipped')
         return
 
-    from pyunifi.controller import Controller
+    print('    UniFi Method...')
+
+    try:
+        from pyunifi.controller import Controller
+    except:
+        print('        Missing python package')
+        return
 
     # Enable self signed SSL / no warnings
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -1340,20 +1376,168 @@ def read_unifi_clients():
                 try:
                     vendor = MacLookup().lookup(mac)
                 except:
-                    vendor = "Prefix is not registered"
+                    vendor = "(unknown)"
 
             sql.execute ("INSERT INTO Unifi_Network (UF_MAC, UF_IP, UF_Name, UF_Vendor) "+
                          "VALUES (?, ?, ?, ?) ", (mac, ip, hostname, vendor) )
 
     except Exception as e:
-        print('        Could not connect to UniFi Controller')
+        print('        ...Skipped. Could not connect to UniFi Controller')
+        print_log(f"{e}")
+
+#-------------------------------------------------------------------------------
+def read_openwrt_clients():
+    # create table if not exists
+    sql_create_table = """ CREATE TABLE IF NOT EXISTS Openwrt_Network(
+                                "OWRT_MAC" STRING(50) NOT NULL COLLATE NOCASE,
+                                "OWRT_IP" STRING(50) COLLATE NOCASE,
+                                "OWRT_Name" STRING(50),
+                                "OWRT_Vendor" STRING(250)
+                            ); """
+    sql.execute(sql_create_table)
+    sql_connection.commit()
+
+    # empty Fritzbox Network table
+    sql.execute ("DELETE FROM Openwrt_Network")
+
+    if not OPENWRT_ACTIVE:
+        return
+
+    print('    OpenWRT Method...')
+
+    try:
+        from openwrt_luci_rpc import OpenWrtRpc
+    except:
+        print('        Missing python package')
+        return
+
+    try:
+        router = OpenWrtRpc(str(OPENWRT_IP), str(OPENWRT_USER), str(OPENWRT_PASS))
+        result = router.get_all_connected_devices(only_reachable=True)
+
+        for device in result:
+            if str(device.hostname) == 'None':
+                hostname = '(unknown)'
+            else:
+                hostname = device.hostname
+
+            sql.execute ("INSERT INTO Openwrt_Network (OWRT_MAC, OWRT_IP, OWRT_Name, OWRT_Vendor) "+
+                         "VALUES (?, ?, ?, ?) ", (device.mac.lower(), device.ip, hostname, '(unknown)') )
+
+    except Exception as e:
+        print(f"        ...Skipped. Could not connect to OpenWRT device")
+        print_log(f"{e}")
+
+#-------------------------------------------------------------------------------
+def read_asuswrt_clients():
+    # create table if not exists
+    sql_create_table = """ CREATE TABLE IF NOT EXISTS Asuswrt_Network(
+                                "ASUS_MAC" STRING(50) NOT NULL COLLATE NOCASE,
+                                "ASUS_IP" STRING(50) COLLATE NOCASE,
+                                "ASUS_Name" STRING(50),
+                                "ASUS_Vendor" STRING(250),
+                                "ASUS_Method" STRING(50)
+                            ); """
+    sql.execute(sql_create_table)
+    sql_connection.commit()
+
+    # empty Fritzbox Network table
+    sql.execute ("DELETE FROM Asuswrt_Network")
+
+    if not ASUSWRT_ACTIVE:
+        return
+
+    print('    AsusWRT Method...')
+
+    try:
+        from asusrouter import AsusRouter
+        from asusrouter.modules.data import AsusData
+    except:
+        print('        Missing python package')
+        return
+
+    try:
+        attempt = 0
+        max_attempts = 5
+
+        result = None
+        while not result and attempt < max_attempts:
+            result = asyncio.run(collect_asuswrt_data(AsusRouter, AsusData))
+            attempt += 1
+            if not result:
+                asyncio.run(asyncio.sleep(5))  # 5 sec delay
+
+        if not result:
+            print(f"        No results received after {max_attempts} attempts")
+
+        for client in result.values():
+            hostname = client["name"] or "(unknown)"
+            ip_address = client["ip_address"]
+            mac = client["mac"]
+            vendor = client["vendor"]
+            if vendor == "None" or vendor is None:
+                vendor = "(unknown)"
+            ip_method = client["ip_method"]
+
+            # print(f"{hostname} - {ip_address} - {mac} - {vendor}")
+
+            sql.execute ("INSERT INTO Asuswrt_Network (ASUS_MAC, ASUS_IP, ASUS_Name, ASUS_Vendor, ASUS_Method) "+
+                        "VALUES (?, ?, ?, ?, ?) ", (mac.lower(), ip_address, hostname, vendor, ip_method))
+
+    except Exception as e:
+        print(f"        ...Skipped. Could not connect to Asus Router")
+        print_log(f"{e}")
+
+#-------------------------------------------------------------------------------
+async def collect_asuswrt_data(AsusRouter,AsusData):
+    async with aiohttp.ClientSession() as session:
+        router = AsusRouter(
+            hostname=ASUSWRT_IP,
+            username=ASUSWRT_USER,
+            password=ASUSWRT_PASS,
+            use_ssl=ASUSWRT_SSL,
+            cache_time=2, 
+            session=session,
+        )
+
+        connected = await router.async_connect()
+        # print(f"Verbindung erfolgreich: {connected}")
+        if not connected:
+            return
+
+        try:
+            clients_data = await router.async_get_data(AsusData.CLIENTS)
+            
+            filtered_clients = {
+                mac: {
+                    'name': client.description.name,
+                    'ip_address': client.connection.ip_address,
+                    'mac': mac,
+                    'vendor': client.description.vendor,
+                    'ip_method': client.connection.ip_method.name
+                }
+                for mac, client in clients_data.items() if client.connection.online
+            }
+
+            if filtered_clients:
+                return filtered_clients
+            else:
+                return {}
+        
+        except Exception as e:
+            print(f"        Connection error occurred: {e}")
+            print_log(f"{e}")
+
+        await router.async_disconnect()
+        # print("\nVerbindung sauber getrennt.")
 
 #-------------------------------------------------------------------------------
 def read_DHCP_leases():
     # check DHCP Leases is active
     if not DHCP_ACTIVE :
-        print('        ...Skipped')
         return
+
+    print(f"    Pi-hole {PIHOLE_VERSION} DHCP Leases Method...")
 
     if PIHOLE_VERSION in (None, 5):
         read_DHCP_leases_five()
@@ -1444,8 +1628,9 @@ def read_DHCP_leases_six():
 def get_satellite_scans():
     sql.execute ("DELETE FROM Satellites_Network")
     if not SATELLITES_ACTIVE:
-        print('        ...Skipped')
         return
+
+    print('    Satellite Import...')
 
     print_log('        ...Mode detection')
     get_satellites = "SELECT sat_password, sat_token FROM Satellites"
@@ -1485,20 +1670,22 @@ def process_satellites(satellite_list):
                     satellite_meta_data_json = {}
 
                 try:
-                    satellite_scan_config = data['satellite_scan_config'][0]
-                    scan_arp = 1 if satellite_scan_config.get('scan_arp', False) else 0
-                    scan_fritzbox = 1 if satellite_scan_config.get('scan_fritzbox', False) else 0
-                    scan_mikrotik = 1 if satellite_scan_config.get('scan_mikrotik', False) else 0
-                    scan_unifi = 1 if satellite_scan_config.get('scan_unifi', False) else 0
+                    config = data['satellite_scan_config'][0]
                 except (KeyError, IndexError, TypeError):
-                    scan_arp = 0
-                    scan_fritzbox = 0
-                    scan_mikrotik = 0
-                    scan_unifi = 0
+                    config = {}
+
+                scan_arp         = 1 if config.get('scan_arp') else 0
+                scan_fritzbox    = 1 if config.get('scan_fritzbox') else 0
+                scan_mikrotik    = 1 if config.get('scan_mikrotik') else 0
+                scan_unifi       = 1 if config.get('scan_unifi') else 0
+                scan_openwrt     = 1 if config.get('scan_openwrt') else 0
+                scan_asuswrt     = 1 if config.get('scan_asuswrt') else 0
+                scan_pihole_net  = 1 if config.get('scan_pihole_net') else 0
+                scan_pihole_dhcp = 1 if config.get('scan_pihole_dhcp') else 0
 
                 for result in data['scan_results']:
-                    if result['cur_ScanMethod'] != 'Internet Check':
-                        sat_MAC = result['cur_MAC']
+                    if result['cur_ScanMethod'] != 'Internet Check' and result['cur_ScanMethod'] != 'Pi-hole DHCP':
+                        sat_MAC = result['cur_MAC'].lower()
                         sat_IP = result['cur_IP']
                         sat_hostname = result['cur_hostname']
                         sat_Vendor = result['cur_Vendor']
@@ -1511,7 +1698,23 @@ def process_satellites(satellite_list):
                                               Sat_MAC, Sat_IP, Sat_Name, Sat_Vendor, Sat_ScanMethod, Sat_Token)
                                               VALUES (?, ?, ?, ?, ?, ?)""",
                                               (sat_MAC, sat_IP, sat_hostname, sat_Vendor, sat_ScanMethod, sat_ScanSource))
+                    # DHCP results are saved in another table
+                    if result['cur_ScanMethod'] == 'Pi-hole DHCP':
+                        # skip lo interface if present
+                        if result['cur_hwaddr'] == "00:00:00:00:00:00":
+                            continue
 
+                        sat_MAC = result['cur_hwaddr'].lower()
+                        sat_IP = result['cur_ip']
+                        sat_hostname = result['cur_name']
+
+                        sql.execute("""SELECT 1 FROM DHCP_Leases WHERE DHCP_MAC = ?""", (sat_MAC,))
+                        if sql.fetchone() is None:
+                            sql.execute("""INSERT INTO DHCP_Leases (DHCP_DateTime, DHCP_MAC,
+                                                DHCP_IP, DHCP_Name, DHCP_MAC2)
+                                                    VALUES (?, ?, ?, ?, ?)
+                                                 """, (result['cur_expires'], result['cur_hwaddr'], result['cur_ip'], result['cur_name'], result['cur_clientid']))
+                # Save Satellite Configuration
                 satUpdateTime = datetime.datetime.now()
                 satUpdateTime = satUpdateTime.replace(microsecond=0)
                 sql.execute("""UPDATE Satellites 
@@ -1522,8 +1725,12 @@ def process_satellites(satellite_list):
                                     sat_conf_scan_fritzbox = ?,
                                     sat_conf_scan_mikrotik = ?,
                                     sat_conf_scan_unifi = ?,
+                                    sat_conf_scan_openwrt = ?,
+                                    sat_conf_scan_asuswrt = ?,
+                                    sat_conf_scan_pihole_net = ?,
+                                    sat_conf_scan_pihole_dhcp = ?,
                                     sat_host_data = ?
-                                WHERE sat_token = ?""", (satUpdateTime, satellite_version, scan_arp, scan_fritzbox, scan_mikrotik, scan_unifi, satellite_meta_data_json, token))
+                                WHERE sat_token = ?""", (satUpdateTime, satellite_version, scan_arp, scan_fritzbox, scan_mikrotik, scan_unifi, scan_openwrt, scan_asuswrt, scan_pihole_net, scan_pihole_dhcp, satellite_meta_data_json, token))
 
 #-------------------------------------------------------------------------------
 def get_satellite_proxy_scans(satellite_list):
@@ -1586,6 +1793,43 @@ def cleanup_satellite_scans(satellite_list):
             os.remove(WORKING_DIR+token+".json") 
 
 #-------------------------------------------------------------------------------
+def update_scan_validation():
+    print('    Update Scan Validation...')
+    # 1. set dev_Scan_Validation_State to 0 for devices that are in CurrentScan and have dev_Scan_Validation > 0
+    sql.execute("""
+        UPDATE Devices
+        SET dev_Scan_Validation_State = 0
+        WHERE dev_Scan_Validation > 0
+        AND dev_MAC IN (SELECT cur_MAC FROM CurrentScan)
+    """)
+    
+    # 2. find devices to be inserted in CurrentScan and save them in a list
+    sql.execute("""
+        SELECT dev_ScanCycle, dev_MAC, dev_LastIP, dev_Vendor, dev_ScanSource
+        FROM Devices
+        WHERE dev_Scan_Validation > 0
+        AND dev_Scan_Validation_State < dev_Scan_Validation
+        AND dev_MAC NOT IN (SELECT cur_MAC FROM CurrentScan)
+    """)
+    devices_to_insert = sql.fetchall()
+    print_log(f"Scan Validation: \n{devices_to_insert}")
+
+    # 3. Add the devices to CurrentScan
+    sql.executemany("""
+        INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, cur_IP, cur_Vendor, cur_ScanMethod, cur_ScanSource)
+        VALUES (?, ?, ?, ?, '(Validation pending)', ?)
+    """, devices_to_insert)
+    
+    # 4. increase dev_Scan_Validation_State by 1 for the devices saved in point 2
+    mac_addresses = [device[1] for device in devices_to_insert]
+    if mac_addresses:
+        sql.executemany("""
+            UPDATE Devices
+            SET dev_Scan_Validation_State = dev_Scan_Validation_State + 1
+            WHERE dev_MAC = ?
+        """, [(mac,) for mac in mac_addresses])
+
+#-------------------------------------------------------------------------------
 def save_scanned_devices(p_arpscan_devices, p_cycle_interval):
     # Delete previous scan data
     sql.execute ("DELETE FROM CurrentScan WHERE cur_ScanCycle = ?",
@@ -1609,33 +1853,13 @@ def save_scanned_devices(p_arpscan_devices, p_cycle_interval):
                     (cycle,
                      (int(startTime.strftime('%s')) - 60 * p_cycle_interval),
                      cycle) )
-
-    # Insert Fritzbox devices
-    sql.execute ("""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, 
-                        cur_IP, cur_Vendor, cur_ScanMethod)
-                    SELECT ?, FB_MAC, FB_IP, FB_Vendor, 'Fritzbox'
-                    FROM Fritzbox_Network
-                    WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
-                                      WHERE cur_MAC = FB_MAC )""",
-                    (cycle) )
-
-    # Insert Mikrotik devices
-    sql.execute ("""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, 
-                        cur_IP, cur_Vendor, cur_ScanMethod)
-                    SELECT ?, MT_MAC, MT_IP, MT_Vendor, 'Mikrotik'
-                    FROM Mikrotik_Network
-                    WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
-                                      WHERE cur_MAC = MT_MAC )""",
-                    (cycle) )
-
-    # Insert UniFi devices
-    sql.execute ("""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, 
-                        cur_IP, cur_Vendor, cur_ScanMethod)
-                    SELECT ?, UF_MAC, UF_IP, UF_Vendor, 'UniFi'
-                    FROM Unifi_Network
-                    WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
-                                      WHERE cur_MAC = UF_MAC )""",
-                    (cycle) )
+    
+    # External source import
+    insert_ext_sources(sql, cycle, 'Fritzbox_Network', 'FB_MAC', 'FB_IP', 'FB_Vendor', 'Fritzbox')
+    insert_ext_sources(sql, cycle, 'Mikrotik_Network', 'MT_MAC', 'MT_IP', 'MT_Vendor', 'Mikrotik')
+    insert_ext_sources(sql, cycle, 'Unifi_Network', 'UF_MAC', 'UF_IP', 'UF_Vendor', 'UniFi')
+    insert_ext_sources(sql, cycle, 'Openwrt_Network', 'OWRT_MAC', 'OWRT_IP', 'OWRT_Vendor', 'OpenWRT')
+    insert_ext_sources(sql, cycle, 'Asuswrt_Network', 'ASUS_MAC', 'ASUS_IP', 'ASUS_Vendor', 'AsusWRT')
 
     # Insert Satellite devices
     sql.execute ("""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, 
@@ -1645,6 +1869,9 @@ def save_scanned_devices(p_arpscan_devices, p_cycle_interval):
                     WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
                                       WHERE cur_MAC = Sat_MAC )""",
                     (cycle) )
+
+    # Scan Validation
+    update_scan_validation()
 
     if not OFFLINE_MODE :
         # Check Internet connectivity
@@ -1669,6 +1896,16 @@ def save_scanned_devices(p_arpscan_devices, p_cycle_interval):
     if sql.fetchone()[0] == 0 :
         sql.execute ("INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, cur_IP, cur_Vendor, cur_ScanMethod) "+
                      "VALUES ( ?, ?, ?, Null, 'local_MAC') ", (cycle, local_mac, local_ip) )
+
+#-------------------------------------------------------------------------------
+def insert_ext_sources(sql, cycle, network_table, mac_column, ip_column, vendor_column, scan_method):
+    sql.execute(f"""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, 
+                        cur_IP, cur_Vendor, cur_ScanMethod)
+                    SELECT ?, {mac_column}, {ip_column}, {vendor_column}, ?
+                    FROM {network_table}
+                    WHERE NOT EXISTS (SELECT 'X' FROM CurrentScan
+                                      WHERE cur_MAC = {mac_column} )""",
+                (cycle, scan_method))
 
 #-------------------------------------------------------------------------------
 def dump_all_resulttables():
@@ -1728,64 +1965,175 @@ def dump_all_resulttables():
             print('----------> Dump: End')
 
 #-------------------------------------------------------------------------------
+def remove_entries_from_devicelist():
+    try:
+        if HOSTNAME_IGNORE_LIST:
+            print_log(f'        {len(HOSTNAME_IGNORE_LIST)} Hostnames are ignored during the scan')
+
+            matched_macs = set()
+
+            query = f"SELECT dev_MAC, dev_Name FROM Devices"
+            sql.execute(query)
+            for mac, name in sql.fetchall():
+                if hostname_ignorelist_filter(name):
+                    matched_macs.add(mac)
+
+            print_log(f'        Matches after hostname resolving')
+            print_log('\n'.join(matched_macs))
+
+            work_tables = {
+                'CurrentScan': 'cur_MAC',
+                'Devices': 'dev_MAC',
+                'Events': 'eve_MAC'
+            }
+
+            for tabelle, mac_spalte in work_tables.items():
+                for mac in matched_macs:
+                    sql.execute(
+                        f"DELETE FROM {tabelle} WHERE {mac_spalte} = ? COLLATE NOCASE",
+                        (mac,)
+                    )
+
+        else:
+            print_log('        Hostname-Ignore list is empty')
+
+    except NameError:
+        print_log("        No Hostname-Ignore list defined")
+
+
+#-------------------------------------------------------------------------------
 def remove_entries_from_table():
     try:
-        MAC_IGNORE_LIST
+        if MAC_IGNORE_LIST:
+            print_log(f'        {len(MAC_IGNORE_LIST)} MACs/MAC ranges are ignored during the scan')
 
-        if len(MAC_IGNORE_LIST) > 0:
-            print(f'        {len(MAC_IGNORE_LIST)} MACs/MAC ranges are ignored during the scan')
-            # incomplete and complete MAC addresses
-            mac_addresses = ' OR '.join([f'cur_MAC LIKE "{mac}%"' for mac in MAC_IGNORE_LIST])
-            query = f'DELETE FROM CurrentScan WHERE {mac_addresses}'
-            sql.execute(query)
-            mac_addresses = ' OR '.join([f'PH_MAC LIKE "{mac}%"' for mac in MAC_IGNORE_LIST])
-            query = f'DELETE FROM PiHole_Network WHERE {mac_addresses}'
-            sql.execute(query)
-            mac_addresses = ' OR '.join([f'DHCP_MAC LIKE "{mac}%"' for mac in MAC_IGNORE_LIST])
-            query = f'DELETE FROM DHCP_Leases WHERE {mac_addresses}'
-            sql.execute(query)
-            mac_addresses = ' OR '.join([f'FB_MAC LIKE "{mac}%"' for mac in MAC_IGNORE_LIST])
-            query = f'DELETE FROM Fritzbox_Network WHERE {mac_addresses}'
-            sql.execute(query)
-            mac_addresses = ' OR '.join([f'MT_MAC LIKE "{mac}%"' for mac in MAC_IGNORE_LIST])
-            query = f'DELETE FROM Mikrotik_Network WHERE {mac_addresses}'
-            sql.execute(query)
-            mac_addresses = ' OR '.join([f'UF_MAC LIKE "{mac}%"' for mac in MAC_IGNORE_LIST])
-            query = f'DELETE FROM Unifi_Network WHERE {mac_addresses}'
-            sql.execute(query)
+            table_column_map = {
+                'CurrentScan': 'cur_MAC',
+                'PiHole_Network': 'PH_MAC',
+                'DHCP_Leases': 'DHCP_MAC',
+                'Fritzbox_Network': 'FB_MAC',
+                'Mikrotik_Network': 'MT_MAC',
+                'Unifi_Network': 'UF_MAC',
+                'Openwrt_Network': 'OWRT_MAC',
+                'Asuswrt_Network': 'ASUS_MAC'
+            }
+
+            for table, column in table_column_map.items():
+                if table not in table_column_map or column != table_column_map[table]:
+                    continue
+
+                # Bedingung als LIKE mit Platzhaltern
+                conditions = [f"{column} LIKE ?" for _ in MAC_IGNORE_LIST]
+                where_clause = ' OR '.join(conditions)
+                query = f'DELETE FROM {table} WHERE {where_clause}'
+
+                # Parameter vorbereiten
+                like_params = [f"{mac}%" for mac in MAC_IGNORE_LIST]
+                sql.execute(query, like_params)
         else:
-            print(f'        MAC-Ignore list is empty')
+            print_log('        MAC-Ignore list is empty')
+
     except NameError:
-        print("        No MAC-Ignore list defined")
+        print_log("        No MAC-Ignore list defined")
 
     try:
-        IP_IGNORE_LIST
+        if IP_IGNORE_LIST:
+            print_log(f'        {len(IP_IGNORE_LIST)} IPs/IP ranges are ignored during the scan')
 
-        if len(IP_IGNORE_LIST) > 0:
-            print(f'        {len(IP_IGNORE_LIST)} IPs/IP ranges are ignored during the scan')
-            # incomplete and complete IP addresses
-            ip_addresses = ' OR '.join([f'cur_IP LIKE "{ips}%"' for ips in IP_IGNORE_LIST])
-            query = f'DELETE FROM CurrentScan WHERE {ip_addresses}'
-            sql.execute(query)
-            ip_addresses = ' OR '.join([f'PH_IP LIKE "{ips}%"' for ips in IP_IGNORE_LIST])
-            query = f'DELETE FROM PiHole_Network WHERE {ip_addresses}'
-            sql.execute(query)
-            ip_addresses = ' OR '.join([f'DHCP_IP LIKE "{ips}%"' for ips in IP_IGNORE_LIST])
-            query = f'DELETE FROM DHCP_Leases WHERE {ip_addresses}'
-            sql.execute(query)
-            ip_addresses = ' OR '.join([f'FB_IP LIKE "{ips}%"' for ips in IP_IGNORE_LIST])
-            query = f'DELETE FROM Fritzbox_Network WHERE {ip_addresses}'
-            sql.execute(query)
-            ip_addresses = ' OR '.join([f'MT_IP LIKE "{ips}%"' for ips in IP_IGNORE_LIST])
-            query = f'DELETE FROM Mikrotik_Network WHERE {ip_addresses}'
-            sql.execute(query)
-            ip_addresses = ' OR '.join([f'UF_IP LIKE "{ips}%"' for ips in IP_IGNORE_LIST])
-            query = f'DELETE FROM Unifi_Network WHERE {ip_addresses}'
-            sql.execute(query)
+            table_column_map = {
+                'CurrentScan': 'cur_IP',
+                'PiHole_Network': 'PH_IP',
+                'DHCP_Leases': 'DHCP_IP',
+                'Fritzbox_Network': 'FB_IP',
+                'Mikrotik_Network': 'MT_IP',
+                'Unifi_Network': 'UF_IP',
+                'Openwrt_Network': 'OWRT_IP',
+                'Asuswrt_Network': 'ASUS_IP'
+            }
+
+            for table, column in table_column_map.items():
+                if table not in table_column_map or column != table_column_map[table]:
+                    continue
+
+                conditions = [f"{column} LIKE ?" for _ in IP_IGNORE_LIST]
+                where_clause = ' OR '.join(conditions)
+                query = f'DELETE FROM {table} WHERE {where_clause}'
+
+                like_params = [f"{ip}%" for ip in IP_IGNORE_LIST]
+                sql.execute(query, like_params)
         else:
-            print(f'        IP-Ignore list is empty')
+            print_log('        IP-Ignore list is empty')
+
     except NameError:
-        print("        No IP-Ignore list defined")
+        print_log("        No IP-Ignore list defined")
+
+    try:
+        if HOSTNAME_IGNORE_LIST:
+            print_log(f'        {len(HOSTNAME_IGNORE_LIST)} Hostnames are ignored during the scan')
+            source_tables = [
+                ("PiHole_Network", "PH_MAC", "PH_Name"),
+                ("DHCP_Leases", "DHCP_MAC", "DHCP_Name"),
+                ("Fritzbox_Network", "FB_MAC", "FB_Name"),
+                ("Mikrotik_Network", "MT_MAC", "MT_Name"),
+                ("Unifi_Network", "UF_MAC", "UF_Name"),
+                ("Openwrt_Network", "OWRT_MAC", "OWRT_Name"),
+                ("Asuswrt_Network", "ASUS_MAC", "ASUS_Name"),
+            ]
+
+            matched_macs = set()
+
+            for map_tablename, map_mac, map_name in source_tables:
+                query = f"SELECT {map_mac}, {map_name} FROM {map_tablename}"
+                sql.execute(query)
+                for mac, name in sql.fetchall():
+                    if hostname_ignorelist_filter(name):
+                        matched_macs.add(mac)
+
+            # print("====================================")
+            # print(matched_macs)
+
+            work_tables = {
+                'CurrentScan': 'cur_MAC',
+                'PiHole_Network': 'PH_MAC',
+                'DHCP_Leases': 'DHCP_MAC',
+                'Fritzbox_Network': 'FB_MAC',
+                'Mikrotik_Network': 'MT_MAC',
+                'Unifi_Network': 'UF_MAC',
+                'Openwrt_Network': 'OWRT_MAC',
+                'Asuswrt_Network': 'ASUS_MAC'
+            }
+
+            for tabelle, mac_spalte in work_tables.items():
+                for mac in matched_macs:
+                    sql.execute(
+                        f"DELETE FROM {tabelle} WHERE {mac_spalte} = ? COLLATE NOCASE",
+                        (mac,)
+                    )
+
+        else:
+            print_log('        Hostname-Ignore list is empty')
+
+    except NameError:
+        print_log("        No Hostname-Ignore list defined")
+
+#-------------------------------------------------------------------------------
+def hostname_ignorelist_filter(hostname: str) -> bool:
+    hostname = hostname.lower()
+    for f in HOSTNAME_IGNORE_LIST:
+        f = f.lower()
+        if f.startswith("*") and f.endswith("*"):
+            if f.strip("*") in hostname:
+                return True
+        elif f.startswith("*"):
+            if hostname.endswith(f[1:]):
+                return True
+        elif f.endswith("*"):
+            if hostname.startswith(f[:-1]):
+                return True
+        else:
+            if hostname == f:
+                return True
+    return False
 
 #-------------------------------------------------------------------------------
 def print_scan_stats():
@@ -1794,31 +2142,27 @@ def print_scan_stats():
                     WHERE cur_ScanCycle = ? """,
                     (cycle,))
     print('    Devices Detected.......:', str (sql.fetchone()[0]) )
-    # Devices arp-scan
-    sql.execute ("""SELECT COUNT(*) FROM CurrentScan
-                    WHERE cur_ScanMethod='arp-scan' AND cur_ScanCycle = ? """,
-                    (cycle,))
-    print('        arp-scan Method....:', str (sql.fetchone()[0]) )
-    # Devices Pi-hole
-    sql.execute ("""SELECT COUNT(*) FROM CurrentScan
-                    WHERE cur_ScanMethod='Pi-hole' AND cur_ScanCycle = ? """,
-                    (cycle,))
-    print('        Pi-hole Method.....: +' + str (sql.fetchone()[0]) )
-    # Devices Fritzbox
-    sql.execute ("""SELECT COUNT(*) FROM CurrentScan
-                    WHERE cur_ScanMethod='Fritzbox' AND cur_ScanCycle = ? """,
-                    (cycle,))
-    print('        Fritzbox Method....: +' + str (sql.fetchone()[0]) )
-    # Devices Mikrotik
-    sql.execute ("""SELECT COUNT(*) FROM CurrentScan
-                    WHERE cur_ScanMethod='Mikrotik' AND cur_ScanCycle = ? """,
-                    (cycle,))
-    print('        Mikrotik Method....: +' + str (sql.fetchone()[0]) )
-    # Devices UniFi
-    sql.execute ("""SELECT COUNT(*) FROM CurrentScan
-                    WHERE cur_ScanMethod='UniFi' AND cur_ScanCycle = ? """,
-                    (cycle,))
-    print('        UniFi Method.......: +' + str (sql.fetchone()[0]) )
+
+    scan_methods = [
+        "arp-scan",
+        "Pi-hole",
+        "Fritzbox",
+        "Mikrotik",
+        "UniFi",
+        "OpenWRT",
+        "AsusWRT",
+        "Pi-hole DHCP"
+    ]
+
+    # Count devices for each method and output if count > 0
+    for method in scan_methods:
+        sql.execute("""SELECT COUNT(*) FROM CurrentScan
+                       WHERE cur_ScanMethod = ? AND cur_ScanCycle = ?""",
+                    (method, cycle))
+        count = sql.fetchone()[0]
+        if count > 0:
+            print(f'        {method} Method: +{count}')
+
     # New Devices
     sql.execute ("""SELECT COUNT(*) FROM CurrentScan
                     WHERE cur_ScanCycle = ? 
@@ -1919,7 +2263,7 @@ def create_new_devices():
     sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
-                    SELECT cur_MAC, cur_IP, ?, 'New Device', cur_Vendor, 1
+                    SELECT cur_MAC, cur_IP, ?, 'New Device', '(' || cur_ScanMethod || ') ' || cur_Vendor, 1
                     FROM CurrentScan
                     WHERE cur_ScanCycle = ? 
                       AND NOT EXISTS (SELECT 1 FROM Devices
@@ -1947,7 +2291,7 @@ def create_new_devices():
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
                     SELECT PH_MAC, IFNULL (PH_IP,'-'), ?, 'New Device',
-                        '(Pi-Hole) ' || PH_Vendor, 1
+                        '(Pi-hole) ' || PH_Vendor, 1
                     FROM PiHole_Network
                     WHERE NOT EXISTS (SELECT 1 FROM Devices
                                       WHERE dev_MAC = PH_MAC) """,
@@ -1971,7 +2315,7 @@ def create_new_devices():
     sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
-                    SELECT DHCP_MAC, DHCP_IP, ?, 'New Device', '(DHCP lease)',1
+                    SELECT DHCP_MAC, DHCP_IP, ?, 'New Device', '(Pi-hole DHCP)',1
                     FROM DHCP_Leases
                     WHERE NOT EXISTS (SELECT 1 FROM Devices
                                       WHERE dev_MAC = DHCP_MAC) """,
@@ -2171,6 +2515,30 @@ def update_devices_data_from_scan():
                                     AND UF_Name IS NOT NULL
                                     AND UF_Name <> '') """)
 
+    # OpenWRT - Update (unknown) Name
+    sql.execute ("""UPDATE Devices
+                    SET dev_Name = (SELECT OWRT_Name FROM Openwrt_Network
+                                    WHERE OWRT_MAC = dev_MAC)
+                    WHERE (dev_Name = "(unknown)"
+                           OR dev_Name = ""
+                           OR dev_Name IS NULL)
+                      AND EXISTS (SELECT 1 FROM Openwrt_Network
+                                  WHERE OWRT_MAC = dev_MAC
+                                    AND OWRT_Name IS NOT NULL
+                                    AND OWRT_Name <> '') """)
+
+    # AsusWRT - Update (unknown) Name
+    sql.execute ("""UPDATE Devices
+                    SET dev_Name = (SELECT ASUS_Name FROM Asuswrt_Network
+                                    WHERE ASUS_MAC = dev_MAC)
+                    WHERE (dev_Name = "(unknown)"
+                           OR dev_Name = ""
+                           OR dev_Name IS NULL)
+                      AND EXISTS (SELECT 1 FROM Asuswrt_Network
+                                  WHERE ASUS_MAC = dev_MAC
+                                    AND ASUS_Name IS NOT NULL
+                                    AND ASUS_Name <> '') """)
+
     # Satellite - Update (unknown) Name
     sql.execute ("""UPDATE Devices
                     SET dev_Name = (SELECT Sat_Name FROM Satellites_Network
@@ -2188,9 +2556,13 @@ def update_devices_data_from_scan():
 
     recordsToUpdate = []
     query = """SELECT * FROM Devices
-               WHERE dev_Vendor = '(unknown)' OR dev_Vendor = ''
-                  OR dev_Vendor = '(Unknown: locally administered)'
-                  OR dev_Vendor IS NULL"""
+               WHERE (
+                   dev_Vendor = '(unknown)' OR
+                   dev_Vendor = '' OR
+                   dev_Vendor = '(Unknown: locally administered)' OR
+                   dev_Vendor IS NULL
+               )
+               AND dev_ScanSource = 'local'"""
 
     for device in sql.execute (query) :
         vendor = query_MAC_vendor (device['dev_MAC'])
@@ -2293,12 +2665,12 @@ def resolve_device_name_avahi(pIP):
 def resolve_device_name_dig(pIP):
     # DNS Server Fallback
     try:
-        temp = NETWORK_DNS_SERVER
+        dnsserver = str(NETWORK_DNS_SERVER)
     except NameError:
-        NETWORK_DNS_SERVER = "localhost"
+        dnsserver = "localhost"
 
     try: 
-        dig_args = ['dig', '+short', '-x', pIP, '@'+NETWORK_DNS_SERVER]
+        dig_args = ['dig', '+short', '-x', pIP, '@'+dnsserver]
         newName = subprocess.check_output (dig_args, universal_newlines=True, timeout=5)
         if ";; communications error to" in newName:
             newName = ""
@@ -2332,14 +2704,13 @@ def resolve_device_name(pMAC, pIP):
         return -2
         
     # Eliminate local domain
-    if newName.endswith('.') :
-        newName = newName[:-1]
-    if newName.endswith('.lan') :
-        newName = newName[:-4]
-    if newName.endswith('.local') :
-        newName = newName[:-6]
-    if newName.endswith('.home') :
-        newName = newName[:-5]
+    suffixes = ['.', '.lan', '.local', '.home']
+
+    for suffix in suffixes:
+        if newName.endswith(suffix):
+            newName = newName[:-len(suffix)]
+            break
+
     return newName
 
 #-------------------------------------------------------------------------------
@@ -2486,7 +2857,6 @@ def rogue_dhcp_detection():
     # Flush Table
     sql.execute("DELETE FROM Nmap_DHCP_Server")
     sql_connection.commit()
-
     closeDB()
 
     # Execute 15 probes and insert in list
@@ -2494,9 +2864,8 @@ def rogue_dhcp_detection():
     dhcp_server_list = []
     dhcp_server_list.append(strftime("%Y-%m-%d %H:%M:%S"))
     for _ in range(dhcp_probes):
-        stream = os.popen('nmap --script broadcast-dhcp-discover 2>/dev/null | grep "Server Identifier" | awk \'{ print $4 }\'')
+        stream = os.popen('sudo nmap --script broadcast-dhcp-discover 2>/dev/null | grep "Server Identifier" | awk \'{ print $4 }\'')
         output = stream.read()
-        # dhcp_server_list.append(output.replace("\n", ""))
 
         multiple_dhcp_ips = output.split("\n")
 
@@ -2537,9 +2906,11 @@ def rogue_dhcp_notification():
     if len(rows) == 1:
         print('    No DHCP Server detected.')
 
+    valid_dhcp_server_list = [DHCP_SERVER_ADDRESS] if not type(DHCP_SERVER_ADDRESS) is list else DHCP_SERVER_ADDRESS
+
     if len(rows) == 2:
         if validate_dhcp_address(rows[1][0]):
-            if rows[1][0] == DHCP_SERVER_ADDRESS :
+            if rows[1][0] in valid_dhcp_server_list :
                 print('    One DHCP Server detected......: ' + rows[1][0] + ' (valid)')
             else:
                 print('    One DHCP Server detected......: ' + rows[1][0] + ' (invalid)')
@@ -2551,7 +2922,7 @@ def rogue_dhcp_notification():
         print('    Multiple DHCP Servers detected:')
         for i in range(1,len(rows),1):
             if validate_dhcp_address(rows[i][0]):
-                if rows[i][0] == DHCP_SERVER_ADDRESS :
+                if rows[i][0] in valid_dhcp_server_list :
                     print('        ' + rows[i][0] + ' (valid)' )
                 else:
                     print('        ' + rows[i][0] + ' (rogue)' )
@@ -2617,16 +2988,17 @@ def set_services_current_scan(_cur_URL, _cur_DateTime, _cur_StatusCode, _cur_Lat
     sql.execute("SELECT * FROM Services WHERE mon_URL = ?", [_cur_URL])
     rows = sql.fetchall()
     for row in rows:
-        _mon_AlertEvents = row[6]
-        _mon_AlertDown = row[7]
-        _mon_StatusCode = row[2]
-        _mon_Latency = row[3]
-        _mon_TargetIP = row[8]
-        _mon_ssl_subject = row[10] # FC value 8
-        _mon_ssl_issuer = row[11] # FC value 4
-        _mon_ssl_valid_from = row[12] # FC value 2
-        _mon_ssl_valid_to = row[13] # FC value 1
-        _mon_ssl_fc = row[14] # FC value between 0 and 15
+        _mon_AlertEvents     = row["mon_AlertEvents"]
+        _mon_AlertDown       = row["mon_AlertDown"]
+        _mon_AlertUp         = row["mon_AlertUp"]
+        _mon_StatusCode      = row["mon_LastStatus"]
+        _mon_Latency         = row["mon_LastLatency"]
+        _mon_TargetIP        = row["mon_TargetIP"]
+        _mon_ssl_subject     = row["mon_ssl_subject"]
+        _mon_ssl_issuer      = row["mon_ssl_issuer"]
+        _mon_ssl_valid_from  = row["mon_ssl_valid_from"]
+        _mon_ssl_valid_to    = row["mon_ssl_valid_to"]
+        _mon_ssl_fc          = row["mon_ssl_fc"]
 
     # SSL Info change - Calc FC
     if len(_cur_ssl_info) == 4:
@@ -2671,10 +3043,10 @@ def set_services_current_scan(_cur_URL, _cur_DateTime, _cur_StatusCode, _cur_Lat
     StatusChanged = 1 if _cur_StatusChanged > 0 else 0
 
     sqlite_insert = """INSERT INTO Services_CurrentScan
-                     (cur_URL, cur_DateTime, cur_StatusCode, cur_Latency, cur_AlertEvents, cur_AlertDown, cur_StatusChanged, cur_LatencyChanged, cur_TargetIP, cur_StatusCode_prev, cur_TargetIP_prev, cur_ssl_subject, cur_ssl_issuer, cur_ssl_valid_from, cur_ssl_valid_to, cur_ssl_fc) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+                     (cur_URL, cur_DateTime, cur_StatusCode, cur_Latency, cur_AlertEvents, cur_AlertDown, cur_AlertUp, cur_StatusChanged, cur_LatencyChanged, cur_TargetIP, cur_StatusCode_prev, cur_TargetIP_prev, cur_ssl_subject, cur_ssl_issuer, cur_ssl_valid_from, cur_ssl_valid_to, cur_ssl_fc) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-    table_data = (_cur_URL, _cur_DateTime, _cur_StatusCode, _cur_Latency, _mon_AlertEvents, _mon_AlertDown, StatusChanged, _cur_LatencyChanged, _cur_TargetIP, _mon_StatusCode, _mon_TargetIP, _cur_ssl_subject, _cur_ssl_issuer, _cur_ssl_valid_from, _cur_ssl_valid_to, _cur_ssl_fc)
+    table_data = (_cur_URL, _cur_DateTime, _cur_StatusCode, _cur_Latency, _mon_AlertEvents, _mon_AlertDown, _mon_AlertUp, StatusChanged, _cur_LatencyChanged, _cur_TargetIP, _mon_StatusCode, _mon_TargetIP, _cur_ssl_subject, _cur_ssl_issuer, _cur_ssl_valid_from, _cur_ssl_valid_to, _cur_ssl_fc)
     sql.execute(sqlite_insert, table_data)
     sql_connection.commit()
 
@@ -2794,14 +3166,17 @@ def flush_services_current_scan():
 def print_service_monitoring_changes():
 
     print("    Services Monitoring Changes...")
-    changedStatusCode = sql.execute("SELECT COUNT() FROM Services_CurrentScan WHERE cur_StatusChanged = 1").fetchone()[0]
-    print("        Changed StatusCodes.....:", str(changedStatusCode))
-    changedLatency = sql.execute("SELECT COUNT() FROM Services_CurrentScan WHERE cur_LatencyChanged = 1").fetchone()[0]
-    print("        Changed Reachability....:", str(changedLatency))
+    changedStatusCode = sql.execute("SELECT COUNT() FROM Services_CurrentScan WHERE cur_StatusChanged = 1 AND cur_Latency != 99999999").fetchone()[0]
+    print("        StatusCodes...:", str(changedStatusCode))
+    changeddown = sql.execute("SELECT COUNT() FROM Services_CurrentScan WHERE cur_LatencyChanged = 1").fetchone()[0]
+    print("        Down..........:", str(changeddown))
+    changedup = sql.execute("SELECT COUNT() FROM Services_CurrentScan WHERE cur_StatusChanged = 1 AND cur_StatusCode_prev = 0 AND cur_StatusCode = 200").fetchone()[0]
+    print("        Up............:", str(changedup))
     with open(PIALERT_WEBSERVICES_LOG, 'a') as monitor_logfile:
         monitor_logfile.write("\nServices Monitoring Changes:\n")
-        monitor_logfile.write("    Changed StatusCodes.....: " + str(changedStatusCode))
-        monitor_logfile.write("\n    Changed Reachability....: " + str(changedLatency))
+        monitor_logfile.write("    StatusCodes...: " + str(changedStatusCode))
+        monitor_logfile.write("\n    Down..........: " + str(changeddown))
+        monitor_logfile.write("\n    Up............: " + str(changedup))
         monitor_logfile.write("\n")
         monitor_logfile.close()
 
@@ -2835,7 +3210,7 @@ def service_monitoring_notification():
     html_line_template = '<tr bgcolor=#909090 style="color:#F0F0F0;"><td colspan="2" style="width:50%; font-size:1.2em;"><b>URL:</b> {} </td><td colspan="2" style="width:50%; font-size:1.2em;"><b>Tag:</b> {} </td></tr>\n'+ \
                          '<tr><td colspan="2" style="width:50%"><b>ScanTime:</b> {} </td><td style="width:25%"><b>IP:</b>  {} </td><td style="width:25%"><b>prev. IP:</b> {} </td></tr>\n'
 
-    sql.execute ("""SELECT Services_CurrentScan.*, Services.mon_tags
+    sql.execute ("""SELECT Services_CurrentScan.*, Services.mon_Tags
                     FROM Services_CurrentScan
                     JOIN Services ON Services_CurrentScan.cur_URL = Services.mon_URL
                     WHERE Services_CurrentScan.cur_AlertDown = 1 
@@ -2855,15 +3230,49 @@ def service_monitoring_notification():
         mail_section_services_down = True
         mail_text_services_down += text_line_template.format (
             'Service: ', eventAlert['cur_URL'],
-            'Tag: ', eventAlert['mon_tags'], 
+            'Tag: ', eventAlert['mon_Tags'], 
             'Time: ', eventAlert['cur_DateTime'], 
             'Destination IP: ', _func_cur_TargetIP,
             'prev. Destination IP: ', _func_cur_TargetIP_prev)
         mail_html_services_down += html_line_template.format (
-            eventAlert['cur_URL'], eventAlert['mon_tags'], eventAlert['cur_DateTime'], _func_cur_TargetIP, _func_cur_TargetIP_prev)
+            eventAlert['cur_URL'], eventAlert['mon_Tags'], eventAlert['cur_DateTime'], _func_cur_TargetIP, _func_cur_TargetIP_prev)
 
     format_report_section_services (mail_section_services_down, 'SECTION_DEVICES_DOWN',
         'TABLE_DEVICES_DOWN', mail_text_services_down, mail_html_services_down)
+
+
+    # # Compose Devices Up Section
+    mail_section_services_up = False
+    mail_text_services_up = ''
+    mail_html_services_up = ''
+    text_line_template = '{}{}\n\t{}\t\t\t{}\n\t{}\t\t\t{}\n\t{}\t{}\n\n'
+    html_line_template = '<tr bgcolor=#909090 style="color:#F0F0F0;"><td colspan="2" style="width:50%; font-size:1.2em;"><b>URL:</b> {} </td><td colspan="2" style="width:50%; font-size:1.2em;"><b>Tag:</b> {} </td></tr>\n'+ \
+                         '<tr><td colspan="2" style="width:50%"><b>ScanTime:</b> {} </td><td style="width:25%"><b>IP:</b>  {} </td></tr>\n'
+
+    sql.execute ("""SELECT Services_CurrentScan.*, Services.mon_Tags
+                    FROM Services_CurrentScan
+                    JOIN Services ON Services_CurrentScan.cur_URL = Services.mon_URL
+                    WHERE Services_CurrentScan.cur_AlertUp = 1 
+                    AND Services_CurrentScan.cur_StatusChanged = 1
+                    AND Services_CurrentScan.cur_StatusCode = 200
+                    AND Services_CurrentScan.cur_StatusCode_prev = 0
+                    ORDER BY Services_CurrentScan.cur_DateTime""")
+
+    for eventAlert in sql :
+        mail_section_services_up = True
+        mail_text_services_up += text_line_template.format (
+            'Service: ', eventAlert['cur_URL'],
+            'Tag: ', eventAlert['mon_Tags'], 
+            'Time: ', eventAlert['cur_DateTime'], 
+            'Destination IP: ', eventAlert['cur_TargetIP'])
+        mail_html_services_up += html_line_template.format (
+            eventAlert['cur_URL'], eventAlert['mon_Tags'], eventAlert['cur_DateTime'], eventAlert['cur_TargetIP'])
+
+        print(mail_text_services_up)
+
+    format_report_section_services (mail_section_services_up, 'SECTION_DEVICES_UP',
+        'TABLE_DEVICES_UP', mail_text_services_up, mail_html_services_up)
+
 
     # Compose Events Section (includes Down as an Event)
     mail_section_events = False
@@ -2874,7 +3283,7 @@ def service_monitoring_notification():
                          '<tr><td style="width:25%"><b>ScanTime:</b> {} </td>  <td style="width:25%"><b>IP:</b> {} </td>          <td style="width:25%"><b>prev. IP:</b> {} </td>          <td style="width:25%"><b>Latency:</b> {} </td>    <tr>\n'+ \
                          '<tr><td style="width:25%">&nbsp;</td>                <td style="width:25%"><b>StatusCode:</b> {} </td>  <td style="width:25%"><b>prev. StatusCode:</b> {} </td>  <td style="width:25%"><b>SSL Code:</b> {} </td>  </tr>\n'
 
-    sql.execute ("""SELECT Services_CurrentScan.*, Services.mon_tags
+    sql.execute ("""SELECT Services_CurrentScan.*, Services.mon_Tags
                     FROM Services_CurrentScan
                     JOIN Services ON Services_CurrentScan.cur_URL = Services.mon_URL
                     WHERE Services_CurrentScan.cur_AlertEvents = 1 
@@ -2894,7 +3303,7 @@ def service_monitoring_notification():
         mail_section_events = True
         mail_text_events += text_line_template.format (
             'Service: ', eventAlert['cur_URL'],
-            'Tag: ', eventAlert['mon_tags'],
+            'Tag: ', eventAlert['mon_Tags'],
             'Time: ', eventAlert['cur_DateTime'],
             'Destination IP: ', _func_cur_TargetIP,
             'prev. Destination IP: ', _func_cur_TargetIP_prev,
@@ -2902,7 +3311,7 @@ def service_monitoring_notification():
             'prev. HTTP Status Code: ', eventAlert['cur_StatusCode_prev'],
             'SSL Status: ', eventAlert['cur_ssl_fc'])
         mail_html_events += html_line_template.format (
-            eventAlert['cur_URL'], eventAlert['mon_tags'], 
+            eventAlert['cur_URL'], eventAlert['mon_Tags'], 
             eventAlert['cur_DateTime'], _func_cur_TargetIP, _func_cur_TargetIP_prev, eventAlert['cur_Latency'], 
             eventAlert['cur_StatusCode'], eventAlert['cur_StatusCode_prev'], eventAlert['cur_ssl_fc'])
 
@@ -2910,7 +3319,7 @@ def service_monitoring_notification():
         'TABLE_EVENTS', mail_text_events, mail_html_events)
 
     # # Send Mail
-    if mail_section_services_down == True or mail_section_events == True :
+    if mail_section_services_down == True or mail_section_events == True or mail_section_services_up == True:
         sending_notifications ('webservice', mail_html_webservice, mail_text_webservice)
     else :
         print('    No changes to report...')
@@ -2937,6 +3346,7 @@ def service_monitoring():
     
     print("    Get Services List...")
     sites = get_services_list()
+    print_log('\n' + '\n'.join(sites))
 
     print("    Flush previous scan results...")
     flush_services_current_scan()
@@ -2962,28 +3372,28 @@ def service_monitoring():
             status, latency = check_services_health(site)
             site_retry = ''
             if latency == "99999999":
-                # 2nd Retry if the first attempt fails
+                # 2. Versuch bei Fehler im ersten Durchlauf
                 status, latency = check_services_health(site)
                 site_retry = '*'
                 if latency == "99999999":
-                    # 3rd Retry if the second attempt fails
+                    # 3. Versuch bei Fehler im zweiten Durchlauf
                     status, latency = check_services_health(site)
                     site_retry = '**'
 
-            #Get IP from Domain
+            # Hole IP aus der Domain
             if latency != "99999999":
                 redirect_state = check_services_redirect(site)
                 domain = urlparse(site).netloc
                 domain = domain.split(":")[0]
                 domain_ip = socket.gethostbyname(domain)
-                # get SSL info
+                # Hole SSL-Informationen
                 ssl_info = get_ssl_cert_info(site)
             else:
                 domain_ip = ""
                 redirect_state = ""
                 ssl_info = ""
 
-            # Saving the results in lists/dictionaries
+            # Speicherung der Ergebnisse in Listen/Dictionaries
             results_log.append((site + ' ' + site_retry, status, latency))
             scan_data.append((site, scantime, status, latency, domain_ip, ssl_info))
             event_data.append((site, scantime, status, latency, domain_ip, ""))
@@ -3039,12 +3449,9 @@ def icmp_monitoring():
 
     closeDB()
     scantime = startTime.strftime("%Y-%m-%d %H:%M")
-
     icmp_scan_results = {}
-
     icmphosts_all = len(icmphosts)
-    icmphosts_online = 0
-    icmphosts_offline = 0
+    print_log('\n' + '\n'.join(icmphosts))
 
     try:
         ping_retries = ICMP_ONLINE_TEST
@@ -3057,18 +3464,14 @@ def icmp_monitoring():
         while icmphosts_index < icmphosts_all:
             host_ip = icmphosts[icmphosts_index]
             for i in range(ping_retries):
-                # print("Host %s retry %s" % (host_ip, str(i+1)))
                 icmp_status = ping(host_ip)
                 if icmp_status == "1":
                     break;
 
             if icmp_status == "1":
                 icmp_rtt = ping_avg(host_ip)
-                # print("Host %s RTT %s" % (host_ip, str(icmp_rtt)))
-                icmphosts_online+=1
             else:
                 icmp_rtt = "99999"
-                icmphosts_offline+=1
 
             current_data = {
                 "host_ip": host_ip,
@@ -3082,15 +3485,20 @@ def icmp_monitoring():
 
             icmphosts_index += 1
 
-        print("        Online Host(s)  : " + str(icmphosts_online))
-        print("        Offline Host(s) : " + str(icmphosts_offline))
-
         openDB()
         # Save Scan Results
         icmp_save_scandata(icmp_scan_results)
 
+        update_icmp_validation()
+        online, offline = get_online_offline_hosts()
+        print("        Online Host(s)  : " + str(online))
+        print("        Offline Host(s) : " + str(offline))
+
+        print("    Create Events...")
+        icmp_create_events()
+
         print("    Calculate Activity History...")
-        calc_activity_history_icmp(icmphosts_online, icmphosts_offline)
+        calc_activity_history_icmp(online, offline)
 
         sql_connection.commit()
         closeDB()
@@ -3099,15 +3507,127 @@ def icmp_monitoring():
         # openDB()
         print("    No Hosts(s) to monitor!")
 
+
+#-------------------------------------------------------------------------------
+def get_online_offline_hosts():
+    sql.execute("""
+        SELECT COUNT(*) 
+        FROM ICMP_Mon_CurrentScan 
+        WHERE cur_Present = 1
+    """)
+    icmphosts_online = sql.fetchone()[0]
+
+    sql.execute("""
+        SELECT COUNT(*) 
+        FROM ICMP_Mon_CurrentScan 
+        WHERE cur_Present = 0
+    """)
+    icmphosts_offline = sql.fetchone()[0]
+
+    return icmphosts_online, icmphosts_offline
+
+#-------------------------------------------------------------------------------
+def update_icmp_validation():
+    print('    Update ICMP Validation...')
+    # 1. Set dev_Scan_Validation_State to 0 for devices that are in Present in CurrentScan and have dev_Scan_Validation > 0
+    sql.execute("""
+        UPDATE ICMP_Mon
+        SET icmp_Scan_Validation_State = 0
+        WHERE icmp_Scan_Validation > 0
+        AND icmp_ip IN (
+            SELECT cur_ip FROM ICMP_Mon_CurrentScan WHERE cur_Present = 1
+        );
+    """)
+    # 2. Find devices in CurrentScan that have activated Scan_Validation and are not currently active
+    sql.execute("""
+        SELECT cur_ip 
+        FROM ICMP_Mon_CurrentScan 
+        WHERE cur_Present = 0 
+        AND cur_ip IN (
+            SELECT icmp_ip 
+            FROM ICMP_Mon 
+            WHERE icmp_Scan_Validation > 0 
+            AND icmp_Scan_Validation_State < icmp_Scan_Validation
+        )
+    """)
+    host_ips = [(row[0],) for row in sql.fetchall()]
+    print_log(f"Scan Validation: \n{host_ips}")
+    # 3. Set the relevant devices as online
+    sql.executemany("""
+        UPDATE ICMP_Mon_CurrentScan 
+        SET cur_Present = 1, cur_PresentChanged = 0, cur_avgrrt = 999
+        WHERE cur_ip = ?
+    """, host_ips)
+    # 4. increase dev_Scan_Validation_State by 1 for the devices saved in point 2
+    sql.executemany("""
+        UPDATE ICMP_Mon
+        SET icmp_Scan_Validation_State = icmp_Scan_Validation_State + 1,
+            icmp_PresentLastScan = 1,
+            icmp_avgrtt = 999
+        WHERE icmp_Scan_Validation > 0 AND icmp_ip = ?
+    """, host_ips)
+
+    sql_connection.commit()
+
 # -----------------------------------------------------------------------------
 def icmp_save_scandata(data):
     print("    Save scan results...")
     for host_ip, scan_data in data.items():
-        #print(f"Host IP: {host_ip}")
-        #print(f"ICMP Status: {scan_data['icmp_status']}")
         set_icmphost_events(host_ip, scan_data['scantime'], scan_data['icmp_status'], scan_data['icmp_rtt'])
         set_icmphost_current_scan(host_ip, scan_data['scantime'], scan_data['icmp_status'], scan_data['icmp_rtt'])
         set_icmphost_update(host_ip, scan_data['scantime'], scan_data['icmp_status'], scan_data['icmp_rtt'])
+
+# -----------------------------------------------------------------------------
+def icmp_create_events():
+    # Check new connections
+    print_log ('Events - New Connections')
+    sql.execute ("""INSERT INTO ICMP_Mon_Connections (icmpeve_ip, icmpeve_DateTime, icmpeve_Present, icmpeve_EventType)
+                        SELECT 
+                            cur.cur_ip AS icmpeve_ip,
+                            cur.cur_LastScan AS icmpeve_DateTime,
+                            cur.cur_Present AS icmpeve_Present,
+                            'Connected' AS icmpeve_EventType
+                        FROM 
+                            ICMP_Mon_CurrentScan cur
+                        WHERE 
+                            cur.cur_Present = 1
+                            AND cur.cur_PresentChanged = 1;""")
+
+    print_log ('Events - Disconnections')
+    sql.execute ("""INSERT INTO ICMP_Mon_Connections (icmpeve_ip, icmpeve_DateTime, icmpeve_Present, icmpeve_EventType)
+                        SELECT 
+                            cur.cur_ip AS icmpeve_ip,
+                            cur.cur_LastScan AS icmpeve_DateTime,
+                            cur.cur_Present AS icmpeve_Present,
+                            'Disconnected' AS icmpeve_EventType
+                        FROM 
+                            ICMP_Mon_CurrentScan cur
+                        JOIN 
+                            ICMP_Mon mon
+                        ON 
+                            cur.cur_ip = mon.icmp_ip
+                        WHERE 
+                            cur.cur_Present = 0
+                            AND cur.cur_PresentChanged = 1
+                            AND mon.icmp_AlertDown = 0;""")
+
+    print_log ('Events - Down')
+    sql.execute ("""INSERT INTO ICMP_Mon_Connections (icmpeve_ip, icmpeve_DateTime, icmpeve_Present, icmpeve_EventType)
+                        SELECT 
+                            cur.cur_ip AS icmpeve_ip,
+                            cur.cur_LastScan AS icmpeve_DateTime,
+                            cur.cur_Present AS icmpeve_Present,
+                            'Down' AS icmpeve_EventType
+                        FROM 
+                            ICMP_Mon_CurrentScan cur
+                        JOIN 
+                            ICMP_Mon mon
+                        ON 
+                            cur.cur_ip = mon.icmp_ip
+                        WHERE 
+                            cur.cur_Present = 0
+                            AND cur.cur_PresentChanged = 1
+                            AND mon.icmp_AlertDown = 1;""")
 
 # -----------------------------------------------------------------------------
 def get_icmphost_list():
@@ -3541,9 +4061,6 @@ def email_reporting():
         '  <td> <a href="{}{}"> {} </a>  </td><td> {} </td>'+ \
         '  <td> {} </td><td> {} </td><td> {} </td></tr>\n'
 
-    # Issue #370
-    # AND eve_DateTime < datetime('now', '-{DELAY} minutes') for devices where dev_alarm_delay is true
-
     sql.execute ("""SELECT * FROM Events_Devices
                     WHERE eve_PendingAlertEmail = 1
                       AND eve_EventType = 'Device Down'
@@ -3634,19 +4151,6 @@ def email_reporting():
                 """, (datetime.datetime.now(),))
     sql.execute("""UPDATE Events SET eve_PendingAlertEmail = 0
                    WHERE eve_PendingAlertEmail = 1""")
-
-    # Issue #370
-    # Clean Pending Alert Events
-    # sql.execute("""UPDATE Devices SET dev_LastNotification = ?
-    #                WHERE dev_MAC IN (SELECT eve_MAC FROM Events
-    #                   WHERE eve_PendingAlertEmail = 1 AND eve_EventType =='Device Down' 
-    #                 AND eve_DateTime < datetime('now', '-{DELAY} minutes')
-    #         """, (datetime.datetime.now(),))
-    # sql.execute ("""UPDATE Events SET eve_PendingAlertEmail = 0
-    #                 WHERE eve_PendingAlertEmail = 1 
-    #                 AND eve_EventType =='Device Down' 
-    #                 AND eve_DateTime < datetime('now', '-{DELAY} minutes')
-    #         """)
 
     # Set Notification Presets
     sql.execute("""UPDATE Devices SET dev_AlertEvents = ?, dev_AlertDeviceDown = ?
@@ -3747,7 +4251,7 @@ def send_ntfy (_Text):
     if NTFY_CLICKABLE == True:
         headers["Click"] = REPORT_DASHBOARD_URL
     # if username and password are set generate hash and update header
-    if NTFY_USER != "" and NTFY_PASSWORD != "":
+    if NTFY_PASSWORD != "":
     # Generate hash for basic auth
         usernamepassword = "{}:{}".format(NTFY_USER,NTFY_PASSWORD)
         basichash = b64encode(bytes(NTFY_USER + ':' + NTFY_PASSWORD, "utf-8")).decode("ascii")
@@ -3880,11 +4384,11 @@ def sending_notifications (_type, _html_text, _txt_text):
             send_webgui (_txt_text)
         else :
             print('    Skip WebUI...')
-        if REPORT_MQTT_WEBMON :
-            print('    Sending report by MQTT...')
+        if REPORT_MQTT_WEBMON:
+            print("    Sending report by MQTT...")
             send_mqtt(_txt_text)
-        else :
-            print('    Skip MQTT...')
+        else:
+            print("    Skip MQTT...")
     elif _type in ['pialert', 'icmp_mon', 'rogue_dhcp']:
         if REPORT_MAIL :
             print('    Sending report by email...')
@@ -3916,11 +4420,12 @@ def sending_notifications (_type, _html_text, _txt_text):
             send_webgui (_txt_text)
         else :
             print('    Skip WebUI...')
-        if REPORT_MQTT :
-            print('    Sending report by MQTT...')
+        if REPORT_MQTT:
+            print("    Sending report by MQTT...")
             send_mqtt(_txt_text)
-        else :
-            print('    Skip MQTT...')
+        else:
+            print("    Skip MQTT...")
+
 #-------------------------------------------------------------------------------
 def format_report_section (pActive, pSection, pTable, pText, pHTML):
     global mail_text

@@ -1,0 +1,18 @@
+
+Pi.Alert v2025-02-06
+---------------------------------------------------------
+Executing user: pi
+Timestamp: 2025-02-24 03:00:00
+
+Updating vendors DB...
+
+Searching devices vendor
+    Devices Ignored:   0
+    Vendors Not Found: 0
+    Vendors updated:   0
+
+Try build in mac-vendor-lookup update
+
+Fallback
+    Backup old mac-vendors.txt for mac-vendor-lookup
+    Create mac-vendors.txt for mac-vendor-lookup

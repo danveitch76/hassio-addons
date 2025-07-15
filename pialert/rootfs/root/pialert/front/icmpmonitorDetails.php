@@ -1,12 +1,3 @@
-<!-- ---------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  icmpmonitorDetails.php - Front module. Service management page
-#-------------------------------------------------------------------------------
-#  leiweibau 2024                                          GNU GPLv3
-#--------------------------------------------------------------------------- -->
-
 <?php
 session_start();
 
@@ -42,52 +33,26 @@ function get_hostip_details($hostip) {
 }
 
 // -----------------------------------------------------------------------------------
-# Set Filter of fallback to default
-$icmpfilter = $_REQUEST['icmpfilter'];
-if (!isset($icmpfilter)) {$icmpfilter = 'all';}
-
 function get_icmphost_events_table($icmp_ip, $icmpfilter) {
 	global $db;
-
-	if ($icmpfilter == 'all') {
-		$filter_sql = "";
-	} elseif ($icmpfilter == 'Online') {
-		$filter_sql = 'AND icmpeve_Present=1';
-	} elseif ($icmpfilter == 'Offline') {
-		$filter_sql = 'AND icmpeve_Present=0';
-	}
-	//$icmp_res = $db->query('SELECT rowid,* FROM ICMP_Mon WHERE icmp_ip="' . $icmp_ip . '"');
 	
 	$icmp_res = $db->query('SELECT rowid,* FROM ICMP_Mon WHERE icmp_ip="' . $icmp_ip . '"');
 	while ($rowa = $icmp_res->fetchArray(SQLITE3_ASSOC)) {
 		$icmp_hostname = $rowa['icmp_hostname'];
 	}
 
-	$icmpeve_res = $db->query('SELECT * FROM ICMP_Mon_Events WHERE icmpeve_ip="' . $icmp_ip . '"' . $filter_sql . ' ORDER BY rowid DESC LIMIT 2000');
+	$icmpeve_res = $db->query('SELECT * FROM ICMP_Mon_Connections WHERE icmpeve_ip="' . $icmp_ip . '" ORDER BY rowid DESC LIMIT 2000');
 	while ($row = $icmpeve_res->fetchArray()) {
 		if ($icmp_hostname != "" && strlen($icmp_hostname) > 0) {$icmpeve_ip = $icmp_hostname;} else { $icmpeve_ip = $row['icmpeve_ip'];}
 		echo '<tr>
               <td>' . $icmpeve_ip . '</td>
               <td>' . $row['icmpeve_DateTime'] . '</td>
-              <td>' . $row['icmpeve_Present'] . '</td>
-              <td>' . $row['icmpeve_avgrtt'] . '</td>
+              <td>' . $row['icmpeve_EventType'] . '</td>
           </tr>';
 	}
 }
 
 // -----------------------------------------------------------------------------------
-function set_table_headline($icmpfilter) {
-	global $pia_lang;
-
-	if ($icmpfilter == 'all') {
-		echo '<h3 class="text-aqua" style="display: inline-block;font-size: 18px; margin: 0; line-height: 1; margin-bottom: 15px;">' . $pia_lang['WEBS_EVE_Shortcut_All'] . '</h3>';
-	} elseif ($icmpfilter == 'Online') {
-		echo '<h3 class="text-green" style="display: inline-block;font-size: 18px; margin: 0; line-height: 1; margin-bottom: 15px;">' . $pia_lang['ICMPMonitor_Shortcut_Online'] . '</h3>';
-	} elseif ($icmpfilter == 'Offline') {
-		echo '<h3 class="text-red" style="display: inline-block;font-size: 18px; margin: 0; line-height: 1; margin-bottom: 15px;">' . $pia_lang['ICMPMonitor_Shortcut_Offline'] . '</h3>';
-	}
-}
-
 $icmpmonitorDetails = get_hostip_details($hostip);
 
 if ($icmpmonitorDetails['icmp_PresentLastScan'] == 1) {
@@ -257,21 +222,10 @@ function get_host_statistic($hostip) {
         </div>
 
         <div class="col-lg-3 col-sm-6 col-xs-6">
-          <a href="./icmpmonitorDetails.php?hostip=<?=$hostip?>&icmpfilter=all">
-            <div class="small-box bg-aqua">
-              <div class="inner"> <h3 id="eventsAll"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['WEBS_EVE_Shortcut_All'];?></p>
-              </div>
-              <div class="icon"> <i class="fa fa-bolt text-aqua-40"></i> </div>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-lg-3 col-sm-6 col-xs-6">
-          <a href="./icmpmonitorDetails.php?hostip=<?=$hostip?>&icmpfilter=Online">
-            <div class="small-box bg-green">
-              <div class="inner"> <h3 id="eventsOnline"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['ICMPMonitor_Shortcut_Online'];?></p>
+          <a href="#">
+            <div class="small-box bg-yellow">
+              <div class="inner"> <h3 id="eventspresence"> -- </h3>
+                <p class="infobox_label"><?=$pia_lang['DevDetail_Shortcut_curPresence'];?></p>
               </div>
               <div class="icon"> <i class="bi bi-check2-square text-green-40"></i> </div>
             </div>
@@ -279,12 +233,12 @@ function get_host_statistic($hostip) {
         </div>
 
         <div class="col-lg-3 col-sm-6 col-xs-6">
-          <a href="./icmpmonitorDetails.php?hostip=<?=$hostip?>&icmpfilter=Offline">
+          <a href="#">
             <div  class="small-box bg-red">
-              <div class="inner"> <h3 id="eventsOffline"> -- </h3>
-                <p class="infobox_label"><?=$pia_lang['ICMPMonitor_Shortcut_Offline'];?></p>
+              <div class="inner"> <h3 id="eventsdown"> -- </h3>
+                <p class="infobox_label"><?=$pia_lang['DevDetail_Shortcut_DownAlerts'];?></p>
               </div>
-              <div class="icon"> <i class="bi bi-sign-turn-right text-red-40"></i> </div>
+              <div class="icon"> <i class="mdi mdi-lan-disconnect text-red-40"></i> </div>
             </div>
           </a>
         </div>
@@ -367,6 +321,24 @@ function get_host_statistic($hostip) {
                         </div>
                       </div>
 
+                      <!-- Vendor -->
+                      <div class="form-group">
+                        <label class="col-sm-3 control-label"><?=$pia_lang['DevDetail_MainInfo_Vendor'];?></label>
+                        <div class="col-sm-7"><input class="form-control" id="txtVendor" type="text" value="<?=$icmpmonitorDetails['icmp_vendor']?>"></div>
+                      </div>
+
+                      <!-- Model -->
+                      <div class="form-group">
+                        <label class="col-sm-3 control-label"><?=$pia_lang['DevDetail_MainInfo_Model'];?></label>
+                        <div class="col-sm-7"><input class="form-control" id="txtModel" type="text" value="<?=$icmpmonitorDetails['icmp_model']?>"></div>
+                      </div>
+
+                      <!-- Serialnumber -->
+                      <div class="form-group">
+                        <label class="col-sm-3 control-label"><?=$pia_lang['DevDetail_MainInfo_Serialnumber'];?></label>
+                        <div class="col-sm-7"><input class="form-control" id="txtSerialnumber" type="text" value="<?=$icmpmonitorDetails['icmp_serial']?>"></div>
+                      </div>
+
                       <!-- Group -->
                       <div class="form-group">
                         <label class="col-sm-3 control-label"><?=$pia_lang['DevDetail_MainInfo_Group'];?></label>
@@ -441,6 +413,12 @@ function get_host_statistic($hostip) {
                         <div class="col-sm-8">
                           <input class="form-control" id="txtavgrtt" type="text" readonly value="<?=$icmpmonitorDetails['icmp_avgrtt']?>">
                         </div>
+                      </div>
+
+                      <!-- Scan Validation -->
+                      <div class="form-group">
+                        <label class="col-sm-4 control-label"><?=$pia_lang['DevDetail_EveandAl_ScanValid'];?></label>
+                        <div class="col-sm-8"><input class="form-control" id="txtScanValidation" type="text" value="<?=$icmpmonitorDetails['icmp_Scan_Validation']?>"></div>
                       </div>
 
                       <div class="form-group">
@@ -522,19 +500,16 @@ function get_host_statistic($hostip) {
 
 <!-- Events ------------------------------------------------------------ -->
               <div class="tab-pane fade table-responsive" id="panEvents">
-<?php
-# Create Event table headline
-set_table_headline($icmpfilter);
-?>
+
                 <!-- Datatable Events -->
+                <h3 class="text-aqua" style="display: inline-block;font-size: 18px; margin: 0; line-height: 1; margin-bottom: 15px;"><?=$pia_lang['WEBS_EVE_Shortcut_All']?></h3>
                 <table id="tableEvents" class="table table-bordered table-hover table-striped ">
                   <thead>
                     <tr>
                       <!-- <th>Service URL</th> -->
                       <th><?=$pia_lang['WEBS_tablehead_TargetIP'];?></th>
                       <th><?=$pia_lang['WEBS_tablehead_ScanTime'];?></th>
-                      <th><?=$pia_lang['WEBS_tablehead_Response_Time'];?></th>
-                      <th><?=$pia_lang['Device_TableHead_Status'];?></th>
+                      <th>Event Type</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -742,9 +717,8 @@ function getEventsTotalsforICMPHost() {
   $.get('php/server/icmpmonitor.php?action=getEventsTotalsforICMP&hostip=<?=$icmpmonitorDetails['icmp_ip']?>', function(data) {
     var totalsEvents = JSON.parse(data);
 
-    $('#eventsAll').html      (totalsEvents[0].toLocaleString());
-    $('#eventsOnline').html   (totalsEvents[1].toLocaleString());
-    $('#eventsOffline').html  (totalsEvents[2].toLocaleString());
+    $('#eventspresence').html   (totalsEvents[0].toLocaleString() + ' h.');
+    $('#eventsdown').html       (totalsEvents[1].toLocaleString());
   });
     // Timer for refresh data
     //newTimerRefreshData(getEventsTotals);
@@ -765,26 +739,17 @@ function initializeDatatable () {
     'columns': [
         { "data": 0 },
         { "data": 1 },
-        { "data": 3 },
         { "data": 2 }
       ],
 
     'columnDefs'  : [
-      {className: 'text-center', targets: [1,2,3] },
+      {className: 'text-left', targets: [1,2] },
       {targets: [2],
         'createdCell': function (td, cellData, rowData, row, col) {
           if (cellData == 99999){
             $(td).html ('TimeOut');
           } else {
-            $(td).html (cellData + ' ms');
-          }
-      } },
-      {targets: [3],
-        'createdCell': function (td, cellData, rowData, row, col) {
-          if (cellData == 1){
-            $(td).html ('<span class="badge bg-green">Online</span>');
-          } else {
-            $(td).html ('<span class="badge bg-gray text-white">Down/Offline</span>');
+            $(td).html (cellData);
           }
       } },
     ],
@@ -820,6 +785,10 @@ function setICMPHostData(refreshCallback='') {
     + '&icmp_location='   + $('#txtLocation').val()
     + '&icmp_owner='      + $('#txtOwner').val()
     + '&icmp_notes='      + $('#txtNotes').val()
+    + '&icmp_scanvalid='  + $('#txtScanValidation').val()
+    + '&icmp_vendor='     + $('#txtVendor').val()
+    + '&icmp_model='      + $('#txtModel').val()
+    + '&icmp_serial='     + $('#txtSerialnumber').val()
     + '&favorit='         + ($('#chkFavorit')[0].checked * 1)
     + '&archived='        + ($('#chkArchived')[0].checked * 1)
     + '&alertdown='       + ($('#chkAlertDown')[0].checked * 1)

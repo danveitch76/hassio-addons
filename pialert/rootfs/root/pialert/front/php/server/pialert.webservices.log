@@ -1,0 +1,20 @@
+
+Pi.Alert v2025-02-06:
+---------------------------------------------------------
+Current User: pi 
+
+Monitor Web-Services
+    Timestamp: 2025-07-14 20:41:15
+    Get Services List
+    Flush previous scan results
+
+Start Services Monitoring
+
+ Timestamp          | StatusCode | ResponseTime | URL 
+-----------------------------------------------------------------
+
+**************** No site(s) to monitor!! ****************
+
+Services Monitoring Changes:
+    Changed StatusCodes.....: 0
+    Changed Reachability....: 0

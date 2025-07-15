@@ -1,13 +1,3 @@
-<!-- ---------------------------------------------------------------------------
-#  Pi.Alert
-#  Open Source Network Guard / WIFI & LAN intrusion detector
-#
-#  devicesEvents.php - Front module. Events page
-#-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
-#  leiweibau 2024+                                         GNU GPLv3
-#--------------------------------------------------------------------------- -->
-
 <?php
 session_start();
 
@@ -61,7 +51,7 @@ require 'php/server/journal.php';
               <div class="inner"> <h3 id="eventsSessions"> -- </h3>
                 <p class="infobox_label"><?=$pia_lang['EVE_Shortcut_Sessions'];?></p>
               </div>
-              <div class="icon"> <i class="fa fa-plug text-green-40"></i> </div>
+              <div class="icon"> <i class="mdi mdi-lan-connect text-green-40"></i> </div>
             </div>
           </a>
         </div>
@@ -105,7 +95,7 @@ require 'php/server/journal.php';
               <div class="inner"> <h3 id="eventsDown"> -- </h3>
                 <p class="infobox_label"><?=$pia_lang['EVE_Shortcut_DownAlerts'];?></p>
               </div>
-              <div class="icon"> <i class="fa fa-warning text-red-40"></i> </div>
+              <div class="icon"> <i class="mdi mdi-lan-disconnect text-red-40"></i> </div>
             </div>
           </a>
         </div>
@@ -232,7 +222,29 @@ function initializeDatatable () {
       // Device Name
       {targets: [1],
         "createdCell": function (td, cellData, rowData, row, col) {
-          $(td).html ('<b><a href="deviceDetails.php?mac='+ rowData[13] +'" class="">'+ cellData +'</a></b>');
+          // $(td).html ('<b><a href="deviceDetails.php?mac='+ rowData[13] +'" class="">'+ cellData +'</a></b>');
+          if (rowData[13]) {
+              $(td).html('<b><a href="deviceDetails.php?mac=' + rowData[13] + '" class="">' + cellData + '</a></b>');
+          } else {
+              // $(td).html('<b><a href="icmpmonitorDetails.php?hostip=' + rowData[9] + '" class="">' + cellData + '</a></b>');
+
+              if (String(cellData).endsWith("**")) {
+                  const mainText = String(cellData).slice(0, -2);
+
+                  $(td).html(
+                      '<b><a href="icmpmonitorDetails.php?hostip=' + rowData[9] + '" class="">' +
+                      mainText +
+                      '<span class="text-warning">**</span>' +
+                      '</a></b>'
+                  );
+              } else {
+                  // Standardfall, keine Hervorhebung nötig
+                  $(td).html('<b><a href="icmpmonitorDetails.php?hostip=' + rowData[9] + '" class="">' + cellData + '</a></b>');
+              }
+
+
+
+          }
       } },
 
       // Replace HTML codes
