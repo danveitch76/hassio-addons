@@ -79,12 +79,15 @@ jobs:
           path: "./${{ matrix.addon }}"
 
       - name: Check if add-on should be built
+        env:
+          PR_HEAD_REF: ${{ github.head_ref }}
+          EVENT_NAME: ${{ github.event_name }}
         id: check
         run: |
           if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
              echo "build_arch=true" >> $GITHUB_OUTPUT;
              echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
-             if [[ -z "${{ github.head_ref }}" ]] && [[ "${{ github.event_name }}" == "push" ]]; then
+             if [[ -z "$PR_HEAD_REF" ]] && [[ "$EVENT_NAME" == "push" ]]; then
                  echo "BUILD_ARGS=" >> $GITHUB_ENV;
              fi
            else
