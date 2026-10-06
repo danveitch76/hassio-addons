@@ -5,6 +5,3 @@ build_from:
   armhf: ghcr.io/hassio-addons/base:16.3.3
   armv7: ghcr.io/hassio-addons/base:16.3.3
   i386: ghcr.io/hassio-addons/base:16.3.3
-codenotary:
-  signer: dan.veitch@gmail.com
-  base_image: codenotary@frenck.dev

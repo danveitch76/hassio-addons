@@ -5,6 +5,3 @@ build_from:
   #armhf: ghcr.io/home-assistant/armhf-base-debian:bookworm
   #armv7: ghcr.io/home-assistant/armv7-base-debian:bookworm
   #i386: ghcr.io/home-assistant/i386-base-debian:bookworm
-codenotary:
-  signer: notary@home-assistant.io
-  base_image: notary@home-assistant.io
