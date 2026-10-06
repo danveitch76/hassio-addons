@@ -20,8 +20,10 @@ ARG HDDTEMP_VERSION
 RUN cd / && wget -q -O - "http://download.savannah.nongnu.org/releases/hddtemp/hddtemp-${HDDTEMP_VERSION}.tar.bz2" | tar jxvf - \
     && cd "hddtemp-${HDDTEMP_VERSION}" && ./configure --build=${BUILD_ARCH}-unknown-linux-gnu && make && find /hddtemp-${HDDTEMP_VERSION} -name "hddtemp"
 
-RUN cd / && wget -q -O - "https://github.com/Netgear/wsdd2/archive/refs/heads/master.tar.gz" | tar zxvf - \
-    && cd wsdd2-master && make
+ARG WSDD2_REF=d7c9e1c5626010d406f36a05c7d51314deb7868c
+RUN mkdir /wsdd2 \
+    && wget -q -O - "https://github.com/oldium/wsdd2/archive/${WSDD2_REF}.tar.gz" | tar xz -C /wsdd2 --strip-components=1 \
+    && make -C /wsdd2
 
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
@@ -91,7 +93,7 @@ COPY --from=builder /hddtemp-${HDDTEMP_VERSION}/src/hddtemp /usr/sbin
 RUN  curl http://download.savannah.nongnu.org/releases/hddtemp/hddtemp.db -Lso /usr/share/misc/hddtemp.db
 
 # WSDD2
-COPY --from=builder /wsdd2-master/wsdd2 /usr/sbin
+COPY --from=builder /wsdd2/wsdd2 /usr/sbin
 
 # SAMBA Config
 RUN  mkdir -p /var/lib/samba \

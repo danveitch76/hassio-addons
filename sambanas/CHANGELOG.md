@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Replaced the unavailable Netgear wsdd2 download with a pinned revision of the maintained oldium fork.
+- Test add-on builds on pull requests before publishing accepted main changes.
+
 ## 10.0.2-nas4c-1
 ### ✨ Features
 - Migrate to [Home Assistant Community Add-on: Base Images](https://github.com/hassio-addons/addon-base) 16.3.3
