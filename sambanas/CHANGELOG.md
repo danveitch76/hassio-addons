@@ -498,3 +498,5 @@ There is a new algorithm for creating the SHARE name. Therefore the name of the 
 - Update base image
 
 [docs]: https://github.com/dianlight/hassio-addons/blob/master/sambanas/DOCS.md
+
+- Fetch hddtemp source and device database from the official Savannah HTTPS mirror with bounded retries.

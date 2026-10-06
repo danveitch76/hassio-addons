@@ -17,7 +17,7 @@ RUN apk add --no-cache make gcc libc-dev linux-headers build-base autoconf autom
 ARG BUILD_ARCH
 ARG HDDTEMP_VERSION
 
-RUN cd / && wget -q -O - "http://download.savannah.nongnu.org/releases/hddtemp/hddtemp-${HDDTEMP_VERSION}.tar.bz2" | tar jxvf - \
+RUN cd / && wget --timeout=60 --tries=3 -O - "https://download-mirror.savannah.gnu.org/releases/hddtemp/hddtemp-${HDDTEMP_VERSION}.tar.bz2" | tar jxvf - \
     && cd "hddtemp-${HDDTEMP_VERSION}" && ./configure --build=${BUILD_ARCH}-unknown-linux-gnu && make && find /hddtemp-${HDDTEMP_VERSION} -name "hddtemp"
 
 ARG WSDD2_REF=d7c9e1c5626010d406f36a05c7d51314deb7868c
@@ -90,7 +90,7 @@ RUN apk add --no-cache \
 # HDDTEMP
 ARG HDDTEMP_VERSION
 COPY --from=builder /hddtemp-${HDDTEMP_VERSION}/src/hddtemp /usr/sbin
-RUN  curl http://download.savannah.nongnu.org/releases/hddtemp/hddtemp.db -Lso /usr/share/misc/hddtemp.db
+RUN  curl --fail --retry 3 https://download-mirror.savannah.gnu.org/releases/hddtemp/hddtemp.db -Lso /usr/share/misc/hddtemp.db
 
 # WSDD2
 COPY --from=builder /wsdd2/wsdd2 /usr/sbin
