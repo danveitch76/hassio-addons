@@ -5,7 +5,9 @@ env:
 
 on:
   push:
-    branch: main
+    branches: [main]
+  pull_request:
+    branches: [main]
 jobs:
   init:
     runs-on: ubuntu-latest
@@ -20,7 +22,6 @@ jobs:
       - name: Get changed files
         id: changed_files
         uses: jitterbit/get-changed-files@master
-        continue-on-error: true
         
       - name: Find add-on directories
         id: addons
@@ -53,6 +54,9 @@ jobs:
           fi
   build:
     needs: init
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     if: needs.init.outputs.changed == 'true'
     name: Build ${{ matrix.arch }} ${{ matrix.addon }} add-on
@@ -75,12 +79,15 @@ jobs:
           path: "./${{ matrix.addon }}"
 
       - name: Check if add-on should be built
+        env:
+          PR_HEAD_REF: ${{ github.head_ref }}
+          EVENT_NAME: ${{ github.event_name }}
         id: check
         run: |
           if [[ "${{ steps.info.outputs.architectures }}" =~ ${{ matrix.arch }} ]]; then
              echo "build_arch=true" >> $GITHUB_OUTPUT;
              echo "image=$(echo ${{ steps.info.outputs.image }} | cut -d'/' -f3)" >> $GITHUB_OUTPUT;
-             if [[ -z "${{ github.head_ref }}" ]] && [[ "${{ github.event_name }}" == "push" ]]; then
+             if [[ -z "$PR_HEAD_REF" ]] && [[ "$EVENT_NAME" == "push" ]]; then
                  echo "BUILD_ARGS=" >> $GITHUB_ENV;
              fi
            else

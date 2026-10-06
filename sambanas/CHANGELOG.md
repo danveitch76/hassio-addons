@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Replaced the unavailable Netgear wsdd2 download with a pinned revision of the maintained oldium fork.
+- Test add-on builds on pull requests before publishing accepted main changes.
+
 ## 10.0.2-nas4c-1
 ### ✨ Features
 - Migrate to [Home Assistant Community Add-on: Base Images](https://github.com/hassio-addons/addon-base) 16.3.3
@@ -491,3 +498,5 @@ There is a new algorithm for creating the SHARE name. Therefore the name of the 
 - Update base image
 
 [docs]: https://github.com/dianlight/hassio-addons/blob/master/sambanas/DOCS.md
+
+- Fetch hddtemp source and device database from the Savannah’s University of Porto HTTPS mirror with bounded retries and a source SHA-256 check.

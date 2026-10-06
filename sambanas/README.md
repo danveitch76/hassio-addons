@@ -29,3 +29,7 @@ Also you can specify disk label to mount at boot and share.
 [issue]: https://github.com/danveitch76/hassio-addons/issues
 [reddit]: https://reddit.com/r/homeassistant
 [repository]: https://github.com/danveitch76/hassio-addons
+
+## Build Dependency
+
+The wsdd2 source is pinned to revision `d7c9e1c5626010d406f36a05c7d51314deb7868c` of `oldium/wsdd2`. The former Netgear download is unavailable. Pull requests build in test mode; only pushes to main may publish images.
