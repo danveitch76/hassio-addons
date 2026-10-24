@@ -42,6 +42,8 @@ jobs:
     if: needs.init.outputs.changed == 'true'
     name: Build ${{ matrix.arch }} ${{ matrix.addon }} add-on
     runs-on: ubuntu-latest
+    env:
+      DOCKER_DEFAULT_PLATFORM: linux/arm64
     permissions:
       contents: read
       id-token: write
@@ -86,6 +88,12 @@ jobs:
           echo "version=$(yq -r '.version' "$config")" >> "$GITHUB_OUTPUT"
           echo "name=$(yq -r '.name' "$config")" >> "$GITHUB_OUTPUT"
           echo "description=$(yq -r '.description' "$config")" >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date --rfc-3339=seconds --utc)" >> "$GITHUB_OUTPUT"
+          {
+            echo "extra_args<<DANOS_BUILD_ARGS"
+            yq -r '.args // {} | to_entries[] | "\(.key)=\(.value)"' "${ADDON}/build.yaml"
+            echo "DANOS_BUILD_ARGS"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Enable aarch64 emulation
         if: steps.prepare.outputs.build_arch == 'true'
@@ -99,7 +107,10 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
           cache-gha-scope: ${{ matrix.addon }}-${{ matrix.arch }}
+          load: ${{ github.event_name != 'push' || !contains(fromJSON(needs.init.outputs.publish_addons), matrix.addon) }}
           build-args: |
+            BUILD_DATE=${{ steps.prepare.outputs.build_date }}
+            ${{ steps.prepare.outputs.extra_args }}
             BUILD_FROM=${{ steps.prepare.outputs.build_from }}
             BUILD_NAME=${{ steps.prepare.outputs.name }}
             BUILD_DESCRIPTION=${{ steps.prepare.outputs.description }}
@@ -113,3 +124,15 @@ jobs:
             ${{ steps.prepare.outputs.version }}
           push: ${{ github.event_name == 'push' && contains(fromJSON(needs.init.outputs.publish_addons), matrix.addon) && 'true' || 'false' }}
           version: ${{ steps.prepare.outputs.version }}
+
+      - name: Verify validation image architecture
+        if: steps.prepare.outputs.build_arch == 'true' && (github.event_name != 'push' || !contains(fromJSON(needs.init.outputs.publish_addons), matrix.addon))
+        shell: bash
+        env:
+          IMAGE: ${{ steps.prepare.outputs.image }}
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          actual="$(docker image inspect "$IMAGE:$VERSION" --format '{{.Architecture}}')"
+          test "$actual" = "arm64"
+          echo "Validated image architecture: $actual"
