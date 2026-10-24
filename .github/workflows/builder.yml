@@ -89,7 +89,7 @@ jobs:
           echo "build_date=$(date --rfc-3339=seconds --utc)" >> "$GITHUB_OUTPUT"
           {
             echo "extra_args<<DANOS_BUILD_ARGS"
-            yq -r '.args // {} | to_entries[] | "\(.key)=\(.value)"' "${ADDON}/build.yaml"
+            yq -r '.args // {} | to_entries[] | select(.key != null) | "\(.key)=\(.value)"' "${ADDON}/build.yaml"
             echo "DANOS_BUILD_ARGS"
           } >> "$GITHUB_OUTPUT"
 
